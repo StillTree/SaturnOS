@@ -7,8 +7,8 @@ This is a repository for storing all necessary components for runnning my own ho
 ## Structure
 
 ```
-- deez_kernel
-- nutcracker
+- kernel (deez_kernel)
+- bootloader (nutcracker)
 - README.md
 ...
 ```
