@@ -3,6 +3,18 @@ name = "nutcracker"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "nutcracker"
+test = false
+bench = false
+
 [dependencies]
-uefi = { version = "0.30.0", features = ["panic_handler"] }
+log = "0.4.22"
+uefi = { version = "0.30.0", features = ["panic_handler", "logger"] }
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
 

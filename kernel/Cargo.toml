@@ -3,4 +3,16 @@ name = "deez_kernel"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "deez_kernel"
+test = false
+bench = false
+
 [dependencies]
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
+
