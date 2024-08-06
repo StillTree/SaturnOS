@@ -13,7 +13,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     log::info!("File contents: {}", core::str::from_utf8(file_contents).unwrap());
 
-    system_table.boot_services().stall(60_000_000);
+    system_table.boot_services().stall(60_000_000); // 60 seconds
 
     Status::SUCCESS
 }
@@ -44,7 +44,7 @@ fn read_file<'a>(boot_services: &'a BootServices, file_name: &CStr16) -> &'a mut
     }
 }
 
-/// Returns a memory slice the size of `n * 4096` (entire memory pages),
+/// Returns a memory slice the size of `n * 4096` bytes (entire memory pages),
 /// where `n` is the calculated number of pages needed, based on
 /// the `memory_size` parameter.
 fn allocate_mem_pages(boot_services: &BootServices, memory_size: usize) -> &mut [u8] {
