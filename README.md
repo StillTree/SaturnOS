@@ -2,6 +2,10 @@
 
 This is a repository for storing all necessary components for runnning my own hobby operating system.
 
+I am obviously learning so sine shit is just straight up copied and modified from the `bootloader` crate (notably framebuffer logging).
+So shoutout to all of these guys for making an amazing pure-Rust bootloader and open sourcing it so others can learn from it
+(this obviously applies to all of their crates, amazing work!!!).
+
 (this readme is really as bad as it gets, just straight to the point)
 
 ## Structure
