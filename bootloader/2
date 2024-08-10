@@ -11,15 +11,9 @@ mod framebuffer_log;
 
 #[panic_handler]
 fn panic_handler(info: &PanicInfo) -> ! {
-    // If the logger hasn't been initialzed yet (which is unlikely but possible),
-    // I don't really see how I could communicate that a panic happened.
-    if let Some(logger) = LOGGER.get() {
-        unsafe {
-            logger.0.force_unlock();
-        }
+    unsafe { LOGGER.get().unwrap().0.force_unlock(); };
 
-        log::error!("{}", info);
-    }
+    log::error!("{}", info);
 
     loop {
         hlt();
@@ -40,7 +34,7 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     log::info!("Exiting boot services in 5 seconds...");
     
-    system_table.boot_services().stall(5_000_000);
+    system_table.boot_services().stall(60_000_000);
 
     let (_, _) = unsafe { system_table.exit_boot_services(MemoryType::LOADER_DATA) };
 
