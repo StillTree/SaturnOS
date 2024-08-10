@@ -3,11 +3,12 @@
 
 use core::panic::PanicInfo;
 
-use framebuffer_log::LOGGER;
+use logger::LOGGER;
+use memory::NutcrackerFrameAllocator;
 use uefi::{cstr16, entry, prelude::BootServices, proto::media::file::{File, FileAttribute, FileInfo, FileType}, table::{boot::{AllocateType, MemoryType}, Boot, SystemTable}, CStr16, Handle, Status};
-use x86_64::{instructions::hlt, registers::control::Cr3};
+use x86_64::{instructions::hlt, registers::control::Cr3, structures::paging::PageTable};
 
-mod framebuffer_log;
+mod logger;
 mod memory;
 
 #[panic_handler]
@@ -22,6 +23,8 @@ fn panic_handler(info: &PanicInfo) -> ! {
         log::error!("{}", info);
     }
 
+    serial_println!("{}", info);
+
     loop {
         hlt();
     }
@@ -29,7 +32,7 @@ fn panic_handler(info: &PanicInfo) -> ! {
 
 #[entry]
 fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
-    framebuffer_log::init(system_table.boot_services());
+    logger::init(system_table.boot_services());
 
     log::info!("Welcome to the NutCracker bootloader!");
 
@@ -43,7 +46,11 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
     
     system_table.boot_services().stall(5_000_000);
 
-    let (_, _) = unsafe { system_table.exit_boot_services(MemoryType::LOADER_DATA) };
+    let (_, mut memory_map) = unsafe { system_table.exit_boot_services(MemoryType::LOADER_DATA) };
+
+    memory_map.sort();
+
+    let mut frame_allocator = NutcrackerFrameAllocator::new(memory_map.entries());
 
     loop {
         hlt();

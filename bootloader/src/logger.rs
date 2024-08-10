@@ -1,9 +1,12 @@
-use core::{fmt::{self, Write}, ptr::read_volatile, slice::from_raw_parts_mut};
+use core::{fmt, ptr::read_volatile, slice::from_raw_parts_mut};
 
 use conquer_once::spin::OnceCell;
 use noto_sans_mono_bitmap::{get_raster, get_raster_width, FontWeight, RasterHeight};
-use spinning_top::Spinlock;
 use uefi::{prelude::BootServices, proto::console::gop::{GraphicsOutput, PixelFormat}};
+
+use crate::serial_println;
+
+pub mod serial;
 
 /// The global logger instance uninitialized until the `init` function gets called.
 pub static LOGGER: OnceCell<NutcrackerLogger> = OnceCell::uninit();
@@ -28,7 +31,7 @@ pub fn init<'a>(boot_services: &'a BootServices) {
 
     LOGGER.get_or_init(move || {
         NutcrackerLogger(
-            Spinlock::new(
+            spin::Mutex::new(
                 FramebufferLogger::new(
                     unsafe { from_raw_parts_mut(framebuffer.as_mut_ptr(), framebuffer.size()) },
                     FramebufferInfo {
@@ -49,7 +52,7 @@ pub fn init<'a>(boot_services: &'a BootServices) {
 /// A wrapper type that implements the `log::Log` trait. It is necessary because
 /// the trait doesn't allow a mutable borrow in the `log`'s function signature,
 /// which is necessary to write data to the framebuffer.
-pub struct NutcrackerLogger(pub Spinlock<FramebufferLogger>);
+pub struct NutcrackerLogger(pub spin::Mutex<FramebufferLogger>);
 
 impl log::Log for NutcrackerLogger {
     fn enabled(&self, _meta: &log::Metadata) -> bool {
@@ -61,7 +64,10 @@ impl log::Log for NutcrackerLogger {
     fn log(&self, record: &log::Record) {
         let mut logger = self.0.lock();
 
+        use core::fmt::Write;
+
         writeln!(logger, "[{:5}]: {}", record.level(), record.args()).unwrap();
+        serial_println!("[{:5}]: {}", record.level(), record.args());
     }
 }
 

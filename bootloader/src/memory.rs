@@ -12,7 +12,7 @@ fn memory_descriptor_usable(memory_descriptor: &MemoryDescriptor) -> bool {
 /// Returns the next available frame from the given descriptor starting with `last_frame` (exclusive).
 fn next_frame_from_descriptor(memory_descriptor: &MemoryDescriptor, last_frame: PhysFrame) -> Option<PhysFrame> {
     let min_frame: PhysFrame<Size4KiB> = PhysFrame::containing_address(PhysAddr::new(memory_descriptor.phys_start));
-    let max_frame: PhysFrame<Size4KiB> = PhysFrame::containing_address(PhysAddr::new(memory_descriptor.phys_start + memory_descriptor.page_count * 4096) - 1);
+    let max_frame: PhysFrame<Size4KiB> = PhysFrame::containing_address(PhysAddr::new(memory_descriptor.phys_start + memory_descriptor.page_count * 4096 - 1));
 
     // If the last allocated frame is outside the bounds of the memory descriptor,
     // we know that the first frame will be available so we return it.
@@ -59,7 +59,7 @@ impl<'a> NutcrackerFrameAllocator<'a> {
     fn allocate_next_current_descriptor_frame(&mut self) -> Option<PhysFrame> {
         let next_available_frame = next_frame_from_descriptor(&self.current_descriptor, self.previous_frame)?;
 
-        // When returning the next available frame immediately becomes the previous one,
+        // When returning, the next available frame immediately becomes the previous one,
         // because it's being consumed.
         self.previous_frame = next_available_frame;
             
@@ -83,6 +83,7 @@ unsafe impl<'a> FrameAllocator<Size4KiB> for NutcrackerFrameAllocator<'a> {
 
             if let Some(frame) = next_frame_from_descriptor(&next_descriptor, self.previous_frame) {
                 self.current_descriptor = next_descriptor;
+                self.previous_frame = frame;
 
                 return Some(frame);
             }
