@@ -88,7 +88,7 @@ pub struct FramebufferLogger {
 
 impl FramebufferLogger {
     /// Creates a new instance with the provided framebuffer, information about it
-    /// and default initial cursor position.
+    /// and a default initial cursor position.
     pub fn new(buffer: &'static mut [u8], info: FramebufferInfo) -> Self {
         FramebufferLogger {
             framebuffer: buffer,

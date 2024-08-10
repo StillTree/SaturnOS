@@ -12,7 +12,7 @@ bench = false
 log = "0.4.22"
 uefi = "0.30.0"
 x86_64 = "0.15.1"
-noto-sans-mono-bitmap = { version = "0.3.0", features = ["size_20", "unicode-specials"] }
+noto-sans-mono-bitmap = { version = "0.3.0", default-features = false, features = ["regular", "size_20", "unicode-basic-latin", "unicode-specials"] }
 spinning_top = "0.3.0"
 conquer-once = { version = "0.4.0", default-features = false }
 

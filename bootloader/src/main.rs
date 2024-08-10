@@ -8,6 +8,7 @@ use uefi::{cstr16, entry, prelude::BootServices, proto::media::file::{File, File
 use x86_64::{instructions::hlt, registers::control::Cr3};
 
 mod framebuffer_log;
+mod memory;
 
 #[panic_handler]
 fn panic_handler(info: &PanicInfo) -> ! {
