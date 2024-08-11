@@ -36,6 +36,7 @@ pub fn init<'a>(boot_services: &'a BootServices) {
                     unsafe { from_raw_parts_mut(framebuffer.as_mut_ptr(), framebuffer.size()) },
                     FramebufferInfo {
                         width: mode_info.resolution().0,
+                        height: mode_info.resolution().1,
                         stride: mode_info.stride(),
                         pixel_format: mode_info.pixel_format(),
                     },
@@ -82,6 +83,7 @@ pub struct FramebufferInfo {
     pub stride: usize,
     pub pixel_format: PixelFormat,
     pub width: usize,
+    pub height: usize,
 }
 
 /// The actual logger and its functionality.
@@ -123,8 +125,16 @@ impl FramebufferLogger {
     /// and advances the cursor to the next position.
     pub fn write_char(&mut self, character: char) {
         match character {
+            // TODO: For now clearing it, in the future it would be nice if it "scrolled" moving
+            // the text above it
             '\n' => {
-                self.cursor_position_y += DEFAULT_FONT_HEIGHT.val() + DEFAULT_LINE_SPACING;
+                if self.cursor_position_y + DEFAULT_FONT_HEIGHT.val() * 2 + DEFAULT_LINE_SPACING * 2 >= self.graphics_mode_info.height {
+                    self.framebuffer.fill(0);
+                    self.cursor_position_y = DEFAULT_BORDER_PADDING;
+                } else {
+                    self.cursor_position_y += DEFAULT_FONT_HEIGHT.val() + DEFAULT_LINE_SPACING;
+                }
+
                 self.cursor_position_x = DEFAULT_BORDER_PADDING;
             },
             '\r' => {
@@ -145,7 +155,6 @@ impl FramebufferLogger {
                 }
 
                 self.cursor_position_x += DEFAULT_FONT_WIDTH + DEFAULT_CHAR_SPACING;
-        
             },
         };
     }

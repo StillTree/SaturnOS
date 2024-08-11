@@ -42,6 +42,10 @@ pub struct NutcrackerFrameAllocator<'a> {
 impl<'a> NutcrackerFrameAllocator<'a> {
     /// Creates a new sequential physical frame allocator based on the copied entries
     /// from the given memory descriptor iterator.
+    ///
+    /// Note: The provided iterator should be a freshly obtained one,
+    /// with no prior iteration performed on it, because the function relies on it
+    /// to find a first usable memory region.
     pub fn new(mut memory_map_entries: MemoryMapIter<'a>) -> Self {
         let current_descriptor = memory_map_entries.find(|descriptor| memory_descriptor_usable(descriptor))
             .expect("Could not find a usable memory region for the allocator");
