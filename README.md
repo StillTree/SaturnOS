@@ -3,7 +3,7 @@
 This is a repository for storing all necessary components for runnning my own hobby operating system.
 
 I am obviously learning so some shit is just straight up copied and modified from the `bootloader` crate
-(notably framebuffer logging and physical frame allocation).
+(notably framebuffer logging and physical frame allocation) and the Philipp Oppermann's OS Dev blog (serial printing).
 So shoutout to all of these guys for making an amazing pure-Rust bootloader and open sourcing it so others can learn from it
 (this obviously applies to all of their crates, amazing work!!!).
 

@@ -1,7 +1,9 @@
 use lazy_static::lazy_static;
 use uart_16550::SerialPort;
 
-// Lazily initialize the serial port so it is available right after launch.
+// Lazily initialize the serial port so it is available right after launch
+// Not using UEFI to communicate to make it available after exitting boot services
+// and I also am to lazy to write all that necessary code to make it work
 lazy_static! {
     pub static ref SERIAL1: spin::Mutex<SerialPort> = {
         let mut serial_port = unsafe { SerialPort::new(0x3f8) };

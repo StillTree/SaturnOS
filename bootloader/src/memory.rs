@@ -38,6 +38,7 @@ pub struct NutcrackerFrameAllocator<'a> {
     previous_frame: PhysFrame,
 }
 
+// I TESTED THIS AND IT ACTUALLY WORKS
 impl<'a> NutcrackerFrameAllocator<'a> {
     /// Creates a new sequential physical frame allocator based on the copied entries
     /// from the given memory descriptor iterator.

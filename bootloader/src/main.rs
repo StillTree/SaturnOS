@@ -6,7 +6,7 @@ use core::panic::PanicInfo;
 use logger::LOGGER;
 use memory::NutcrackerFrameAllocator;
 use uefi::{cstr16, entry, prelude::BootServices, proto::media::file::{File, FileAttribute, FileInfo, FileType}, table::{boot::{AllocateType, MemoryType}, Boot, SystemTable}, CStr16, Handle, Status};
-use x86_64::{instructions::hlt, registers::control::Cr3, structures::paging::PageTable};
+use x86_64::{instructions::hlt, registers::control::Cr3, structures::paging::{FrameAllocator, OffsetPageTable, PageTable}, VirtAddr};
 
 mod logger;
 mod memory;
@@ -21,10 +21,9 @@ fn panic_handler(info: &PanicInfo) -> ! {
         }
 
         log::error!("{}", info);
+    } else {
+        serial_println!("{}", info);
     }
-
-    serial_println!("{}", info);
-
     loop {
         hlt();
     }
@@ -42,15 +41,14 @@ fn efi_main(image: Handle, mut system_table: SystemTable<Boot>) -> Status {
 
     log::info!("File contents: {}", core::str::from_utf8(file_contents).unwrap().trim_end());
 
-    log::info!("Exiting boot services in 5 seconds...");
-    
-    system_table.boot_services().stall(5_000_000);
-
+    log::info!("Exitting boot services");
     let (_, mut memory_map) = unsafe { system_table.exit_boot_services(MemoryType::LOADER_DATA) };
 
     memory_map.sort();
 
     let mut frame_allocator = NutcrackerFrameAllocator::new(memory_map.entries());
+
+    let table = create_kernel_page_table(&mut frame_allocator);
 
     loop {
         hlt();
@@ -102,5 +100,17 @@ fn allocate_mem_pages(boot_services: &BootServices, memory_size: usize) -> &mut 
 
         core::slice::from_raw_parts_mut(content_ptr, memory_size)
     }
+}
+
+fn create_kernel_page_table<'a>(frame_allocator: &'a mut NutcrackerFrameAllocator) -> OffsetPageTable<'a> {
+    let new_frame = frame_allocator.allocate_frame().expect("No unused pages available");
+    log::info!("New kernel L4 page table: {:#?}", new_frame);
+
+    let ptr = VirtAddr::new(new_frame.start_address().as_u64()).as_mut_ptr();
+    unsafe {
+        *ptr = PageTable::new();
+    };
+
+    unsafe { OffsetPageTable::new(&mut *ptr, VirtAddr::new(0)) }
 }
 
