@@ -29,10 +29,7 @@ impl<'a> KernelExecutable<'a> {
         }
     }
 
-    pub fn load_segments(&mut self, kernel_page_table: &mut OffsetPageTable, frame_allocator: &mut NutcrackerFrameAllocator) {
-        for a in self.elf.program_iter() {
-            log::info!("{:#?}", a);
-        }
+    pub fn load_segments(&mut self, kernel_page_table: &mut OffsetPageTable, frame_allocator: &mut NutcrackerFrameAllocator) -> VirtAddr {
         // Handling all loadable segments
         for program_header in self.elf.program_iter() {
             if program_header.get_type().expect("Could not get ELF kernel executable program header type") != program::Type::Load {
@@ -175,6 +172,8 @@ impl<'a> KernelExecutable<'a> {
                 }
             }
         }
+
+        VirtAddr::new(self.elf.header.pt2.entry_point())
     }
 }
 

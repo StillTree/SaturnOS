@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-use core::panic::PanicInfo;
+use core::{arch::asm, panic::PanicInfo};
 
 use kernel::KernelExecutable;
 use logger::LOGGER;
@@ -54,17 +54,23 @@ fn efi_main(image: Handle, system_table: SystemTable<Boot>) -> Status {
     // what iterator is passed in.
     let mut frame_allocator = NutcrackerFrameAllocator::new(memory_map.entries());
 
-    let table = create_kernel_page_table(&mut frame_allocator);
+    let (frame, table) = create_kernel_page_table(&mut frame_allocator);
 
-    load_kernel(kernel, table, frame_allocator);
+    // TODO: Identity-map the VGA text buffer
+    load_kernel(kernel, table, frame, frame_allocator);
 
     // Bro really debugged this shit for like 30 minutes just to find out,
     // that you can't return after exiting boot services 💀
     //Status::SUCCESS
 }
 
-fn load_kernel(mut kernel: KernelExecutable, mut kernel_page_table: OffsetPageTable, mut frame_allocator: NutcrackerFrameAllocator) -> ! {
-    kernel.load_segments(&mut kernel_page_table, &mut frame_allocator);
+fn load_kernel(
+    mut kernel: KernelExecutable,
+    mut kernel_page_table: OffsetPageTable,
+    kernel_page_table_frame: PhysFrame,
+    mut frame_allocator: NutcrackerFrameAllocator,
+) -> ! {
+    let entry_point = kernel.load_segments(&mut kernel_page_table, &mut frame_allocator);
 
     for lol in kernel_page_table.level_4_table().iter() {
         if lol.is_unused() {
@@ -74,10 +80,8 @@ fn load_kernel(mut kernel: KernelExecutable, mut kernel_page_table: OffsetPageTa
         log::info!("{:#?}", lol);
     }
 
-    // Just iterate over L4 entries, then L3 entries and find the first unused one (L3), after
-    // which get its virtual address using the Page::from_page_table_indicies_1gib function.
-    // This will be the kernel's stack beginning address, then allocate 80 KiB of memory using
-    // 4 KiB pages and voila.
+    // Getting the first L4 entry that's available getting its corresponding address
+    // and creating the kernel's stack there. Its size is completely arbitrary and might change I guess
     let stack_size = 81920; // 80 KiB plus a guard page
     
     let l4_entry = kernel_page_table.level_4_table().iter().position(|entry| entry.is_unused())
@@ -102,6 +106,8 @@ fn load_kernel(mut kernel: KernelExecutable, mut kernel_page_table: OffsetPageTa
         }.ignore();
     }
 
+    // Identity mapping the context switch function so we don't immediately page fault
+    // when the kernel takes over
     let context_switch_fn_phys_frame: PhysFrame<Size4KiB> = PhysFrame::containing_address(PhysAddr::new(context_switch as *const () as u64));
     log::info!("Context switch function at: {:?}", context_switch_fn_phys_frame.start_address());
 
@@ -119,18 +125,29 @@ fn load_kernel(mut kernel: KernelExecutable, mut kernel_page_table: OffsetPageTa
         }.ignore();
     }
 
-    loop {
-        hlt();
+    context_switch(kernel_page_table_frame.start_address(), stack_end_addr, entry_point);
+}
+
+fn context_switch(page_table_addr: PhysAddr, stack_beginning_addr: VirtAddr, entry_point: VirtAddr) -> ! {
+    unsafe {
+        asm!(
+            r#"
+            xor rbp, rbp
+            mov cr3, {}
+            mov rsp, {}
+            push 0
+            jmp {}
+            "#,
+            in(reg) page_table_addr.as_u64(),
+            in(reg) stack_beginning_addr.as_u64(),
+            in(reg) entry_point.as_u64()
+        );
     };
+
+    unreachable!();
 }
 
-fn context_switch() -> ! {
-    loop {
-        hlt();
-    }
-}
-
-fn create_kernel_page_table(frame_allocator: & mut NutcrackerFrameAllocator) -> OffsetPageTable<'static> {
+fn create_kernel_page_table(frame_allocator: & mut NutcrackerFrameAllocator) -> (PhysFrame, OffsetPageTable<'static>) {
     let new_frame = frame_allocator.allocate_frame().expect("No unused pages available");
     log::info!("New kernel L4 page table: {:#?}", new_frame);
 
@@ -139,6 +156,6 @@ fn create_kernel_page_table(frame_allocator: & mut NutcrackerFrameAllocator) -> 
         *ptr = PageTable::new();
     };
 
-    unsafe { OffsetPageTable::new(&mut *ptr, VirtAddr::new(0)) }
+    (new_frame, unsafe { OffsetPageTable::new(&mut *ptr, VirtAddr::new(0)) })
 }
 
