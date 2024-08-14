@@ -7,7 +7,7 @@ use kernel::KernelExecutable;
 use logger::LOGGER;
 use memory::NutcrackerFrameAllocator;
 use uefi::{cstr16, entry, table::{boot::MemoryType, Boot, SystemTable}, Handle, Status};
-use x86_64::{instructions::hlt, registers::control::Cr3, structures::paging::{FrameAllocator, OffsetPageTable, PageTable}, VirtAddr};
+use x86_64::{instructions::hlt, registers::control::Cr3, structures::paging::{FrameAllocator, Mapper, OffsetPageTable, Page, PageTable, PageTableFlags, PageTableIndex, PhysFrame, Size4KiB}, PhysAddr, VirtAddr};
 
 mod logger;
 mod memory;
@@ -25,6 +25,7 @@ fn panic_handler(info: &PanicInfo) -> ! {
     } else {
         serial_println!("{}", info);
     }
+
     loop {
         hlt();
     }
@@ -55,16 +56,81 @@ fn efi_main(image: Handle, system_table: SystemTable<Boot>) -> Status {
 
     let table = create_kernel_page_table(&mut frame_allocator);
 
-    loop {
-        hlt();
-    }
+    load_kernel(kernel, table, frame_allocator);
 
     // Bro really debugged this shit for like 30 minutes just to find out,
     // that you can't return after exiting boot services 💀
     //Status::SUCCESS
 }
 
-fn create_kernel_page_table<'a>(frame_allocator: &'a mut NutcrackerFrameAllocator) -> OffsetPageTable<'a> {
+fn load_kernel(mut kernel: KernelExecutable, mut kernel_page_table: OffsetPageTable, mut frame_allocator: NutcrackerFrameAllocator) -> ! {
+    kernel.load_segments(&mut kernel_page_table, &mut frame_allocator);
+
+    for lol in kernel_page_table.level_4_table().iter() {
+        if lol.is_unused() {
+            continue;
+        }
+
+        log::info!("{:#?}", lol);
+    }
+
+    // Just iterate over L4 entries, then L3 entries and find the first unused one (L3), after
+    // which get its virtual address using the Page::from_page_table_indicies_1gib function.
+    // This will be the kernel's stack beginning address, then allocate 80 KiB of memory using
+    // 4 KiB pages and voila.
+    let stack_size = 81920; // 80 KiB plus a guard page
+    
+    let l4_entry = kernel_page_table.level_4_table().iter().position(|entry| entry.is_unused())
+        .expect("No available kernel page table entries found");
+
+    let stack_start_addr = Page::from_page_table_indices_1gib(PageTableIndex::new(u16::try_from(l4_entry).unwrap()), PageTableIndex::new(0)).start_address() + 4096;
+    let stack_end_addr = stack_start_addr + stack_size;
+    
+    log::info!("Kernel stack start at: {:?}", stack_start_addr);
+
+    for page in Page::range_inclusive(Page::containing_address(stack_start_addr), Page::containing_address(stack_end_addr - 1)) {
+        let frame = frame_allocator.allocate_frame().expect("Could not allocate a frame for the kernel's stack");
+        log::info!("Mapping kernel stack page {:?} to frame {:?}", page.start_address(), frame.start_address());
+
+        unsafe {
+            kernel_page_table.map_to(
+                page,
+                frame,
+                PageTableFlags::PRESENT | PageTableFlags::WRITABLE | PageTableFlags::NO_EXECUTE,
+                &mut frame_allocator
+            ).expect("Could not map a frame to a kernel stack page")
+        }.ignore();
+    }
+
+    let context_switch_fn_phys_frame: PhysFrame<Size4KiB> = PhysFrame::containing_address(PhysAddr::new(context_switch as *const () as u64));
+    log::info!("Context switch function at: {:?}", context_switch_fn_phys_frame.start_address());
+
+    for frame in PhysFrame::range_inclusive(context_switch_fn_phys_frame, context_switch_fn_phys_frame + 1) {
+        let page: Page<Size4KiB> = Page::containing_address(VirtAddr::new(frame.start_address().as_u64()));
+
+        unsafe {
+            kernel_page_table.map_to_with_table_flags(
+                page,
+                frame,
+                PageTableFlags::PRESENT,
+                PageTableFlags::PRESENT | PageTableFlags::WRITABLE,
+                &mut frame_allocator
+            ).expect("Could not identity map context switch function frame")
+        }.ignore();
+    }
+
+    loop {
+        hlt();
+    };
+}
+
+fn context_switch() -> ! {
+    loop {
+        hlt();
+    }
+}
+
+fn create_kernel_page_table(frame_allocator: & mut NutcrackerFrameAllocator) -> OffsetPageTable<'static> {
     let new_frame = frame_allocator.allocate_frame().expect("No unused pages available");
     log::info!("New kernel L4 page table: {:#?}", new_frame);
 

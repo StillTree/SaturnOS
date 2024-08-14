@@ -1,7 +1,7 @@
 use uefi::{prelude::BootServices, proto::media::file::{File, FileAttribute, FileInfo, FileType}, table::boot::{AllocateType, MemoryType}, CStr16};
 
 /// Reads a file from the disk.
-pub fn read_file<'a>(boot_services: &'a BootServices, file_name: &CStr16) -> &'a mut [u8] {
+pub fn read_file(boot_services: &BootServices, file_name: &CStr16) -> &'static mut [u8] {
     let mut file_system = boot_services.get_image_file_system(boot_services.image_handle())
         .expect("Could not get the bootloader's image filesystem");
 
@@ -29,7 +29,7 @@ pub fn read_file<'a>(boot_services: &'a BootServices, file_name: &CStr16) -> &'a
 /// Returns a memory slice the size of `n * 4096` bytes (entire memory pages),
 /// where `n` is the calculated number of pages needed, based on
 /// the `memory_size` parameter.
-fn allocate_mem_pages(boot_services: &BootServices, memory_size: usize) -> &mut [u8] {
+fn allocate_mem_pages(boot_services: &BootServices, memory_size: usize) -> &'static mut [u8] {
     let content_ptr = boot_services
         // Round up the number of needed pages by adding 4095 to the needed size
         .allocate_pages(AllocateType::AnyPages, MemoryType::LOADER_DATA, (memory_size + 4095) / 4096)
