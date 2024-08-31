@@ -12,11 +12,71 @@
       "-Wpedantic",
       "-c",
       "-o",
+      "out/Logger/Framebuffer.o",
+      "src/Logger/Framebuffer.c"
+    ],
+    "directory": "/home/stilltree/Dev/SaturnOS/bootloader",
+    "file": "/home/stilltree/Dev/SaturnOS/bootloader/src/Logger/Framebuffer.c",
+    "output": "/home/stilltree/Dev/SaturnOS/bootloader/out/Logger/Framebuffer.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/x86_64-w64-mingw32-gcc",
+      "-I",
+      "inc",
+      "-std=c17",
+      "-mno-red-zone",
+      "-ffreestanding",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-o",
+      "out/FontBitmaps.o",
+      "src/FontBitmaps.c"
+    ],
+    "directory": "/home/stilltree/Dev/SaturnOS/bootloader",
+    "file": "/home/stilltree/Dev/SaturnOS/bootloader/src/FontBitmaps.c",
+    "output": "/home/stilltree/Dev/SaturnOS/bootloader/out/FontBitmaps.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/x86_64-w64-mingw32-gcc",
+      "-I",
+      "inc",
+      "-std=c17",
+      "-mno-red-zone",
+      "-ffreestanding",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-o",
+      "out/Memory.o",
+      "src/Memory.c"
+    ],
+    "directory": "/home/stilltree/Dev/SaturnOS/bootloader",
+    "file": "/home/stilltree/Dev/SaturnOS/bootloader/src/Memory.c",
+    "output": "/home/stilltree/Dev/SaturnOS/bootloader/out/Memory.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/x86_64-w64-mingw32-gcc",
+      "-I",
+      "inc",
+      "-std=c17",
+      "-mno-red-zone",
+      "-ffreestanding",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-o",
       "out/Main.o",
       "src/Main.c"
     ],
-    "directory": "/home/stilltree/Dev/deez_os_c/bootloader",
-    "file": "/home/stilltree/Dev/deez_os_c/bootloader/src/Main.c",
-    "output": "/home/stilltree/Dev/deez_os_c/bootloader/out/Main.o"
+    "directory": "/home/stilltree/Dev/SaturnOS/bootloader",
+    "file": "/home/stilltree/Dev/SaturnOS/bootloader/src/Main.c",
+    "output": "/home/stilltree/Dev/SaturnOS/bootloader/out/Main.o"
   }
 ]

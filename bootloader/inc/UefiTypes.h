@@ -1,14 +1,35 @@
 #pragma once
 
 typedef unsigned long long UINT64;
+typedef long long          INT64;
 typedef unsigned int       UINT32;
 typedef unsigned short     CHAR16;
 typedef unsigned short     UINT16;
 typedef unsigned char      UINT8;
 
 typedef UINT64 UINTN;
+typedef INT64  INTN;
+
+#define MAX_BIT 0x8000000000000000ULL
 
 typedef unsigned char BOOLEAN;
+
+///
+/// Boolean true value.  UEFI Specification defines this value to be 1,
+/// but this form is more portable.
+///
+#define TRUE ((BOOLEAN) (1==1))
+
+///
+/// Boolean false value.  UEFI Specification defines this value to be 0,
+/// but this form is more portable.
+///
+#define FALSE ((BOOLEAN) (0==1))
+
+///
+/// NULL pointer (VOID *)
+///
+#define NULL ((VOID*) 0)
 
 #define EFIAPI __attribute__((ms_abi))
 
@@ -38,6 +59,35 @@ typedef unsigned char BOOLEAN;
 //
 typedef UINTN EFI_STATUS;
 
+/**
+	Produces a RETURN_STATUS code with the highest bit set.
+
+	@param  StatusCode    The status code value to convert into a warning code.
+	                      StatusCode must be in the range 0x00000000..0x7FFFFFFF.
+
+	@return The value specified by StatusCode with the highest bit set.
+
+**/
+#define ENCODE_ERROR(StatusCode) ((EFI_STATUS) (MAX_BIT | (StatusCode)))
+
+/**
+	Returns TRUE if a specified EFI_STATUS code is an error code.
+
+	This function returns TRUE if StatusCode has the high bit set.  Otherwise, FALSE is returned.
+
+	@param  StatusCode    The status code value to evaluate.
+
+	@retval TRUE          The high bit of StatusCode is set.
+	@retval FALSE         The high bit of StatusCode is clear.
+
+**/
+#define EFI_ERROR(StatusCode) (((INTN) (EFI_STATUS) (StatusCode)) < 0)
+
+///
+/// The operation is not supported.
+///
+#define EFI_UNSUPPORTED ENCODE_ERROR(3)
+
 ///
 /// A collection of related interfaces.
 ///
@@ -52,18 +102,6 @@ typedef UINT64 EFI_PHYSICAL_ADDRESS;
 /// 64-bit virtual memory address.
 ///
 typedef UINT64 EFI_VIRTUAL_ADDRESS;
-
-///
-/// Boolean true value.  UEFI Specification defines this value to be 1,
-/// but this form is more portable.
-///
-#define TRUE ((BOOLEAN) (1==1))
-
-///
-/// Boolean false value.  UEFI Specification defines this value to be 0,
-/// but this form is more portable.
-///
-#define FALSE ((BOOLEAN) (0==1))
 
 ///
 /// The operation completed successfully.

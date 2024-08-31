@@ -4,6 +4,7 @@
 #include "UefiBootServices.h"
 #include "UefiRuntimeServices.h"
 #include "UefiProtocols/SimpleTextOutput.h"
+#include "UefiProtocols/GraphicsOutput.h"
 
 ///
 /// EFI System Table

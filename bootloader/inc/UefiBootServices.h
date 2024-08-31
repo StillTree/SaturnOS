@@ -229,7 +229,7 @@ EFI_STATUS
 	                              Interface is returned.
 	@param[in]   AgentHandle      The handle of the agent that is opening the protocol interface
 	                              specified by Protocol and Interface.
-  	param[in]   ControllerHandle If the agent that is opening a protocol is a driver that follows the
+  	param[in]   ControllerHandle  If the agent that is opening a protocol is a driver that follows the
 	                              UEFI Driver Model, then this parameter is the controller handle
 	                              that requires the protocol interface. If the agent does not follow
 	                              the UEFI Driver Model, then this parameter is optional and may
@@ -285,6 +285,31 @@ EFI_STATUS
 	IN EFI_GUID   *Protocol,
 	IN EFI_HANDLE AgentHandle,
 	IN EFI_HANDLE ControllerHandle
+);
+
+/**
+	Returns the first protocol instance that matches the given protocol.
+
+	@param[in]  Protocol          Provides the protocol to search for.
+	@param[in]  Registration      Optional registration key returned from
+	                              RegisterProtocolNotify().
+	@param[out]  Interface        On return, a pointer to the first interface that matches Protocol and
+	                              Registration.
+
+	@retval EFI_SUCCESS           A protocol instance matching Protocol was found and returned in
+	                              Interface.
+	@retval EFI_NOT_FOUND         No protocol instances were found that match Protocol and
+	                              Registration.
+	@retval EFI_INVALID_PARAMETER Interface is NULL.
+	                              Protocol is NULL.
+
+**/
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LOCATE_PROTOCOL)(
+	IN  EFI_GUID *Protocol,
+	IN  VOID     *Registration OPTIONAL,
+	OUT VOID     **Interface
 );
 
 ///
@@ -366,11 +391,11 @@ typedef struct {
   //
   // Library Services
   //
-  VOID* ProtocolsPerHandle;
-  VOID* LocateHandleBuffer;
-  VOID* LocateProtocol;
-  VOID*                    InstallMultipleProtocolInterfaces;
-  VOID*                    UninstallMultipleProtocolInterfaces;
+  VOID*               ProtocolsPerHandle;
+  VOID*               LocateHandleBuffer;
+  EFI_LOCATE_PROTOCOL LocateProtocol;
+  VOID*               InstallMultipleProtocolInterfaces;
+  VOID*               UninstallMultipleProtocolInterfaces;
 
   //
   // 32-bit CRC Services
