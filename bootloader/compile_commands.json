@@ -1,0 +1,22 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/x86_64-w64-mingw32-gcc",
+      "-I",
+      "inc",
+      "-std=c17",
+      "-mno-red-zone",
+      "-ffreestanding",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-o",
+      "out/Main.o",
+      "src/Main.c"
+    ],
+    "directory": "/home/stilltree/Dev/deez_os_c/bootloader",
+    "file": "/home/stilltree/Dev/deez_os_c/bootloader/src/Main.c",
+    "output": "/home/stilltree/Dev/deez_os_c/bootloader/out/Main.o"
+  }
+]
