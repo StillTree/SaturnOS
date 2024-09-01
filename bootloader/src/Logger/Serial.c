@@ -33,7 +33,7 @@ EFI_STATUS InitSerialLogger(EFI_SYSTEM_TABLE* systemTable, SerialLoggerData* log
 
 	OutputByte(logger->port, 0xae);
 
-	// If we didn't get the exact same byte that we sent in loopback mode,
+	// If we didn't get back the exact same byte that we sent in loopback mode,
 	// the device is not functioning corretly and should not be used
 	if(InputByte(logger->port + 0) != 0xAE) {
 		systemTable->ConOut->OutputString(

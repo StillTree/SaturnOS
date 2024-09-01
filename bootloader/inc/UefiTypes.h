@@ -84,9 +84,26 @@ typedef UINTN EFI_STATUS;
 #define EFI_ERROR(StatusCode) (((INTN) (EFI_STATUS) (StatusCode)) < 0)
 
 ///
+/// The operation completed successfully.
+///
+#define EFI_SUCCESS (EFI_STATUS) (0)
+
+///
+/// The parameter was incorrect.
+///
+#define EFI_INVALID_PARAMETER ENCODE_ERROR(2)
+
+///
 /// The operation is not supported.
 ///
 #define EFI_UNSUPPORTED ENCODE_ERROR(3)
+
+///
+/// The buffer was not large enough to hold the requested data.
+/// The required buffer size is returned in the appropriate
+/// parameter when this error occurs.
+///
+#define EFI_BUFFER_TOO_SMALL ENCODE_ERROR(5)
 
 ///
 /// The physical device reported an error while attempting the
@@ -108,11 +125,6 @@ typedef UINT64 EFI_PHYSICAL_ADDRESS;
 /// 64-bit virtual memory address.
 ///
 typedef UINT64 EFI_VIRTUAL_ADDRESS;
-
-///
-/// The operation completed successfully.
-///
-#define EFI_SUCCESS (EFI_STATUS) (0)
 
 ///
 /// 128 bit buffer containing a unique identifier value.
