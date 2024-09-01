@@ -89,6 +89,12 @@ typedef UINTN EFI_STATUS;
 #define EFI_UNSUPPORTED ENCODE_ERROR(3)
 
 ///
+/// The physical device reported an error while attempting the
+/// operation.
+///
+#define EFI_DEVICE_ERROR ENCODE_ERROR(7)
+
+///
 /// A collection of related interfaces.
 ///
 typedef VOID* EFI_HANDLE;

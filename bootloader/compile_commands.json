@@ -12,6 +12,26 @@
       "-Wpedantic",
       "-c",
       "-o",
+      "out/Logger/Serial.o",
+      "src/Logger/Serial.c"
+    ],
+    "directory": "/home/stilltree/Dev/SaturnOS/bootloader",
+    "file": "/home/stilltree/Dev/SaturnOS/bootloader/src/Logger/Serial.c",
+    "output": "/home/stilltree/Dev/SaturnOS/bootloader/out/Logger/Serial.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/x86_64-w64-mingw32-gcc",
+      "-I",
+      "inc",
+      "-std=c17",
+      "-mno-red-zone",
+      "-ffreestanding",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-o",
       "out/Logger/Framebuffer.o",
       "src/Logger/Framebuffer.c"
     ],
@@ -38,6 +58,26 @@
     "directory": "/home/stilltree/Dev/SaturnOS/bootloader",
     "file": "/home/stilltree/Dev/SaturnOS/bootloader/src/FontBitmaps.c",
     "output": "/home/stilltree/Dev/SaturnOS/bootloader/out/FontBitmaps.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/x86_64-w64-mingw32-gcc",
+      "-I",
+      "inc",
+      "-std=c17",
+      "-mno-red-zone",
+      "-ffreestanding",
+      "-Wall",
+      "-Wextra",
+      "-Wpedantic",
+      "-c",
+      "-o",
+      "out/Logger.o",
+      "src/Logger.c"
+    ],
+    "directory": "/home/stilltree/Dev/SaturnOS/bootloader",
+    "file": "/home/stilltree/Dev/SaturnOS/bootloader/src/Logger.c",
+    "output": "/home/stilltree/Dev/SaturnOS/bootloader/out/Logger.o"
   },
   {
     "arguments": [

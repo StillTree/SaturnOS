@@ -4,6 +4,10 @@
 
 EFI_STATUS InitFramebufferLogger(EFI_SYSTEM_TABLE* systemTable, FramebufferLoggerData* logger)
 {
+	systemTable->ConOut->OutputString(
+		systemTable->ConOut,
+		L"Initializing the framebuffer logger... ");
+
 	EFI_STATUS status = EFI_SUCCESS;
 
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* graphicsOutputProtocol = NULL;
@@ -42,9 +46,6 @@ EFI_STATUS InitFramebufferLogger(EFI_SYSTEM_TABLE* systemTable, FramebufferLogge
 			&& info->VerticalResolution >= 600
 			&& (info->PixelFormat == PixelRedGreenBlueReserved8BitPerColor || info->PixelFormat == PixelBlueGreenRedReserved8BitPerColor))
 		{
-			systemTable->ConOut->OutputString(
-				systemTable->ConOut,
-				L"A suitable Graphics Output Protocol mode found, switching...");
 			suitableModeInfo  = info;
 			suitableModeIndex = i;
 			break;
@@ -81,6 +82,10 @@ EFI_STATUS InitFramebufferLogger(EFI_SYSTEM_TABLE* systemTable, FramebufferLogge
 	systemTable->BootServices->FreePool(suitableModeInfo);
 
 	// TODO: Close the GOP
+	//
+	systemTable->ConOut->OutputString(
+		systemTable->ConOut,
+		L"Done\r\n");
 
 	return status;
 }
