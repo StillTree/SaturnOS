@@ -11,7 +11,7 @@ typedef struct FrameAllocatorData
 	UINTN                  memoryMapSize;
 	UINTN                  descriptorSize;
 	EFI_MEMORY_DESCRIPTOR* currentMemoryDescriptor;
-	UINTN                  currentMemoryDescriptorIndex;
+	UINTN                  currentMemoryDescriptorIndex; // Relative to the whole memory map
 	EFI_PHYSICAL_ADDRESS   previousFrame;
 } FrameAllocatorData;
 
