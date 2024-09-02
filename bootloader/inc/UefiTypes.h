@@ -112,6 +112,16 @@ typedef UINTN EFI_STATUS;
 #define EFI_DEVICE_ERROR ENCODE_ERROR(7)
 
 ///
+/// The resource has run out.
+///
+#define EFI_OUT_OF_RESOURCES ENCODE_ERROR(9)
+
+///
+/// The item was not found.
+///
+#define EFI_NOT_FOUND ENCODE_ERROR(14)
+
+///
 /// A collection of related interfaces.
 ///
 typedef VOID* EFI_HANDLE;
