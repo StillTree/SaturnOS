@@ -14,9 +14,12 @@
 #define GLOBAL          ((UINT64) 1 << 8)
 #define NO_EXECUTE      ((UINT64) 1 << 63)
 
-#define PHYSICAL_ADDRESS_MASK 0x000ffffffffff000
+#define PAGE_FRAME_NUMBER_MASK ((1ULL << 40) - 1)
 
 #define PAGE_TABLE_ENTRIES 512
+
+#define VIRTUAL_ADDRESS_PAGE_OFFSET_MASK 0xfff // Last 12 bits
+#define VIRTUAL_ADDRESS_ENTRY_INDEX_MASK ((1UL << 9) - 1) // 9 bits
 
 /// C's memset but without a shitty name.
 VOID MemoryFill(VOID* ptr, UINT8 value, UINTN size);
