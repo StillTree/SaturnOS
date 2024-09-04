@@ -28,15 +28,15 @@
 VOID MemoryFill(VOID* ptr, UINT8 value, UINTN size);
 
 /// Gets the page offset value from the given virtual address.
-inline UINT16 VirtualAddressPageOffset(EFI_VIRTUAL_ADDRESS address);
+UINT16 VirtualAddressPageOffset(EFI_VIRTUAL_ADDRESS address);
 /// Gets the Level 1 Page Table index from the given virtual address.
-inline UINT16 VirtualAddressP1Index(EFI_VIRTUAL_ADDRESS address);
+UINT16 VirtualAddressP1Index(EFI_VIRTUAL_ADDRESS address);
 /// Gets the Level 2 Page Table index from the given virtual address.
-inline UINT16 VirtualAddressP2Index(EFI_VIRTUAL_ADDRESS address);
+UINT16 VirtualAddressP2Index(EFI_VIRTUAL_ADDRESS address);
 /// Gets the Level 3 Page Table index from the given virtual address.
-inline UINT16 VirtualAddressP3Index(EFI_VIRTUAL_ADDRESS address);
+UINT16 VirtualAddressP3Index(EFI_VIRTUAL_ADDRESS address);
 /// Gets the Level 4 Page Table index from the given virtual address.
-inline UINT16 VirtualAddressP4Index(EFI_VIRTUAL_ADDRESS address);
+UINT16 VirtualAddressP4Index(EFI_VIRTUAL_ADDRESS address);
 
 /// Initializes an empty page table with all entries blank at the given physical address.
 EFI_STATUS InitEmptyPageTable(EFI_PHYSICAL_ADDRESS tableAddress);
@@ -48,7 +48,7 @@ EFI_PHYSICAL_ADDRESS TableEntryPhysicalAddress(EFI_PHYSICAL_ADDRESS tableAddress
 /// located in the given table's address, at the specified index.
 UINT16 TableEntryFlags(EFI_PHYSICAL_ADDRESS tableAddress, UINT16 index);
 /// Constructs a page table entry containing the given physical address and flags.
-inline UINT64 PageTableEntry(EFI_PHYSICAL_ADDRESS address, UINT16 flags);
+UINT64 PageTableEntry(EFI_PHYSICAL_ADDRESS address, UINT16 flags);
 
 /// Maps the given memory page to the given physical memory frame
 /// in the given Level 4 Page Table's hierarchy,

@@ -1,0 +1,2 @@
+# Supernova (SaturnOS's bootloader)
+

@@ -1,9 +1,12 @@
 #include "Uefi.h"
 #include "Logger.h"
 #include "FrameAllocator.h"
+#include "EspFileSystem.h"
 
-EFI_GUID gEfiGraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
-EFI_GUID gEfiSimpleTextOutProtocolGuid  = EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID;
+EFI_GUID gEfiGraphicsOutputProtocolGuid   = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+EFI_GUID gEfiSimpleTextOutProtocolGuid    = EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID;
+EFI_GUID gEfiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
+EFI_GUID gEfiLoadedImageProtocolGuid      = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 
 EFI_STATUS ExitBootServices(
 	EFI_HANDLE* imageHandle,
@@ -11,6 +14,7 @@ EFI_STATUS ExitBootServices(
 	EFI_MEMORY_DESCRIPTOR** memoryMap,
 	UINTN* descriptorSize,
 	UINTN* memoryMapSize);
+EFI_STATUS OpenFileSystem(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL** rootVolume);
 
 EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable)
 {
@@ -20,6 +24,34 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	{
 		goto halt;
 	}
+
+	EFI_FILE_PROTOCOL* rootVolume = NULL;
+	status = OpenFileSystem(imageHandle, systemTable, &rootVolume);
+	if(EFI_ERROR(status))
+	{
+		goto halt;
+	}
+
+	UINT8* file = NULL;
+	status = ReadFile(systemTable, rootVolume, L"Supernova\\zupa.txt", (VOID**) &file);
+	if(EFI_ERROR(status))
+	{
+		goto halt;
+	}
+
+	if(file[0] == 'p')
+	{
+		SN_LOG_INFO(L"dsfsfsd");
+	}
+
+	CHAR16 sraka[6];
+	sraka[0] = file[0];
+	sraka[1] = file[1];
+	sraka[2] = file[2];
+	sraka[3] = file[3];
+	sraka[4] = file[4];
+	sraka[5] = L'\0';
+	SN_LOG_INFO(sraka);
 
 	UINTN descriptorSize = 0;
 	UINTN memoryMapSize = 0;
@@ -47,6 +79,60 @@ halt:
 
 	// We never ever want to get here after exiting boot services
 	return EFI_SUCCESS;
+}
+
+EFI_STATUS OpenFileSystem(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL** rootVolume)
+{
+	EFI_LOADED_IMAGE_PROTOCOL* loadedImage = NULL;
+	EFI_STATUS status = systemTable->BootServices->OpenProtocol(
+		imageHandle,
+		&gEfiLoadedImageProtocolGuid,
+		(VOID**) &loadedImage,
+		imageHandle,
+		NULL,
+		EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+	if(EFI_ERROR(status))
+	{
+		SN_LOG_ERROR(L"An unexpected error occured while trying to load the loaded image protocol");
+		return status;
+	}
+
+	EFI_SIMPLE_FILE_SYSTEM_PROTOCOL* simpleFileSystem = NULL;
+	status = systemTable->BootServices->OpenProtocol(
+		loadedImage->DeviceHandle,
+		&gEfiSimpleFileSystemProtocolGuid,
+		(VOID**) &simpleFileSystem,
+		imageHandle,
+		NULL,
+		EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL);
+	if(EFI_ERROR(status))
+	{
+		SN_LOG_ERROR(L"An unexpected error occured while trying to load the simple file system protocol");
+		goto closeLoadedImage;
+	}
+
+	status = simpleFileSystem->OpenVolume(simpleFileSystem, rootVolume);
+	if(EFI_ERROR(status))
+	{
+		SN_LOG_ERROR(L"An unexpected error occured while trynig to open the ESP handle");
+		goto closeSimpleFileSystem;
+	}
+
+closeSimpleFileSystem:
+	systemTable->BootServices->CloseProtocol(
+		loadedImage->DeviceHandle,
+		&gEfiSimpleFileSystemProtocolGuid,
+		imageHandle,
+		NULL);
+
+closeLoadedImage:
+	systemTable->BootServices->CloseProtocol(
+		imageHandle,
+		&gEfiLoadedImageProtocolGuid,
+		imageHandle,
+		NULL);
+
+	return status;
 }
 
 EFI_STATUS ExitBootServices(

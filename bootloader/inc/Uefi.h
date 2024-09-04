@@ -5,6 +5,8 @@
 #include "UefiRuntimeServices.h"
 #include "UefiProtocols/SimpleTextOutput.h"
 #include "UefiProtocols/GraphicsOutput.h"
+#include "UefiProtocols/SimpleFileSystem.h"
+#include "UefiProtocols/LoadedImage.h"
 
 ///
 /// EFI System Table

@@ -5,6 +5,7 @@ typedef long long          INT64;
 typedef unsigned int       UINT32;
 typedef unsigned short     CHAR16;
 typedef unsigned short     UINT16;
+typedef short              INT16;
 typedef unsigned char      UINT8;
 
 typedef UINT64 UINTN;
@@ -146,6 +147,31 @@ typedef struct {
 	UINT16 Data3;
 	UINT8  Data4[8];
 } EFI_GUID;
+
+///
+/// EFI Time Abstraction:
+///  Year:       1900 - 9999
+///  Month:      1 - 12
+///  Day:        1 - 31
+///  Hour:       0 - 23
+///  Minute:     0 - 59
+///  Second:     0 - 59
+///  Nanosecond: 0 - 999,999,999
+///  TimeZone:   -1440 to 1440 or 2047
+///
+typedef struct {
+	UINT16    Year;
+	UINT8     Month;
+	UINT8     Day;
+	UINT8     Hour;
+	UINT8     Minute;
+	UINT8     Second;
+	UINT8     Pad1;
+	UINT32    Nanosecond;
+	INT16     TimeZone;
+	UINT8     Daylight;
+	UINT8     Pad2;
+} EFI_TIME;
 
 ///
 /// Data structure that precedes all of the standard EFI table types.
