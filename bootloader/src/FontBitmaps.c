@@ -1,5 +1,9 @@
 #include "UefiTypes.h"
 
+// A rasterization of the basic ASCII characters
+// and additionally the unicode U+FFFD replacement characters.
+// Rasterized thanks to the amazing https://github.com/phip1611/noto-sans-mono-bitmap-rs
+// Rust crate that I modified a little.
 const CHAR16 g_fontBitmaps[96][20][10] = {
 	[0] = {
 		{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },

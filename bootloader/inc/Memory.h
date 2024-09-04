@@ -1,20 +1,23 @@
 #pragma once
 
 #include "UefiTypes.h"
+#include "FrameAllocator.h"
 
-#define PRESENT         ((UINT64) 1)
-#define WRITEABLE       ((UINT64) 1 << 1)
-#define USER_ACCESSIBLE ((UINT64) 1 << 2)
-#define WRITE_THROUGH   ((UINT64) 1 << 3)
-#define NO_CACHE        ((UINT64) 1 << 4)
+#define ENTRY_PRESENT         ((UINT64) 1)
+#define ENTRY_WRITEABLE       ((UINT64) 1 << 1)
+#define ENTRY_USER_ACCESSIBLE ((UINT64) 1 << 2)
+#define ENTRY_WRITE_THROUGH   ((UINT64) 1 << 3)
+#define ENTRY_NO_CACHE        ((UINT64) 1 << 4)
 // Set by the CPU, only for checking
-#define ACCESSED        ((UINT64) 1 << 5)
-#define DIRTY           ((UINT64) 1 << 6)
-#define HUGE_PAGE       ((UINT64) 1 << 7)
-#define GLOBAL          ((UINT64) 1 << 8)
-#define NO_EXECUTE      ((UINT64) 1 << 63)
+#define ENTRY_ACCESSED ((UINT64) 1 << 5)
+// Set by the CPU, only for checking
+#define ENTRY_DIRTY ((UINT64) 1 << 6)
+#define ENTRY_HUGE_PAGE  ((UINT64) 1 << 7)
+#define ENTRY_GLOBAL     ((UINT64) 1 << 8)
+#define ENTRY_NO_EXECUTE ((UINT64) 1 << 63)
 
 #define PAGE_FRAME_NUMBER_MASK ((1ULL << 40) - 1)
+#define PAGE_ENTRY_FLAGS_MASK  0xfff
 
 #define PAGE_TABLE_ENTRIES 512
 
@@ -24,5 +27,35 @@
 /// C's memset but without a shitty name.
 VOID MemoryFill(VOID* ptr, UINT8 value, UINTN size);
 
+/// Gets the page offset value from the given virtual address.
+inline UINT16 VirtualAddressPageOffset(EFI_VIRTUAL_ADDRESS address);
+/// Gets the Level 1 Page Table index from the given virtual address.
+inline UINT16 VirtualAddressP1Index(EFI_VIRTUAL_ADDRESS address);
+/// Gets the Level 2 Page Table index from the given virtual address.
+inline UINT16 VirtualAddressP2Index(EFI_VIRTUAL_ADDRESS address);
+/// Gets the Level 3 Page Table index from the given virtual address.
+inline UINT16 VirtualAddressP3Index(EFI_VIRTUAL_ADDRESS address);
+/// Gets the Level 4 Page Table index from the given virtual address.
+inline UINT16 VirtualAddressP4Index(EFI_VIRTUAL_ADDRESS address);
+
+/// Initializes an empty page table with all entries blank at the given physical address.
 EFI_STATUS InitEmptyPageTable(EFI_PHYSICAL_ADDRESS tableAddress);
+
+/// Extracts the physical address from a page table entry,
+/// located in the given table's address, at the specified index.
+EFI_PHYSICAL_ADDRESS TableEntryPhysicalAddress(EFI_PHYSICAL_ADDRESS tableAddress, UINT16 index);
+/// Extracts the page flags from a page table entry,
+/// located in the given table's address, at the specified index.
+UINT16 TableEntryFlags(EFI_PHYSICAL_ADDRESS tableAddress, UINT16 index);
+/// Constructs a page table entry containing the given physical address and flags.
+inline UINT64 PageTableEntry(EFI_PHYSICAL_ADDRESS address, UINT16 flags);
+
+/// Maps the given memory page to the given physical memory frame
+/// in the given Level 4 Page Table's hierarchy,
+/// creating all the necessary intermediate table if neccessary.
+EFI_STATUS MapMemoryPage(
+	EFI_VIRTUAL_ADDRESS pageStart,
+	EFI_PHYSICAL_ADDRESS frameStart,
+	EFI_PHYSICAL_ADDRESS p4PhysicalAddress,
+	FrameAllocatorData* frameAllocator);
 
