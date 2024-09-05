@@ -7,6 +7,22 @@
 		0x964e5b22, 0x6459, 0x11d2, {0x8e, 0x39, 0x0, 0xa0, 0xc9, 0x69, 0x72, 0x3b } \
 	}
 
+#define EFI_FILE_INFO_ID \
+	{ \
+		0x09576e92, 0x6d3f, 0x11d2, {0x8e, 0x39, 0x00, 0xa0, 0xc9, 0x69, 0x72, 0x3b } \
+	}
+
+typedef struct {
+	UINT64   Size;
+	UINT64   FileSize;
+	UINT64   PhysicalSize;
+	EFI_TIME CreateTime;
+	EFI_TIME LastAccessTime;
+	EFI_TIME ModificationTime;
+	UINT64   Attribute;
+	CHAR16   FileName[];
+} EFI_FILE_INFO;
+
 typedef struct _EFI_SIMPLE_FILE_SYSTEM_PROTOCOL EFI_SIMPLE_FILE_SYSTEM_PROTOCOL;
 
 typedef struct _EFI_FILE_PROTOCOL EFI_FILE_PROTOCOL;

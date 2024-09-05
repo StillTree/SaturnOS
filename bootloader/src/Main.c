@@ -33,25 +33,13 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	UINT8* file = NULL;
-	status = ReadFile(systemTable, rootVolume, L"Supernova\\zupa.txt", (VOID**) &file);
+	status = ReadFile(systemTable, rootVolume, L"Supernova\\zupa2.txt", (VOID**) &file);
 	if(EFI_ERROR(status))
 	{
 		goto halt;
 	}
 
-	if(file[0] == 'p')
-	{
-		SN_LOG_INFO(L"dsfsfsd");
-	}
-
-	CHAR16 sraka[6];
-	sraka[0] = file[0];
-	sraka[1] = file[1];
-	sraka[2] = file[2];
-	sraka[3] = file[3];
-	sraka[4] = file[4];
-	sraka[5] = L'\0';
-	SN_LOG_INFO(sraka);
+	rootVolume->Close(rootVolume);
 
 	UINTN descriptorSize = 0;
 	UINTN memoryMapSize = 0;
