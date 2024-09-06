@@ -11,6 +11,33 @@ VOID MemoryFill(VOID* ptr, UINT8 value, UINTN size)
 	}
 }
 
+VOID MemoryCopy(VOID* ptr1, VOID* ptr2, UINTN size)
+{
+	UINT8* src = ptr1; 
+	UINT8* dest = ptr2; 
+
+	for(UINTN i = 0; i < size; i++) 
+	{
+		dest[i] = src[i]; 
+	}
+}
+
+INT32 MemoryCompare(const VOID* ptr1, const VOID* ptr2, UINTN size)
+{
+	const UINT8* a = ptr1;
+	const UINT8* b = ptr2;
+
+	for(UINTN i = 0; i < size; i++)
+	{
+		if (a[i] < b[i])
+			return -1;
+		else if(a[i] > b[i])
+			return 1;
+	}
+
+	return 0;
+}
+
 inline UINT16 VirtualAddressPageOffset(EFI_VIRTUAL_ADDRESS address)
 {
 	return address & VIRTUAL_ADDRESS_PAGE_OFFSET_MASK;

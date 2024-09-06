@@ -1,3 +1,5 @@
+#include "Kernel.h"
+#include "Memory.h"
 #include "Uefi.h"
 #include "Logger.h"
 #include "FrameAllocator.h"
@@ -16,9 +18,24 @@ EFI_STATUS ExitBootServices(
 	UINTN* memoryMapSize);
 EFI_STATUS OpenFileSystem(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL** rootVolume);
 
+// Function to convert uint8_t to hexadecimal string
+void uint8_to_hex_str(UINT8 value, CHAR16 *buffer) {
+    // Define the characters used for hex digits
+    const char hex_digits[] = "0123456789ABCDEF";
+
+    // Calculate the length needed for the string (always 3 for uint8_t)
+    UINT8 length = 3;
+
+    // Place the null terminator at the end
+    buffer[length - 1] = '\0';
+
+    // Convert the number to a hex string
+    buffer[0] = hex_digits[(value >> 4) & 0xF]; // High nibble
+    buffer[1] = hex_digits[value & 0xF];        // Low nibble
+}
+
 EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable)
 {
-	(void) imageHandle;
 	EFI_STATUS status = InitLogger(systemTable, &g_mainLogger, TRUE, TRUE);
 	if(EFI_ERROR(status))
 	{
@@ -32,8 +49,8 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
-	UINT8* file = NULL;
-	status = ReadFile(systemTable, rootVolume, L"Supernova\\zupa2.txt", (VOID**) &file);
+	UINT8* kernelFile = NULL;
+	status = ReadFile(systemTable, rootVolume, L"Supernova\\Kernel.elf", (VOID**) &kernelFile);
 	if(EFI_ERROR(status))
 	{
 		goto halt;
@@ -59,13 +76,44 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
+	EFI_PHYSICAL_ADDRESS kernelP4Table;
+	status = AllocateFrame(&frameAllocator, &kernelP4Table);
+	if(EFI_ERROR(status))
+	{
+		goto halt;
+	}
+
+	status = InitEmptyPageTable(kernelP4Table);
+	if(EFI_ERROR(status))
+	{
+		SN_LOG_ERROR(L"There was an error while trying to initialize an empty P4 Page Table");
+		goto halt;
+	}
+
+	EFI_VIRTUAL_ADDRESS kernelEntryPoint;
+	status = LoadKernel(kernelFile, &frameAllocator, kernelP4Table, &kernelEntryPoint);
+	if(EFI_ERROR(status))
+	{
+		goto halt;
+	}
+
+	// TODO: So our problem now is that the kernel thinks its at physical address 100000,
+	// where in reality its somewhere completely different.
+	// I will have to change the allocator to start allocation at that address,
+	// or recompile the kernel with a smaller physical address.
+	//
+	// TODO: Make another function to context switch, map it to the kernel's P4
+	// so we don't page fault right out of the gate, load the P4 and jump to the entry address.
+	//
+	// This just might be all that is required for now, we'll see :D
+
 halt:
 	while(TRUE)
 	{
 		__asm__("cli; hlt");
 	}
 
-	// We never ever want to get here after exiting boot services
+	// If we actually get here, smoething went catastrophically wrong 💀
 	return EFI_SUCCESS;
 }
 

@@ -61,9 +61,10 @@ EFI_STATUS ReadFile(EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL* rootVolume
 		goto freeFileInfo;
 	}
 
+	UINTN fileSize = fileInfo->FileSize;
 	status = openedFile->Read(
 		openedFile,
-		&fileInfoSize,
+		&fileSize,
 		*fileBuffer);
 	if(EFI_ERROR(status))
 	{

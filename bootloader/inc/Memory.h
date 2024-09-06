@@ -26,6 +26,10 @@
 
 /// C's memset but without a shitty name.
 VOID MemoryFill(VOID* ptr, UINT8 value, UINTN size);
+/// C's memcpy byt without a shitty name.
+VOID MemoryCopy(VOID* ptr1, VOID* ptr2, UINTN size);
+/// C's memcmp but without a shitty name.
+INT32 MemoryCompare(const VOID* ptr1, const VOID* ptr2, UINTN size);
 
 /// Gets the page offset value from the given virtual address.
 UINT16 VirtualAddressPageOffset(EFI_VIRTUAL_ADDRESS address);
