@@ -1,4 +1,4 @@
-# Deez OS
+# Saturn OS
 
 This is a repository for storing all necessary components for runnning my own hobby operating system.
 
