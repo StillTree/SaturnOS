@@ -18,22 +18,6 @@ EFI_STATUS ExitBootServices(
 	UINTN* memoryMapSize);
 EFI_STATUS OpenFileSystem(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL** rootVolume);
 
-// Function to convert uint8_t to hexadecimal string
-void uint8_to_hex_str(UINT8 value, CHAR16 *buffer) {
-    // Define the characters used for hex digits
-    const char hex_digits[] = "0123456789ABCDEF";
-
-    // Calculate the length needed for the string (always 3 for uint8_t)
-    UINT8 length = 3;
-
-    // Place the null terminator at the end
-    buffer[length - 1] = '\0';
-
-    // Convert the number to a hex string
-    buffer[0] = hex_digits[(value >> 4) & 0xF]; // High nibble
-    buffer[1] = hex_digits[value & 0xF];        // Low nibble
-}
-
 EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable)
 {
 	EFI_STATUS status = InitLogger(systemTable, &g_mainLogger, TRUE, TRUE);
