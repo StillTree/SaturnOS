@@ -122,18 +122,8 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	SN_LOG_INFO(L"Successfully allocated an 80 KiB kernel stack");
-
-	// TODO: So our problem now is that the kernel thinks its at physical address 0x100000,
-	// where in reality its somewhere completely different.
-	// I will have to change the allocator to start allocation at that address,
-	// or recompile the kernel with a smaller physical address.
-	//
-	// TODO: Make another function to context switch, map it to the kernel's P4
-	// so we don't page fault right out of the gate, load the P4 and jump to the entry address.
-	//
-	// This just might be all that is required for now, we'll see :D
-	
 	SN_LOG_INFO(L"Performing context switch");
+
 	ContextSwitch(kernelEntryPoint, kernelP4Table, virtualStackAddress - 4096);
 
 halt:
