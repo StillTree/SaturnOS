@@ -17,6 +17,7 @@ EFI_STATUS ExitBootServices(
 	UINTN* descriptorSize,
 	UINTN* memoryMapSize);
 EFI_STATUS OpenFileSystem(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL** rootVolume);
+VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP4Table, EFI_VIRTUAL_ADDRESS stackAddress);
 
 EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable)
 {
@@ -81,7 +82,48 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
-	// TODO: So our problem now is that the kernel thinks its at physical address 100000,
+	// TODO: Use some shit to determine the actual function size and if it needs 2 or even more pages to be mapped.
+	EFI_PHYSICAL_ADDRESS contextSwitchFnAddress = (UINTN) ContextSwitch;
+	status = MapMemoryPage(
+		PhysFrameContainingAddress(contextSwitchFnAddress),
+		PhysFrameContainingAddress(contextSwitchFnAddress),
+		kernelP4Table,
+		&frameAllocator,
+		ENTRY_PRESENT | ENTRY_WRITEABLE);
+	if(EFI_ERROR(status))
+	{
+		goto halt;
+	}
+
+	SN_LOG_INFO(L"Successfully identity-mapped the context switch function");
+
+	EFI_VIRTUAL_ADDRESS virtualStackAddress = 0x8000000000;
+	// Allocate 20 frames for the kernel's stack (80 KiB)
+	for(UINTN i = 0; i < 21; i++)
+	{
+		EFI_PHYSICAL_ADDRESS frameAddress;
+		status = AllocateFrame(&frameAllocator, &frameAddress);
+		if(EFI_ERROR(status))
+		{
+			goto halt;
+		}
+
+		virtualStackAddress += 4096;
+		status = MapMemoryPage(
+			virtualStackAddress,
+			frameAddress,
+			kernelP4Table,
+			&frameAllocator,
+			ENTRY_PRESENT | ENTRY_WRITEABLE);
+		if(EFI_ERROR(status))
+		{
+			goto halt;
+		}
+	}
+
+	SN_LOG_INFO(L"Successfully allocated an 80 KiB kernel stack");
+
+	// TODO: So our problem now is that the kernel thinks its at physical address 0x100000,
 	// where in reality its somewhere completely different.
 	// I will have to change the allocator to start allocation at that address,
 	// or recompile the kernel with a smaller physical address.
@@ -90,6 +132,9 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	// so we don't page fault right out of the gate, load the P4 and jump to the entry address.
 	//
 	// This just might be all that is required for now, we'll see :D
+	
+	SN_LOG_INFO(L"Performing context switch");
+	ContextSwitch(kernelEntryPoint, kernelP4Table, virtualStackAddress - 4096);
 
 halt:
 	while(TRUE)
@@ -99,6 +144,35 @@ halt:
 
 	// If we actually get here, smoething went catastrophically wrong 💀
 	return EFI_SUCCESS;
+}
+
+VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP4Table, EFI_VIRTUAL_ADDRESS stackAddress)
+{
+	//__asm__ volatile("outb %b0, %w1" : : "a"('x'), "Nd"(0x3f8) : "memory");
+	//__asm__ volatile("mov %0, %%cr3" : : "r"(kernelP4Table) : "memory");
+	//__asm__ volatile("outb %b0, %w1" : : "a"('d'), "Nd"(0x3f8) : "memory");
+	//__asm__ volatile("mov %0, %%rsp" : : "r"(stackAddress) : "memory");
+	//__asm__ volatile("outb %b0, %w1" : : "a"('d'), "Nd"(0x3f8) : "memory");
+
+	__asm__ volatile(
+		"xor %%rbp, %%rbp\n\t"
+		"mov %0, %%cr3\n\t"
+		"mov %1, %%rsp\n\t"
+		"push $0\n\t"
+		"call *%2\n\t"
+		"outb %b3, %w4\n\t"
+		:
+		: "r"(kernelP4Table),
+		  "r"(stackAddress),
+		  "r"(entryPoint),
+		  "a"(':'), "Nd"(0x3f8)
+		: "memory");
+
+	//VOID (*KernelMain) (VOID) = (__attribute__((sysv_abi)) VOID(*) (VOID)) entryPoint;
+
+	//__asm__ volatile("outb %b0, %w1" : : "a"('d'), "Nd"(0x3f8) : "memory");
+
+	//KernelMain();
 }
 
 EFI_STATUS OpenFileSystem(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL** rootVolume)

@@ -1,14 +1,7 @@
 #include "FrameAllocator.h"
 
 #include "Logger.h"
-
-/// Returns the starting address for a physical frame that contains the given address
-/// (literally just aligns the address to the lower 4096 byte).
-EFI_PHYSICAL_ADDRESS PhysFrameContainingAddress(EFI_PHYSICAL_ADDRESS address)
-{
-	// As simple as it gets...
-	return address & ~0xFFF;
-}
+#include "Memory.h"
 
 /// Returns the next available frame from the given descriptor starting with `lastFrame` (exclusive).
 EFI_STATUS NextDescriptorFrame(

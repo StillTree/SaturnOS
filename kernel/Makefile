@@ -7,6 +7,7 @@ CXX = x86_64-elf-g++
 LD  = x86_64-elf-ld
 
 CXXFLAGS = \
+	-g \
 	-I $(INC_DIR) \
 	-std=c++23 \
 	-mno-red-zone \

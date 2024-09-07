@@ -31,6 +31,10 @@ VOID MemoryCopy(VOID* ptr1, VOID* ptr2, UINTN size);
 /// C's memcmp but without a shitty name.
 INT32 MemoryCompare(const VOID* ptr1, const VOID* ptr2, UINTN size);
 
+/// Returns the starting address for a physical frame that contains the given address
+/// (literally just aligns the address to the lower 4096 byte).
+EFI_PHYSICAL_ADDRESS PhysFrameContainingAddress(EFI_PHYSICAL_ADDRESS address);
+
 /// Gets the page offset value from the given virtual address.
 UINT16 VirtualAddressPageOffset(EFI_VIRTUAL_ADDRESS address);
 /// Gets the Level 1 Page Table index from the given virtual address.
@@ -61,5 +65,6 @@ EFI_STATUS MapMemoryPage(
 	EFI_VIRTUAL_ADDRESS pageStart,
 	EFI_PHYSICAL_ADDRESS frameStart,
 	EFI_PHYSICAL_ADDRESS p4PhysicalAddress,
-	FrameAllocatorData* frameAllocator);
+	FrameAllocatorData* frameAllocator,
+	UINT16 flags);
 

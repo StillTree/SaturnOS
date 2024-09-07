@@ -51,7 +51,14 @@ EFI_STATUS LoadKernel(
 			MemoryFill((VOID*) frameAddress, 0, 4096);
 			MemoryCopy(loadedFile + header->p_offset + j * 4096, (VOID*) frameAddress, header->p_filesz);
 
-			status = MapMemoryPage(header->p_vaddr + j * 4096, frameAddress, p4TableAddress, frameAllocator);
+			UINT16 flags = ENTRY_PRESENT;
+			if(header->p_flags & PF_W)
+				flags |= ENTRY_WRITEABLE;
+
+			if(!(header->p_flags & PF_X))
+				flags |= ENTRY_NO_EXECUTE;
+
+			status = MapMemoryPage(header->p_vaddr + j * 4096, frameAddress, p4TableAddress, frameAllocator, flags);
 			if(EFI_ERROR(status))
 			{
 				SN_LOG_ERROR(L"An unexpected error occured while trying to map a memory frame in the kernel's P4 table");

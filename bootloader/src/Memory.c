@@ -38,6 +38,12 @@ INT32 MemoryCompare(const VOID* ptr1, const VOID* ptr2, UINTN size)
 	return 0;
 }
 
+EFI_PHYSICAL_ADDRESS PhysFrameContainingAddress(EFI_PHYSICAL_ADDRESS address)
+{
+	// As simple as it gets...
+	return address & ~0xFFF;
+}
+
 inline UINT16 VirtualAddressPageOffset(EFI_VIRTUAL_ADDRESS address)
 {
 	return address & VIRTUAL_ADDRESS_PAGE_OFFSET_MASK;
@@ -104,7 +110,8 @@ EFI_STATUS MapMemoryPage(
 	EFI_VIRTUAL_ADDRESS pageStart,
 	EFI_PHYSICAL_ADDRESS frameStart,
 	EFI_PHYSICAL_ADDRESS p4PhysicalAddress,
-	FrameAllocatorData* frameAllocator)
+	FrameAllocatorData* frameAllocator,
+	UINT16 flags)
 {
 	// The page and the frame start addresses must all be 4096 (0x1000) aligned,
 	// otherwise something went terribly wrong
@@ -194,7 +201,7 @@ EFI_STATUS MapMemoryPage(
 		SN_LOG_WARN(L"An attempt was made to map an existing page table entry");
 		return EFI_INVALID_PARAMETER;
 	}
-	p1Entries[p1Index] = PageTableEntry(frameStart, ENTRY_PRESENT | ENTRY_WRITEABLE);
+	p1Entries[p1Index] = PageTableEntry(frameStart, flags | ENTRY_PRESENT);
 
 	return EFI_SUCCESS;
 }
