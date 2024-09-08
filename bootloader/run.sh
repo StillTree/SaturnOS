@@ -6,8 +6,9 @@ if [ $? -ne 0 ]; then
 	exit
 fi
 
+ARCH=$(uname -m)
 ENABLE_KVM="-enable-kvm"
-if [[ "$OSTYPE" != "linux-gnu"* ]]; then
+if [[ "$OSTYPE" != "linux-gnu"* ]] && [[ "$ARCH" != "x86_64" ]]; then
 	ENABLE_KVM=""
 fi
 
