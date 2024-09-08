@@ -3,6 +3,12 @@
 #include "UefiTypes.h"
 #include "FrameAllocator.h"
 
+typedef struct KernelBootInfo
+{
+	EFI_VIRTUAL_ADDRESS framebufferAddress;
+	UINTN               framebufferSize;
+} KernelBootInfo;
+
 EFI_STATUS LoadKernel(
 	UINT8* loadedFile,
 	FrameAllocatorData* frameAllocator,

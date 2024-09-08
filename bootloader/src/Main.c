@@ -122,6 +122,32 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	SN_LOG_INFO(L"Successfully allocated an 80 KiB kernel stack");
+
+	EFI_VIRTUAL_ADDRESS bootInfoVirtualAddress = 0x10000000000;
+	EFI_PHYSICAL_ADDRESS bootInfoPhysicalAddress;
+	status = AllocateFrame(&frameAllocator, &bootInfoPhysicalAddress);
+	if(EFI_ERROR(status))
+	{
+		goto halt;
+	}
+	
+	status = MapMemoryPage(
+		bootInfoVirtualAddress,
+		bootInfoPhysicalAddress,
+		kernelP4Table,
+		&frameAllocator,
+		ENTRY_PRESENT | ENTRY_WRITEABLE);
+	if(EFI_ERROR(status))
+	{
+		goto halt;
+	}
+
+	KernelBootInfo* bootInfo = (KernelBootInfo*) bootInfoPhysicalAddress;
+	bootInfo->framebufferSize    = g_mainLogger.framebuffer.framebufferSize;
+	bootInfo->framebufferAddress = (UINTN) g_mainLogger.framebuffer.framebuffer;
+
+	// TODO: Identity-map the framebuffer
+
 	SN_LOG_INFO(L"Performing context switch");
 
 	ContextSwitch(kernelEntryPoint, kernelP4Table, virtualStackAddress - 4096);
@@ -138,12 +164,6 @@ halt:
 
 VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP4Table, EFI_VIRTUAL_ADDRESS stackAddress)
 {
-	//__asm__ volatile("outb %b0, %w1" : : "a"('x'), "Nd"(0x3f8) : "memory");
-	//__asm__ volatile("mov %0, %%cr3" : : "r"(kernelP4Table) : "memory");
-	//__asm__ volatile("outb %b0, %w1" : : "a"('d'), "Nd"(0x3f8) : "memory");
-	//__asm__ volatile("mov %0, %%rsp" : : "r"(stackAddress) : "memory");
-	//__asm__ volatile("outb %b0, %w1" : : "a"('d'), "Nd"(0x3f8) : "memory");
-
 	__asm__ volatile(
 		"xor %%rbp, %%rbp\n\t"
 		"mov %0, %%cr3\n\t"
@@ -158,11 +178,7 @@ VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP
 		  "a"(':'), "Nd"(0x3f8)
 		: "memory");
 
-	//VOID (*KernelMain) (VOID) = (__attribute__((sysv_abi)) VOID(*) (VOID)) entryPoint;
-
-	//__asm__ volatile("outb %b0, %w1" : : "a"('d'), "Nd"(0x3f8) : "memory");
-
-	//KernelMain();
+	// We should not ever exit this function...
 }
 
 EFI_STATUS OpenFileSystem(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL** rootVolume)
