@@ -2,8 +2,6 @@
 
 This is a repository (monorepo?) for storing all necessary components for runnning my own hobby operating system.
 
-(this readme is really as bad as it gets, just straight to the point)
-
 ## Structure
 
 ```
