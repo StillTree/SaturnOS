@@ -141,7 +141,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		bootInfoPhysicalAddress,
 		kernelP4Table,
 		&frameAllocator,
-		ENTRY_PRESENT | ENTRY_WRITEABLE);
+		ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_NO_EXECUTE);
 	if(EFI_ERROR(status))
 	{
 		goto halt;
@@ -162,7 +162,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 			framebufferPhysicalAddress,
 			kernelP4Table,
 			&frameAllocator,
-			ENTRY_PRESENT | ENTRY_WRITEABLE);
+			ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_NO_EXECUTE);
 		if(EFI_ERROR(status))
 		{
 			goto halt;
@@ -196,13 +196,13 @@ VOID ContextSwitch(
 	EFI_VIRTUAL_ADDRESS bootInfoAddress)
 {
 	__asm__ volatile(
-		"xor %%rbp, %%rbp\n\t"
-		"mov %0, %%cr3\n\t"
-		"mov %1, %%rsp\n\t"
-		"mov %2, %%rdi\n\t"
-		"push $0\n\t"
-		"call *%3\n\t"
-		"outb %b4, %w5\n\t"
+		"xor %%rbp, %%rbp\n\t" // Zero out the base pointer, the kernel will take care of it from here
+		"mov %0, %%cr3\n\t"    // Load the P4's address - address space switch
+		"mov %1, %%rsp\n\t"    // We want a new stack so we load it into the stack pointer
+		"mov %2, %%rdi\n\t"    // The first function argument is a pointer to the boot info
+		"push $0\n\t"          // To be honest, I don't know if that even does something
+		"call *%3\n\t"         // Call the kernel function
+		"outb %b4, %w5\n\t"    // If we exit the kernel's function which shouldn't happen, we print a colon
 		:
 		: "r"(kernelP4Table),
 		  "r"(stackAddress),

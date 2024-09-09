@@ -66,5 +66,5 @@ EFI_STATUS MapMemoryPage(
 	EFI_PHYSICAL_ADDRESS frameStart,
 	EFI_PHYSICAL_ADDRESS p4PhysicalAddress,
 	FrameAllocatorData* frameAllocator,
-	UINT16 flags);
+	UINT64 flags);
 

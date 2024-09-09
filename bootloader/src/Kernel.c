@@ -51,7 +51,7 @@ EFI_STATUS LoadKernel(
 			MemoryFill((VOID*) frameAddress, 0, 4096);
 			MemoryCopy(loadedFile + header->p_offset + j * 4096, (VOID*) frameAddress, header->p_filesz);
 
-			UINT16 flags = ENTRY_PRESENT;
+			UINT64 flags = ENTRY_PRESENT;
 			if(header->p_flags & PF_W)
 				flags |= ENTRY_WRITEABLE;
 

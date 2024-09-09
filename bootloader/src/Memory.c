@@ -111,7 +111,7 @@ EFI_STATUS MapMemoryPage(
 	EFI_PHYSICAL_ADDRESS frameStart,
 	EFI_PHYSICAL_ADDRESS p4PhysicalAddress,
 	FrameAllocatorData* frameAllocator,
-	UINT16 flags)
+	UINT64 flags)
 {
 	// The page and the frame start addresses must all be 4096 (0x1000) aligned,
 	// otherwise something went terribly wrong
