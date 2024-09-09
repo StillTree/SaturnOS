@@ -143,7 +143,7 @@ typedef struct {
 	EFI_PHYSICAL_ADDRESS FrameBufferBase;
 	///
 	/// Amount of frame buffer needed to support the active mode as defined by
-	/// PixelsPerScanLine xVerticalResolution x PixelElementSize.
+	/// PixelsPerScanLine x VerticalResolution x PixelElementSize.
 	///
 	UINTN FrameBufferSize;
 } EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE;

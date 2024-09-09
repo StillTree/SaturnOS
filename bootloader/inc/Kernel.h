@@ -7,6 +7,8 @@ typedef struct KernelBootInfo
 {
 	EFI_VIRTUAL_ADDRESS framebufferAddress;
 	UINTN               framebufferSize;
+	UINTN               framebufferWidth;
+	UINTN               framebufferHeight;
 } KernelBootInfo;
 
 EFI_STATUS LoadKernel(

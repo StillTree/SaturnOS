@@ -17,7 +17,11 @@ EFI_STATUS ExitBootServices(
 	UINTN* descriptorSize,
 	UINTN* memoryMapSize);
 EFI_STATUS OpenFileSystem(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL** rootVolume);
-VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP4Table, EFI_VIRTUAL_ADDRESS stackAddress);
+VOID ContextSwitch(
+	EFI_PHYSICAL_ADDRESS entryPoint,
+	EFI_PHYSICAL_ADDRESS kernelP4Table,
+	EFI_VIRTUAL_ADDRESS stackAddress,
+	EFI_VIRTUAL_ADDRESS bootInfoAddress);
 
 EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable)
 {
@@ -108,7 +112,6 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 			goto halt;
 		}
 
-		virtualStackAddress += 4096;
 		status = MapMemoryPage(
 			virtualStackAddress,
 			frameAddress,
@@ -119,6 +122,8 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		{
 			goto halt;
 		}
+
+		virtualStackAddress += 4096;
 	}
 
 	SN_LOG_INFO(L"Successfully allocated an 80 KiB kernel stack");
@@ -130,7 +135,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	{
 		goto halt;
 	}
-	
+
 	status = MapMemoryPage(
 		bootInfoVirtualAddress,
 		bootInfoPhysicalAddress,
@@ -142,15 +147,37 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
-	KernelBootInfo* bootInfo = (KernelBootInfo*) bootInfoPhysicalAddress;
+	KernelBootInfo* bootInfo     = (KernelBootInfo*) bootInfoPhysicalAddress;
 	bootInfo->framebufferSize    = g_mainLogger.framebuffer.framebufferSize;
 	bootInfo->framebufferAddress = (UINTN) g_mainLogger.framebuffer.framebuffer;
+	bootInfo->framebufferWidth   = g_mainLogger.framebuffer.width;
+	bootInfo->framebufferHeight  = g_mainLogger.framebuffer.height;
 
-	// TODO: Identity-map the framebuffer
+	UINTN framebufferPages = (bootInfo->framebufferSize + 4095) / 4096;
+	UINTN framebufferPhysicalAddress = bootInfo->framebufferAddress;
+	for(UINTN i = 0; i < framebufferPages; i++)
+	{
+		status = MapMemoryPage(
+			framebufferPhysicalAddress,
+			framebufferPhysicalAddress,
+			kernelP4Table,
+			&frameAllocator,
+			ENTRY_PRESENT | ENTRY_WRITEABLE);
+		if(EFI_ERROR(status))
+		{
+			goto halt;
+		}
+
+		framebufferPhysicalAddress += 4096;
+	}
 
 	SN_LOG_INFO(L"Performing context switch");
 
-	ContextSwitch(kernelEntryPoint, kernelP4Table, virtualStackAddress - 4096);
+	ContextSwitch(
+		kernelEntryPoint,
+		kernelP4Table,
+		virtualStackAddress - 4096,
+		bootInfoVirtualAddress);
 
 halt:
 	while(TRUE)
@@ -162,18 +189,24 @@ halt:
 	return EFI_SUCCESS;
 }
 
-VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP4Table, EFI_VIRTUAL_ADDRESS stackAddress)
+VOID ContextSwitch(
+	EFI_PHYSICAL_ADDRESS entryPoint,
+	EFI_PHYSICAL_ADDRESS kernelP4Table,
+	EFI_VIRTUAL_ADDRESS stackAddress,
+	EFI_VIRTUAL_ADDRESS bootInfoAddress)
 {
 	__asm__ volatile(
 		"xor %%rbp, %%rbp\n\t"
 		"mov %0, %%cr3\n\t"
 		"mov %1, %%rsp\n\t"
+		"mov %2, %%rdi\n\t"
 		"push $0\n\t"
-		"call *%2\n\t"
-		"outb %b3, %w4\n\t"
+		"call *%3\n\t"
+		"outb %b4, %w5\n\t"
 		:
 		: "r"(kernelP4Table),
 		  "r"(stackAddress),
+		  "r"(bootInfoAddress),
 		  "r"(entryPoint),
 		  "a"(':'), "Nd"(0x3f8)
 		: "memory");
