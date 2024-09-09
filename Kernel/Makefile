@@ -1,7 +1,7 @@
 TARGET_DIR = out
-SRC_DIR = src
-INC_DIR = inc
-TARGET = $(TARGET_DIR)/Kernel.elf
+SRC_DIR    = src
+INC_DIR    = inc
+TARGET     = $(TARGET_DIR)/Kernel.elf
 
 CXX = x86_64-elf-g++
 LD  = x86_64-elf-ld

@@ -7,9 +7,12 @@ This is a repository (monorepo?) for storing all necessary components for runnni
 ## Structure
 
 ```
-- kernel (SaturnKernel)
-- bootloader (Supernova)
+- Kernel (SaturnKernel)
+- Bootloader (Supernova)
 - README.md
+- LICENSE (GPLv3)
+- run.sh (A utility script for running in one command)
+- Makefile (calls all the other Makefiles)
 ...
 ```
 
