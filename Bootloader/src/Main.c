@@ -101,9 +101,10 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 
 	SN_LOG_INFO(L"Successfully identity-mapped the context switch function");
 
-	EFI_VIRTUAL_ADDRESS virtualStackAddress = 0x8000000000;
+	// We need a guard page at the end of the stack to page fault when overflowing
+	EFI_VIRTUAL_ADDRESS virtualStackAddress = 0x8000001000;
 	// Allocate 20 frames for the kernel's stack (80 KiB)
-	for(UINTN i = 0; i < 21; i++)
+	for(UINTN i = 0; i < 20; i++)
 	{
 		EFI_PHYSICAL_ADDRESS frameAddress;
 		status = AllocateFrame(&frameAllocator, &frameAddress);
@@ -117,7 +118,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 			frameAddress,
 			kernelP4Table,
 			&frameAllocator,
-			ENTRY_PRESENT | ENTRY_WRITEABLE);
+			ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_NO_EXECUTE);
 		if(EFI_ERROR(status))
 		{
 			goto halt;
@@ -128,7 +129,8 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 
 	SN_LOG_INFO(L"Successfully allocated an 80 KiB kernel stack");
 
-	EFI_VIRTUAL_ADDRESS bootInfoVirtualAddress = 0x10000000000;
+	// Allocate the boot info right after the stack
+	EFI_VIRTUAL_ADDRESS bootInfoVirtualAddress = virtualStackAddress;
 	EFI_PHYSICAL_ADDRESS bootInfoPhysicalAddress;
 	status = AllocateFrame(&frameAllocator, &bootInfoPhysicalAddress);
 	if(EFI_ERROR(status))
@@ -176,7 +178,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	ContextSwitch(
 		kernelEntryPoint,
 		kernelP4Table,
-		virtualStackAddress - 4096,
+		virtualStackAddress - 16, // x86_64 System V ABI requires the stack to be 16 bit aligned
 		bootInfoVirtualAddress);
 
 halt:

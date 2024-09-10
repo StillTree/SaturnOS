@@ -4,17 +4,21 @@ INC_DIR    = inc
 TARGET     = $(TARGET_DIR)/Kernel.elf
 
 CXX = x86_64-elf-g++
+AS  = x86_64-elf-as
 LD  = x86_64-elf-ld
 
+# TEMPORARY -mgeneral-regs-only !!!
 CXXFLAGS = \
 	-g \
 	-I $(INC_DIR) \
 	-std=c++23 \
 	-mno-red-zone \
+	-mgeneral-regs-only \
 	-mno-mmx \
 	-mcmodel=kernel \
 	-mno-sse \
 	-mno-sse2 \
+	-fno-exceptions \
 	-ffreestanding \
 	-nostdlib \
 	-Wall \

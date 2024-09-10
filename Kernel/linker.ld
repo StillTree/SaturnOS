@@ -4,44 +4,34 @@ ENTRY(KernelMain)
 
 SECTIONS
 {
-	KERNEL_PHYSICAL = 0x100000;
-	KERNEL_VIRTUAL = 0xffffffff80000000;
-	. = KERNEL_PHYSICAL + KERNEL_VIRTUAL;
-	KERNEL_START = .;
+	KERNEL_PHYSICAL_START = 0x100000;
+	KERNEL_VIRTUAL_START  = 0xffffffff80000000;
+	. = KERNEL_PHYSICAL_START + KERNEL_VIRTUAL_START;
 
-	.text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRTUAL)
+	.text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VIRTUAL_START)
 	{
-		TEXT_START = .;
 		*(.text*)
 		*(.gnu.linkonce.t*)
-		TEXT_END = .;
 	}
 
-	.data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRTUAL)
+	.data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VIRTUAL_START)
 	{
-		DATA_START = .;
 		*(.data*)
 		*(.gnu.linkonce.d*)
-		DATA_END = .;
 	}
 
-	.rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRTUAL)
+	.rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VIRTUAL_START)
 	{
-		READ_ONLY_DATA_START = .;
 		*(.rodata*)
 		*(.gnu.linkonce.r*)
-		READ_ONLY_DATA_END = .;
 	}
 
-	.bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_VIRTUAL)
+	.bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_VIRTUAL_START)
 	{
-		BLOCK_STARTING_SYMBOLS_START = .;
 		*(COMMON)
 		*(.bss*)
 		*(.gnu.linkonce.b*)
-		BLOCK_STARTING_SYMBOLS_END = .;
 	}
-	KERNEL_END = .;
 
 	/DISCARD/ :
 	{
