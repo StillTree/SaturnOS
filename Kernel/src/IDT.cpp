@@ -10,13 +10,14 @@ __attribute__((interrupt)) void InterruptHandler(void* interruptFrame)
 
 void InitIDT()
 {
-	IDTEntry* entry  = &idt[3];
+	IDTEntry* entry   = &idt[3];
 	entry->ISRLow     = reinterpret_cast<U64>(InterruptHandler) & 0xffff;
 	entry->KernelCS   = 0;
 	entry->IST        = 0;
-	entry->Attributes = 0;
+	entry->Attributes = 0x8f;
 	entry->ISRMiddle  = (reinterpret_cast<U64>(InterruptHandler) >> 16) & 0xffff;
 	entry->ISRHigh    = (reinterpret_cast<U64>(InterruptHandler) >> 32) & 0xffffffff;
+	entry->Reserved   = 0;
 
 	idtr.Address = reinterpret_cast<U64>(&idt[0]);
 	idtr.Size    = static_cast<U16>(sizeof(IDTEntry) * 4);

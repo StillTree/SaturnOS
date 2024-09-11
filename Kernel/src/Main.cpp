@@ -12,7 +12,7 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	InitIDT();
 
 	__asm__ volatile("int3");
-
+	
 	U32* framebuffer = reinterpret_cast<U32*>(bootInfo->framebufferAddress);
 	for(I32 y = 0; y < 100; y++)
 	{
