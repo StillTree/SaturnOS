@@ -31,9 +31,13 @@ LDFLAGS = \
 	-z max-page-size=0x1000 \
 	-nostdlib
 
-SRC_FILES = $(shell find $(SRC_DIR) -name '*.cpp')
+CPP_FILES = $(shell find $(SRC_DIR) -name '*.cpp')
+ASM_FILES = $(shell find $(SRC_DIR) -name '*.s')
 
-OBJ_FILES = $(patsubst $(SRC_DIR)/%.cpp,$(TARGET_DIR)/%.o,$(SRC_FILES))
+OBJ_CPP_FILES = $(patsubst $(SRC_DIR)/%.cpp,$(TARGET_DIR)/%.o,$(CPP_FILES))
+OBJ_ASM_FILES = $(patsubst $(SRC_DIR)/%.s,$(TARGET_DIR)/%.o,$(ASM_FILES))
+
+OBJ_FILES = $(OBJ_CPP_FILES) $(OBJ_ASM_FILES)
 
 .PHONY: all clean
 
@@ -45,6 +49,10 @@ $(TARGET_DIR):
 $(TARGET_DIR)/%.o: $(SRC_DIR)/%.cpp | $(TARGET_DIR)
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+$(TARGET_DIR)/%.o: $(SRC_DIR)/%.s | $(TARGET_DIR)
+	@mkdir -p $(dir $@)
+	$(AS) $< -o $@
 
 $(TARGET): $(OBJ_FILES)
 	$(LD) $(LDFLAGS) $^ -o $@

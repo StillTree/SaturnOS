@@ -12,7 +12,7 @@ void InitIDT()
 {
 	IDTEntry* entry   = &idt[3];
 	entry->ISRLow     = reinterpret_cast<U64>(InterruptHandler) & 0xffff;
-	entry->KernelCS   = 0;
+	entry->KernelCS   = 0x08;
 	entry->IST        = 0;
 	entry->Attributes = 0x8f;
 	entry->ISRMiddle  = (reinterpret_cast<U64>(InterruptHandler) >> 16) & 0xffff;
@@ -20,7 +20,7 @@ void InitIDT()
 	entry->Reserved   = 0;
 
 	idtr.Address = reinterpret_cast<U64>(&idt[0]);
-	idtr.Size    = static_cast<U16>(sizeof(IDTEntry) * 4);
+	idtr.Size    = sizeof(IDTEntry) * 4 - 1;
 
 	__asm__ volatile("lidt %0" : : "m"(idtr));
 	__asm__ volatile("sti");

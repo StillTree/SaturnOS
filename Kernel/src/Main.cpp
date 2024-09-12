@@ -1,5 +1,6 @@
 #include "Core.hpp"
 
+#include "GDT.hpp"
 #include "IDT.hpp"
 
 #ifndef __x86_64__
@@ -9,9 +10,13 @@
 /// C linking so the linker doesn't absolutely shit itself
 extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 {
+	InitGDT();
+	__asm__ volatile("outb %b0, %w1" : : "a"('g'), "Nd"(0x3f8) : "memory");
 	InitIDT();
+	__asm__ volatile("outb %b0, %w1" : : "a"('d'), "Nd"(0x3f8) : "memory");
 
 	__asm__ volatile("int3");
+	__asm__ volatile("outb %b0, %w1" : : "a"('i'), "Nd"(0x3f8) : "memory");
 	
 	U32* framebuffer = reinterpret_cast<U32*>(bootInfo->framebufferAddress);
 	for(I32 y = 0; y < 100; y++)
