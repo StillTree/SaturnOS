@@ -1,28 +1,39 @@
 #include "IDT.hpp"
 
-IDTEntry idt[256];
-IDTRegistry idtr;
+#include "InterruptHandlers.hpp"
 
-__attribute__((interrupt)) void InterruptHandler(void* interruptFrame)
+namespace SaturnKernel
 {
-	__asm__ volatile("outb %b0, %w1" : : "a"('@'), "Nd"(0x3f8) : "memory");
-}
+	IDTEntry g_idt[256];
 
-void InitIDT()
-{
-	IDTEntry* entry   = &idt[3];
-	entry->ISRLow     = reinterpret_cast<U64>(InterruptHandler) & 0xffff;
-	entry->KernelCS   = 0x08;
-	entry->IST        = 0;
-	entry->Attributes = 0x8f;
-	entry->ISRMiddle  = (reinterpret_cast<U64>(InterruptHandler) >> 16) & 0xffff;
-	entry->ISRHigh    = (reinterpret_cast<U64>(InterruptHandler) >> 32) & 0xffffffff;
-	entry->Reserved   = 0;
+	void SetIDTEntry(U8 vector, U64 handlerFn)
+	{
+		IDTEntry& entry   = g_idt[vector];
+		entry.AddressLow  = handlerFn & 0xffff;
+		entry.AddressMid  = (handlerFn >> 16) & 0xffff;
+		entry.AddressHigh = handlerFn >> 32;
+		entry.KernelCS    = 0x8;
+		entry.Flags       = 0x8e;
+		entry.IST         = 0;
+		entry.Reserved    = 0;
+	}
 
-	idtr.Address = reinterpret_cast<U64>(&idt[0]);
-	idtr.Size    = sizeof(IDTEntry) * 4 - 1;
+	void InitIDT()
+	{
+		for(int i = 0; i < 5; i++)
+		{
+			SetIDTEntry(i, reinterpret_cast<U64>(SaturnKernel::test));
+		}
 
-	__asm__ volatile("lidt %0" : : "m"(idtr));
-	__asm__ volatile("sti");
+		IDTRegister idtRegister;
+		idtRegister.Size    = 0xfff;
+		idtRegister.Address = reinterpret_cast<U64>(&g_idt);
+
+		__asm__ volatile(
+			"lidt %0\n\t"
+			"sti\n\t"
+			:
+			: "m"(idtRegister));
+	}
 }
 

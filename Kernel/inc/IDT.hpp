@@ -2,22 +2,29 @@
 
 #include "Core.hpp"
 
-struct __attribute__((packed)) IDTEntry
+namespace SaturnKernel
 {
-	U64 ISRLow;
-	U16 KernelCS;
-	U8  IST;
-	U8  Attributes;
-	U16 ISRMiddle;
-	U32 ISRHigh;
-	U32 Reserved;
-};
+	struct __attribute__((packed)) IDTEntry
+	{
+		U16 AddressLow;
+		U16 KernelCS;
+		U8  IST;
+		U8  Flags;
+		U16 AddressMid;
+		U32 AddressHigh;
+		U32 Reserved;
+	};
 
-struct __attribute__((packed)) IDTRegistry
-{
-	U16 Size;
-	U64 Address;
-};
+	struct __attribute__((packed)) IDTRegister
+	{
+		U16 Size;
+		U64 Address;
+	};
 
-void InitIDT();
+	void LoadIDT(void* address);
+	void SetIDTEntry(U8 vector, U64 handler);
+	void InitIDT();
+
+	extern IDTEntry g_idt[256];
+}
 

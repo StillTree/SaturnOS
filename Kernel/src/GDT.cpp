@@ -1,32 +1,37 @@
 #include "GDT.hpp"
 
-GDTEntry gdt[5];
-GDTDescriptor gdtr;
-
-void SetGDTEntry(USIZE index, U32 address, U32 limit, U8 access, U8 flags)
+namespace SaturnKernel
 {
-	GDTEntry* entry     = &gdt[index];
-	entry->AddressLow    = address;
-	entry->AddressMiddle = address >> 16;
-	entry->AddressHigh   = address >> 24;
-	entry->Access        = access;
-	entry->Limit         = limit;
-	entry->FlagsAndLimit = ((flags & 0xf) << 4) | ((limit >> 16) & 0xf);
-}
+	GDT g_gdt;
 
-extern "C" void LoadGDT(GDTDescriptor* gdtr);
+	GDTEntry SetGDTEntry(U32 address, U32 limit, U8 access, U8 flags)
+	{
+		GDTEntry entry;
+		entry.AddressLow    = address;
+		entry.AddressMiddle = address >> 16;
+		entry.AddressHigh   = address >> 24;
+		entry.Access        = access;
+		entry.Limit         = limit;
+		entry.FlagsAndLimit = ((flags & 0xf) << 4) | ((limit >> 16) & 0xf);
 
-void InitGDT()
-{
-	SetGDTEntry(0, 0, 0,       0,    0);
-	SetGDTEntry(1, 0, 0xfffff, 0x9a, 0xa);
-	SetGDTEntry(2, 0, 0xfffff, 0x92, 0xc);
-	SetGDTEntry(3, 0, 0xfffff, 0xfa, 0xa);
-	SetGDTEntry(4, 0, 0xfffff, 0xf2, 0xc);
+		return entry;
+	}
 
-	gdtr.Address = reinterpret_cast<U64>(&gdt[0]);
-	gdtr.Size    = sizeof(GDTEntry) * 5 - 1;
+	void InitGDT()
+	{
+		g_gdt.Null       = SetGDTEntry(0, 0,       0,    0);
+		g_gdt.KernelCode = SetGDTEntry(0, 0xfffff, 0x9a, 0xa);
+		g_gdt.KernelData = SetGDTEntry(0, 0xfffff, 0x92, 0xc);
+		g_gdt.UserCode   = SetGDTEntry(0, 0xfffff, 0xfa, 0xa);
+		g_gdt.UserData   = SetGDTEntry(0, 0xfffff, 0xf2, 0xc);
 
-	LoadGDT(&gdtr);
+		GDTDescriptor gdtDescriptor;
+		gdtDescriptor.Address = reinterpret_cast<U64>(&g_gdt);
+		gdtDescriptor.Size    = sizeof(GDT) - 1;
+
+		__asm__ volatile("lgdt %0" : : "m"(gdtDescriptor));
+
+		LoadGDT();
+	}
 }
 

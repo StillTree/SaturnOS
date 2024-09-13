@@ -21,7 +21,6 @@ if [ -z "${OVMF_VARS_LOCATION+x}" ]; then
 fi
 
 qemu-system-x86_64 \
-	-s -S \
 	$ENABLE_KVM \
 	-serial stdio \
 	-drive if=pflash,format=raw,readonly=on,file=$OVMF_CODE_LOCATION \
