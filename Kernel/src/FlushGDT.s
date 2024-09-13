@@ -1,6 +1,6 @@
-.globl LoadGDT
+.globl FlushGDT
 
-LoadGDT:
+FlushGDT:
 	mov $0x10, %ax
 	mov %ax, %ds
 	mov %ax, %es

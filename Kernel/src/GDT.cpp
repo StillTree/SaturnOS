@@ -31,7 +31,7 @@ namespace SaturnKernel
 
 		__asm__ volatile("lgdt %0" : : "m"(gdtDescriptor));
 
-		LoadGDT();
+		FlushGDT();
 	}
 }
 

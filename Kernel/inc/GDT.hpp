@@ -32,5 +32,5 @@ namespace SaturnKernel
 	void InitGDT();
 }
 
-extern "C" void LoadGDT();
+extern "C" void FlushGDT();
 
