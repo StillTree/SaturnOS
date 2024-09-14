@@ -2,6 +2,7 @@
 
 #include "GDT.hpp"
 #include "IDT.hpp"
+#include "Logger.hpp"
 
 #ifndef __x86_64__
 #error SaturnKernel requires an x86 64-bit architecture to run properly!
@@ -10,21 +11,17 @@
 /// C linking so the linker and the bootloader don't absolutely shit themselves
 extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 {
+	SaturnKernel::g_mainLogger.Init(true, true, bootInfo, 0x3f8);
+	SK_LOG_INFO("Initializing the SaturnOS Kernel");
+
 	__asm__("cli");
 
+	SK_LOG_INFO("Initializing the GDT");
 	SaturnKernel::InitGDT();
+	SK_LOG_INFO("Initializing the IDT");
 	SaturnKernel::InitIDT();
 
 	__asm__ volatile("int3");
-
-	U32* framebuffer = reinterpret_cast<U32*>(bootInfo->framebufferAddress);
-	for(I32 y = 0; y < 100; y++)
-	{
-		for(I32 x = 0; x < 100; x++)
-		{
-			framebuffer[y * bootInfo->framebufferWidth + x] = 0xff8800;
-		}
-	}
 
 	while(true)
 	{

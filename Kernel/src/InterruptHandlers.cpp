@@ -1,18 +1,24 @@
 #include "InterruptHandlers.hpp"
 
+#include "Logger.hpp"
+#include "Panic.hpp"
+
 namespace SaturnKernel
 {
 	__attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame)
 	{
-		__asm__ volatile("outb %b0, %w1" : : "a"('b'), "Nd"(0x3f8) : "memory");
+		SK_LOG_ERROR("EXCEPTION OCCURED: BREAKPOINT, InterruptFrame");
+		SK_LOG_ERROR("{");
+		SK_LOG_ERROR("}");
 	}
 
 	__attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, U64)
 	{
-		__asm__ volatile("outb %b0, %w1" : : "a"('d'), "Nd"(0x3f8) : "memory");
+		SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: DOUBLE FAULT, InterruptFrame");
+		SK_LOG_ERROR("{");
+		SK_LOG_ERROR("}");
 
-		while(true)
-			__asm__ volatile("cli; hlt");
+		Hang();
 	}
 
 	__attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, U64 errorCode)
@@ -25,10 +31,11 @@ namespace SaturnKernel
 
 		// TODO: Using the errorCode figure the rest of the shit out
 
-		__asm__ volatile("outb %b0, %w1" : : "a"('p'), "Nd"(0x3f8) : "memory");
+		SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT, InterruptFrame");
+		SK_LOG_ERROR("{");
+		SK_LOG_ERROR("}");
 
-		while(true)
-			__asm__ volatile("cli; hlt");
+		Hang();
 	}
 }
 

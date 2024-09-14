@@ -1,4 +1,4 @@
-.globl FlushGDT
+.global FlushGDT
 
 FlushGDT:
 	mov $0x10, %ax

@@ -131,7 +131,6 @@ VOID FramebufferLoggerWriteChar(FramebufferLoggerData* logger, CHAR16 character)
 	if(logger->cursorPositionX + 9 >= logger->width)
 	{
 		FramebufferLoggerWriteChar(logger, L'\n');
-		return;
 	}
 
 	for(UINTN y = 0; y < 20; y++)
