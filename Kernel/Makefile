@@ -48,9 +48,9 @@ all: $(TARGET)
 $(TARGET_DIR):
 	mkdir -p $(TARGET_DIR)
 
+# Checks if the compiled file contains interrupt routines and if so adds a special flag
 $(TARGET_DIR)/%.o: $(SRC_DIR)/%.cpp | $(TARGET_DIR)
 	@mkdir -p $(dir $@)
-# Checks if the compiled file contains interrupt routines and if so adds a special flag
 	$(CXX) $(CXXFLAGS) $(if $(filter $(INTERRUPT_CPP_FILES),$^),$(INTERRUPT_CXXFLAGS),) -c $< -o $@
 
 $(TARGET_DIR)/%.o: $(SRC_DIR)/%.s | $(TARGET_DIR)

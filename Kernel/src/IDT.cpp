@@ -20,10 +20,13 @@ namespace SaturnKernel
 
 	void InitIDT()
 	{
-		for(int i = 0; i < 5; i++)
-		{
-			SetIDTEntry(i, reinterpret_cast<U64>(SaturnKernel::test));
-		}
+		// TODO: The rest of handlers
+		SetIDTEntry(3,  reinterpret_cast<U64>(BreakpointInterruptHandler));
+		// TODO: The rest of handlers
+		SetIDTEntry(8,  reinterpret_cast<U64>(DoubleFaultInterruptHandler));
+		// TODO: The rest of handlers
+		SetIDTEntry(14, reinterpret_cast<U64>(PageFaultInterruptHandler));
+		// TODO: The rest of handlers
 
 		IDTRegister idtRegister;
 		idtRegister.Size    = 0xfff;
