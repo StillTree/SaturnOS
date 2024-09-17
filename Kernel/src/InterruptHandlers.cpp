@@ -10,6 +10,11 @@ namespace SaturnKernel
 	{
 		SK_LOG_ERROR("EXCEPTION OCCURED: BREAKPOINT, InterruptFrame");
 		SK_LOG_ERROR("{");
+		SK_LOG_ERROR("    StackPointer = {}", frame->StackPointer);
+		SK_LOG_ERROR("    Flags = {}", frame->Flags);
+		SK_LOG_ERROR("    CodeSegment = {}", frame->CodeSegment);
+		SK_LOG_ERROR("    SegmentSelector = {}", frame->SegmentSelector);
+		SK_LOG_ERROR("    Instruction Pointer = {}", frame->InstructionPointer);
 		SK_LOG_ERROR("}");
 	}
 
@@ -17,6 +22,11 @@ namespace SaturnKernel
 	{
 		SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: DOUBLE FAULT, InterruptFrame");
 		SK_LOG_ERROR("{");
+		SK_LOG_ERROR("    StackPointer = {}", frame->StackPointer);
+		SK_LOG_ERROR("    Flags = {}", frame->Flags);
+		SK_LOG_ERROR("    CodeSegment = {}", frame->CodeSegment);
+		SK_LOG_ERROR("    SegmentSelector = {}", frame->SegmentSelector);
+		SK_LOG_ERROR("    Instruction Pointer = {}", frame->InstructionPointer);
 		SK_LOG_ERROR("}");
 
 		Hang();
@@ -32,8 +42,17 @@ namespace SaturnKernel
 
 		// TODO: Using the errorCode figure the rest of the shit out
 
-		SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT, InterruptFrame");
+		SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT");
+		SK_LOG_ERROR("Faulty virtual address = {}", faultVirtualAddress);
+		SK_LOG_ERROR("PML4 address = {}", pml4Address);
+		SK_LOG_ERROR("Error code = {}", errorCode);
+		SK_LOG_ERROR("InterruptFrame");
 		SK_LOG_ERROR("{");
+		SK_LOG_ERROR("    StackPointer = {}", frame->StackPointer);
+		SK_LOG_ERROR("    Flags = {}", frame->Flags);
+		SK_LOG_ERROR("    CodeSegment = {}", frame->CodeSegment);
+		SK_LOG_ERROR("    SegmentSelector = {}", frame->SegmentSelector);
+		SK_LOG_ERROR("    Instruction Pointer = {}", frame->InstructionPointer);
 		SK_LOG_ERROR("}");
 
 		Hang();

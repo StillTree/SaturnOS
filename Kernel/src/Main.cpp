@@ -21,6 +21,9 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Initializing the IDT");
 	SaturnKernel::InitIDT();
 
+	U8* poorBeef = reinterpret_cast<U8*>(0xdeadbeef);
+	*poorBeef = 69;
+
 	__asm__ volatile("int3");
 
 	while(true)

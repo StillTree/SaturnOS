@@ -1,4 +1,6 @@
 #include "Logger.hpp"
+#include "Format.hpp"
+#include <stdarg.h>
 
 namespace SaturnKernel
 {
@@ -34,7 +36,7 @@ namespace SaturnKernel
 		framebuffer.Clear();
 	}
 
-	void Logger::Log(LogLevel logLevel, const I8* string)
+	void Logger::Log(LogLevel logLevel, const I8* format, ...)
 	{
 		if(framebufferEnabled)
 		{
@@ -53,9 +55,6 @@ namespace SaturnKernel
 					framebuffer.WriteString("[ERROR]: ");
 					break;
 			}
-
-			framebuffer.WriteString(string);
-			framebuffer.WriteChar('\n');
 		}
 
 		if(serialConsoleEnabled)
@@ -75,10 +74,47 @@ namespace SaturnKernel
 					serialConsole.WriteString("[ERROR]: ");
 					break;
 			}
-
-			serialConsole.WriteString(string);
-			serialConsole.WriteChar('\n');
 		}
+		
+		va_list args;
+		va_start(args, format);
+
+		USIZE i = 0;
+		while(format[i] != '\0')
+		{
+			if(format[i] == '{' && format[i + 1] == '}')
+			{
+				I8 hexOutput[MAX_HEX_LENGTH];
+				U64 number = va_arg(args, U64);
+				NumberToHexString(number, hexOutput);
+
+				if(framebufferEnabled)
+					framebuffer.WriteString(hexOutput);
+
+				if(serialConsoleEnabled)
+					serialConsole.WriteString(hexOutput);
+
+				i++;
+			}
+			else
+			{
+				if(framebufferEnabled)
+					framebuffer.WriteChar(format[i]);
+
+				if(serialConsoleEnabled)
+					serialConsole.WriteChar(format[i]);
+			}
+
+			i++;
+		}
+
+		va_end(args);
+
+		if(framebufferEnabled)
+			framebuffer.WriteChar('\n');
+
+		if(serialConsoleEnabled)
+			serialConsole.WriteChar('\n');
 	}
 }
 
