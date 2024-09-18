@@ -8,6 +8,11 @@
 #error SaturnKernel requires an x86 64-bit architecture to run properly!
 #endif
 
+void test()
+{
+	test();
+}
+
 /// C linking so the linker and the bootloader don't absolutely shit themselves
 extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 {
@@ -21,8 +26,7 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Initializing the IDT");
 	SaturnKernel::InitIDT();
 
-	U8* poorBeef = reinterpret_cast<U8*>(0xdeadbeef);
-	*poorBeef = 69;
+	test();
 
 	__asm__ volatile("int3");
 
