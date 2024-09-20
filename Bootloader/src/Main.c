@@ -204,7 +204,7 @@ VOID ContextSwitch(
 		"mov %2, %%rdi\n\t"    // The first function argument is a pointer to the boot info
 		"push $0\n\t"          // To be honest, I don't know if that even does something
 		"call *%3\n\t"         // Call the kernel function
-		"outb %b4, %w5\n\t"    // If we exit the kernel's function which shouldn't happen, we print a colon
+		"outb %b4, %w5\n\t"    // If we exit the kernel's function which shouldn't happen, we print a colon to the COM1 serial output
 		:
 		: "r"(kernelP4Table),
 		  "r"(stackAddress),

@@ -46,7 +46,6 @@ EFI_STATUS LoadKernel(
 				SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a memory frame for the kernel");
 				return status;
 			}
-			SN_LOG_INFO(L"Successfully allocated a kernel frame");
 
 			MemoryFill((VOID*) frameAddress, 0, 4096);
 			MemoryCopy(loadedFile + header->p_offset + j * 4096, (VOID*) frameAddress, header->p_filesz);
@@ -64,7 +63,6 @@ EFI_STATUS LoadKernel(
 				SN_LOG_ERROR(L"An unexpected error occured while trying to map a memory frame in the kernel's P4 table");
 				return status;
 			}
-			SN_LOG_INFO(L"Successfully mapped a kernel page");
 		}
 	}
 

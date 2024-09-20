@@ -3,7 +3,7 @@
 #include "Uefi.h"
 
 // We don't talk about what's below it...
-#define MIN_PHYS_MEMORY_ADDRESS (EFI_PHYSICAL_ADDRESS) 10000
+#define MIN_PHYS_MEMORY_ADDRESS (EFI_PHYSICAL_ADDRESS) 0x10000
 
 /// Frame allocator's state.
 typedef struct FrameAllocatorData
