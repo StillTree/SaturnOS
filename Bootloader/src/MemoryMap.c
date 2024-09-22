@@ -1,12 +1,12 @@
 #include "MemoryMap.h"
 
-#include "FrameAllocator.h"
 #include "Memory.h"
 
 EFI_STATUS CreateMemoryMap(
 	FrameAllocatorData* frameAllocator,
 	EFI_PHYSICAL_ADDRESS kernelP4Table,
 	MemoryMapEntry** memoryMap,
+	UINTN* memoryMapEntries,
 	EFI_MEMORY_DESCRIPTOR* uefiMemoryMap,
 	UINTN memoryMapSize,
 	UINTN descriptorSize,
@@ -58,6 +58,35 @@ EFI_STATUS CreateMemoryMap(
 	}
 
 	MemoryMapEntry* firstEntry = (MemoryMapEntry*) mapPhysicalAddress;
+	UINTN entry = 0;
+	for(UINTN i = 0; i < memoryMapSize / descriptorSize - frameAllocator->currentMemoryDescriptorIndex; i++)
+	{
+		// sizeof(EFI_MEMORY_DESCRIPTOR) is not the same as its size in memory
+		const EFI_MEMORY_DESCRIPTOR* descriptor = (EFI_MEMORY_DESCRIPTOR*) ((UINT8*) frameAllocator->currentMemoryDescriptor + (i * descriptorSize));
+
+		if(!(descriptor->Type == EfiConventionalMemory ||
+			descriptor->Type == EfiLoaderData || 
+			descriptor->Type == EfiLoaderCode ||
+			descriptor->Type == EfiBootServicesData ||
+			descriptor->Type == EfiBootServicesCode))
+			continue;
+
+		firstEntry[entry].numberOfPages = descriptor->NumberOfPages;
+		firstEntry[entry].physicalStart = descriptor->PhysicalStart;
+		entry++;
+
+		// This if should technically only be entered once
+		if(frameAllocator->previousFrame > descriptor->PhysicalStart)
+		{
+			// These are all guaranteed to be 4096 aligned so I don't need to worry about that
+			UINTN descriptorPagesUsed = ((frameAllocator->previousFrame - descriptor->PhysicalStart) + 4096) / 4096;
+			firstEntry[entry - 1].physicalStart = frameAllocator->previousFrame + 4096;
+			firstEntry[entry - 1].numberOfPages -= descriptorPagesUsed;
+		}
+	}
+
+	*memoryMap        = firstEntry;
+	*memoryMapEntries = entries;
 
 	return status;
 }

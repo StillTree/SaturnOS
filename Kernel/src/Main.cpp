@@ -21,7 +21,13 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Initializing the IDT");
 	SaturnKernel::InitIDT();
 
-	__asm__ volatile("int3");
+	//__asm__ volatile("int3");
+
+	SaturnKernel::MemoryMapEntry* entry = reinterpret_cast<SaturnKernel::MemoryMapEntry*>(bootInfo->memoryMapAddress);
+	for(USIZE i = 0; i < bootInfo->memoryMapEntries; i++)
+	{
+		SK_LOG_INFO("Memory map entry: physicalStart = {}, numberOfPages = {}", entry[i].physicalStart, entry[i].numberOfPages);
+	}
 
 	while(true)
 	{

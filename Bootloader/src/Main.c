@@ -1,5 +1,6 @@
 #include "Kernel.h"
 #include "Memory.h"
+#include "MemoryMap.h"
 #include "Uefi.h"
 #include "Logger.h"
 #include "FrameAllocator.h"
@@ -9,15 +10,6 @@ EFI_GUID gEfiGraphicsOutputProtocolGuid   = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 EFI_GUID gEfiSimpleTextOutProtocolGuid    = EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID;
 EFI_GUID gEfiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
 EFI_GUID gEfiLoadedImageProtocolGuid      = EFI_LOADED_IMAGE_PROTOCOL_GUID;
-
-EFI_STATUS CreateMemoryMap(
-	FrameAllocatorData* frameAllocator,
-	EFI_PHYSICAL_ADDRESS kernelP4Table,
-	void** memoryMap,
-	EFI_MEMORY_DESCRIPTOR* uefiMemoryMap,
-	UINTN memoryMapSize,
-	UINTN descriptorSize,
-	EFI_VIRTUAL_ADDRESS memoryMapVirtualAddress);
 
 EFI_STATUS ExitBootServices(
 	EFI_HANDLE* imageHandle,
@@ -182,7 +174,24 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		framebufferPhysicalAddress += 4096;
 	}
 
-	//CreateMemoryMap(&frameAllocator, kernelP4Table, NULL, memoryMap, memoryMapSize, descriptorSize, bootInfoVirtualAddress + 4096);
+	// After this function call no other frame allocations should be made
+	MemoryMapEntry* kernelMemoryMap = NULL;
+	UINTN kernelMemoryMapEntries = 0;
+	status = CreateMemoryMap(
+		&frameAllocator,
+		kernelP4Table,
+		&kernelMemoryMap,
+		&kernelMemoryMapEntries,
+		memoryMap,
+		memoryMapSize,
+		descriptorSize,
+		bootInfoVirtualAddress + 4096);
+	if(EFI_ERROR(status))
+	{
+		goto halt;
+	}
+	bootInfo->memoryMapAddress = bootInfoVirtualAddress + 4096;
+	bootInfo->memoryMapEntries = kernelMemoryMapEntries;
 
 	SN_LOG_INFO(L"Performing context switch");
 

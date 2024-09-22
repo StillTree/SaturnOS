@@ -19,6 +19,12 @@ typedef U64 USIZE;
 
 namespace SaturnKernel
 {
+typedef struct MemoryMapEntry
+{
+	U64 physicalStart;
+	USIZE numberOfPages;
+} MemoryMapEntry;
+
 	/// Boot information passed to the kernel by the bootloader.
 	struct KernelBootInfo
 	{
@@ -26,6 +32,8 @@ namespace SaturnKernel
 		U64 framebufferSize;
 		U64 framebufferWidth;
 		U64 framebufferHeight;
+		U64 memoryMapAddress;
+		U64 memoryMapEntries;
 	};
 }
 
