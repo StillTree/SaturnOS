@@ -113,7 +113,7 @@ EFI_STATUS AllocateCurrentDescriptorFrame(FrameAllocatorData* frameAllocator, EF
 }
 
 /// A helper function that allocates the next free frames from the current descriptor,
-/// only if a contiguous array is available, otherwise returns an error.
+/// only if a contiguous frame array is available, otherwise returns an error.
 EFI_STATUS AllocateCurrentDescriptorContiguousFrames(FrameAllocatorData* frameAllocator, UINTN num, EFI_PHYSICAL_ADDRESS* allocatedFrameAddress)
 {
 	EFI_STATUS status = NextDescriptorContiguousFrames(

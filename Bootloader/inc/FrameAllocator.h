@@ -19,4 +19,6 @@ typedef struct FrameAllocatorData
 EFI_STATUS InitFrameAllocator(FrameAllocatorData* frameAllocator, EFI_MEMORY_DESCRIPTOR* memoryMap, UINTN memoryMapSize, UINTN descriptorSize);
 /// Allocates a new available memory frame.
 EFI_STATUS AllocateFrame(FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDRESS* allocatedFrameAddress);
+/// Allocates a contiguous array of available memory frames.
+EFI_STATUS AllocateContiguousFrames(FrameAllocatorData* frameAllocator, UINTN num, EFI_PHYSICAL_ADDRESS* allocatedFrameAddress);
 

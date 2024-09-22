@@ -34,18 +34,18 @@ EFI_STATUS CreateMemoryMap(
 
 	// Allocate them and map to the given virtual address
 	UINTN memoryMapPages = (entries * sizeof(MemoryMapEntry) + 4095) / 4096;
+	EFI_PHYSICAL_ADDRESS mapPhysicalAddress;
+	status = AllocateContiguousFrames(frameAllocator, memoryMapPages, &mapPhysicalAddress);
+	if(EFI_ERROR(status))
+	{
+		return status;
+	}
+
 	for(UINTN i = 0; i < memoryMapPages; i++)
 	{
-		EFI_PHYSICAL_ADDRESS frameAddress;
-		status = AllocateFrame(frameAllocator, &frameAddress);
-		if(EFI_ERROR(status))
-		{
-			return status;
-		}
-
 		status = MapMemoryPage(
 			memoryMapVirtualAddress,
-			frameAddress,
+			mapPhysicalAddress + i * 4096,
 			kernelP4Table,
 			frameAllocator,
 			ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_NO_EXECUTE);
@@ -56,6 +56,8 @@ EFI_STATUS CreateMemoryMap(
 
 		memoryMapVirtualAddress += 4096;
 	}
+
+	MemoryMapEntry* firstEntry = (MemoryMapEntry*) mapPhysicalAddress;
 
 	return status;
 }

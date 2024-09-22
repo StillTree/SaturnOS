@@ -10,6 +10,15 @@ EFI_GUID gEfiSimpleTextOutProtocolGuid    = EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID
 EFI_GUID gEfiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
 EFI_GUID gEfiLoadedImageProtocolGuid      = EFI_LOADED_IMAGE_PROTOCOL_GUID;
 
+EFI_STATUS CreateMemoryMap(
+	FrameAllocatorData* frameAllocator,
+	EFI_PHYSICAL_ADDRESS kernelP4Table,
+	void** memoryMap,
+	EFI_MEMORY_DESCRIPTOR* uefiMemoryMap,
+	UINTN memoryMapSize,
+	UINTN descriptorSize,
+	EFI_VIRTUAL_ADDRESS memoryMapVirtualAddress);
+
 EFI_STATUS ExitBootServices(
 	EFI_HANDLE* imageHandle,
 	EFI_SYSTEM_TABLE* systemTable,
@@ -172,6 +181,8 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 
 		framebufferPhysicalAddress += 4096;
 	}
+
+	//CreateMemoryMap(&frameAllocator, kernelP4Table, NULL, memoryMap, memoryMapSize, descriptorSize, bootInfoVirtualAddress + 4096);
 
 	SN_LOG_INFO(L"Performing context switch");
 
