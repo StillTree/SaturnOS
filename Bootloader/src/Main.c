@@ -174,9 +174,9 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		framebufferPhysicalAddress += 4096;
 	}
 
-	// Mapping the whole (500 pages for now = 1 GiB) physical memory at an offset using 2MiB huge pages
+	// Mapping the whole (512 pages for now = 1 GiB) physical memory at an offset using 2MiB huge pages
 	const EFI_VIRTUAL_ADDRESS mappingOffset = 0x500000000000; // 10 TiB in hex (I think...)
-	for(UINT64 i = 0; i < 500; i++)
+	for(UINT64 i = 0; i < 512; i++)
 	{
 		status = MapMemoryPage2MiB(
 			mappingOffset + 0x200000 * i,
