@@ -26,7 +26,7 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SaturnKernel::MemoryMapEntry* entry = reinterpret_cast<SaturnKernel::MemoryMapEntry*>(bootInfo->memoryMapAddress);
 	for(USIZE i = 0; i < bootInfo->memoryMapEntries; i++)
 	{
-		SK_LOG_INFO("Memory map entry: physicalStart = {}, numberOfPages = {}", entry[i].physicalStart, entry[i].numberOfPages);
+		SK_LOG_INFO("Memory map entry: physicalStart = {}, physicalEnd = {}", entry[i].physicalStart, entry[i].physicalEnd);
 	}
 
 	while(true)

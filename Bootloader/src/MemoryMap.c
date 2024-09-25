@@ -71,7 +71,7 @@ EFI_STATUS CreateMemoryMap(
 			descriptor->Type == EfiBootServicesCode))
 			continue;
 
-		firstEntry[entry].numberOfPages = descriptor->NumberOfPages;
+		firstEntry[entry].physicalEnd = descriptor->PhysicalStart + descriptor->NumberOfPages * 4096 - 1;
 		firstEntry[entry].physicalStart = descriptor->PhysicalStart;
 		entry++;
 
@@ -79,9 +79,8 @@ EFI_STATUS CreateMemoryMap(
 		if(frameAllocator->previousFrame > descriptor->PhysicalStart)
 		{
 			// These are all guaranteed to be 4096 aligned so I don't need to worry about that
-			UINTN descriptorPagesUsed = ((frameAllocator->previousFrame - descriptor->PhysicalStart) + 4096) / 4096;
 			firstEntry[entry - 1].physicalStart = frameAllocator->previousFrame + 4096;
-			firstEntry[entry - 1].numberOfPages -= descriptorPagesUsed;
+			firstEntry[entry - 1].physicalEnd   = descriptor->PhysicalStart + descriptor->NumberOfPages * 4096 - 1;
 		}
 	}
 

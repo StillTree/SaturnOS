@@ -88,7 +88,7 @@ EFI_STATUS InitFrameAllocator(FrameAllocatorData* frameAllocator, EFI_MEMORY_DES
 		return EFI_NOT_FOUND;
 	}
 
-	frameAllocator->previousFrame = PhysFrameContainingAddress(MIN_PHYS_MEMORY_ADDRESS);
+	frameAllocator->previousFrame = PhysFrameContainingAddress(MIN_PHYS_MEMORY_ADDRESS - 4096);
 
 	return EFI_SUCCESS;
 }

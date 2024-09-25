@@ -22,7 +22,7 @@ namespace SaturnKernel
 typedef struct MemoryMapEntry
 {
 	U64 physicalStart;
-	USIZE numberOfPages;
+	U64 physicalEnd;
 } MemoryMapEntry;
 
 	/// Boot information passed to the kernel by the bootloader.

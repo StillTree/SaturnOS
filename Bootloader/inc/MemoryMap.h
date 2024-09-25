@@ -10,7 +10,7 @@
 typedef struct MemoryMapEntry
 {
 	EFI_PHYSICAL_ADDRESS physicalStart;
-	UINTN                numberOfPages;
+	UINTN                physicalEnd;
 } MemoryMapEntry;
 
 EFI_STATUS CreateMemoryMap(
