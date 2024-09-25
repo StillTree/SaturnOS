@@ -58,10 +58,20 @@ UINT16 TableEntryFlags(EFI_PHYSICAL_ADDRESS tableAddress, UINT16 index);
 /// Constructs a page table entry containing the given physical address and flags.
 UINT64 PageTableEntry(EFI_PHYSICAL_ADDRESS address, UINT16 flags);
 
-/// Maps the given memory page to the given physical memory frame
+/// Maps the given memory page to the given 4KiB physical memory frame
 /// in the given Level 4 Page Table's hierarchy,
-/// creating all the necessary intermediate table if neccessary.
-EFI_STATUS MapMemoryPage(
+/// creating all the necessary intermediate tables if neccessary.
+EFI_STATUS MapMemoryPage4KiB(
+	EFI_VIRTUAL_ADDRESS pageStart,
+	EFI_PHYSICAL_ADDRESS frameStart,
+	EFI_PHYSICAL_ADDRESS p4PhysicalAddress,
+	FrameAllocatorData* frameAllocator,
+	UINT64 flags);
+
+/// Maps the given memory page to the given 2MiB physical memory frame
+/// in the given Level 4 Page Table's hierarchy,
+/// creating all the necessary intermediate tables if neccessary.
+EFI_STATUS MapMemoryPage2MiB(
 	EFI_VIRTUAL_ADDRESS pageStart,
 	EFI_PHYSICAL_ADDRESS frameStart,
 	EFI_PHYSICAL_ADDRESS p4PhysicalAddress,

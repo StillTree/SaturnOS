@@ -57,7 +57,7 @@ EFI_STATUS LoadKernel(
 			if(!(header->p_flags & PF_X))
 				flags |= ENTRY_NO_EXECUTE;
 
-			status = MapMemoryPage(header->p_vaddr + j * 4096, frameAddress, p4TableAddress, frameAllocator, flags);
+			status = MapMemoryPage4KiB(header->p_vaddr + j * 4096, frameAddress, p4TableAddress, frameAllocator, flags);
 			if(EFI_ERROR(status))
 			{
 				SN_LOG_ERROR(L"An unexpected error occured while trying to map a memory frame in the kernel's P4 table");

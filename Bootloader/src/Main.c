@@ -89,7 +89,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 
 	// TODO: Use some shit to determine the actual function size and if it needs 2 or even more pages to be mapped.
 	EFI_PHYSICAL_ADDRESS contextSwitchFnAddress = (UINTN) ContextSwitch;
-	status = MapMemoryPage(
+	status = MapMemoryPage4KiB(
 		PhysFrameContainingAddress(contextSwitchFnAddress),
 		PhysFrameContainingAddress(contextSwitchFnAddress),
 		kernelP4Table,
@@ -114,7 +114,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 			goto halt;
 		}
 
-		status = MapMemoryPage(
+		status = MapMemoryPage4KiB(
 			virtualStackAddress,
 			frameAddress,
 			kernelP4Table,
@@ -139,7 +139,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
-	status = MapMemoryPage(
+	status = MapMemoryPage4KiB(
 		bootInfoVirtualAddress,
 		bootInfoPhysicalAddress,
 		kernelP4Table,
@@ -160,7 +160,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	UINTN framebufferPhysicalAddress = bootInfo->framebufferAddress;
 	for(UINTN i = 0; i < framebufferPages; i++)
 	{
-		status = MapMemoryPage(
+		status = MapMemoryPage4KiB(
 			framebufferPhysicalAddress,
 			framebufferPhysicalAddress,
 			kernelP4Table,
@@ -172,6 +172,22 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		}
 
 		framebufferPhysicalAddress += 4096;
+	}
+
+	// Mapping the whole (500 pages for now = 1 GiB) physical memory at an offset using 2MiB huge pages
+	const EFI_VIRTUAL_ADDRESS mappingOffset = 0x500000000000; // 10 TiB in hex (I think...)
+	for(UINT64 i = 0; i < 500; i++)
+	{
+		status = MapMemoryPage2MiB(
+			mappingOffset + 0x200000 * i,
+			0x200000 * i,
+			kernelP4Table,
+			&frameAllocator,
+			ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_HUGE_PAGE);
+		if(EFI_ERROR(status))
+		{
+			goto halt;
+		}
 	}
 
 	// After this function call no other frame allocations should be made

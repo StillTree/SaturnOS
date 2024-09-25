@@ -106,7 +106,7 @@ inline UINT64 PageTableEntry(EFI_PHYSICAL_ADDRESS address, UINT16 flags)
 	return address | flags;
 }
 
-EFI_STATUS MapMemoryPage(
+EFI_STATUS MapMemoryPage4KiB(
 	EFI_VIRTUAL_ADDRESS pageStart,
 	EFI_PHYSICAL_ADDRESS frameStart,
 	EFI_PHYSICAL_ADDRESS p4PhysicalAddress,
@@ -202,6 +202,82 @@ EFI_STATUS MapMemoryPage(
 		return EFI_INVALID_PARAMETER;
 	}
 	p1Entries[p1Index] = PageTableEntry(frameStart, flags | ENTRY_PRESENT);
+
+	return EFI_SUCCESS;
+}
+
+EFI_STATUS MapMemoryPage2MiB(
+	EFI_VIRTUAL_ADDRESS pageStart,
+	EFI_PHYSICAL_ADDRESS frameStart,
+	EFI_PHYSICAL_ADDRESS p4PhysicalAddress,
+	FrameAllocatorData* frameAllocator,
+	UINT64 flags)
+{
+	// The page and the frame start addresses must all be 4096 (0x1000) aligned,
+	// otherwise something went terribly wrong
+	if((pageStart & 0x1fffff) != 0)
+		return EFI_INVALID_PARAMETER;
+
+	if((frameStart & 0x1fffff) != 0)
+		return EFI_INVALID_PARAMETER;
+
+	UINT16 p4Index = VirtualAddressP4Index(pageStart);
+	// If the Level 4 Page Table's entry is not present, create it
+	if(!(TableEntryFlags(p4PhysicalAddress, p4Index) & ENTRY_PRESENT))
+	{
+		EFI_PHYSICAL_ADDRESS newTable = 0;
+		EFI_STATUS status = AllocateFrame(frameAllocator, &newTable);
+		if(EFI_ERROR(status))
+		{
+			SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a physical memory frame");
+			return status;
+		}
+
+		status = InitEmptyPageTable(newTable);
+		if(EFI_ERROR(status))
+		{
+			SN_LOG_ERROR(L"An unexpected error occured while trying to initialize an empty page table");
+			return status;
+		}
+
+		UINT64* p4Entries = (UINT64*) p4PhysicalAddress;
+		p4Entries[p4Index] = PageTableEntry(newTable, ENTRY_PRESENT | ENTRY_WRITEABLE);
+	}
+	EFI_PHYSICAL_ADDRESS p3PhysicalAddress = TableEntryPhysicalAddress(p4PhysicalAddress, p4Index);
+
+	UINT16 p3Index = VirtualAddressP3Index(pageStart);
+	// If the Level 3 Page Table's entry is not present, create it
+	if(!(TableEntryFlags(p3PhysicalAddress, p3Index) & ENTRY_PRESENT))
+	{
+		EFI_PHYSICAL_ADDRESS newTable = 0;
+		EFI_STATUS status = AllocateFrame(frameAllocator, &newTable);
+		if(EFI_ERROR(status))
+		{
+			SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a physical memory frame");
+			return status;
+		}
+
+		status = InitEmptyPageTable(newTable);
+		if(EFI_ERROR(status))
+		{
+			SN_LOG_ERROR(L"An unexpected error occured while trying to initialize an empty page table");
+			return status;
+		}
+
+		UINT64* p3Entries = (UINT64*) p3PhysicalAddress;
+		p3Entries[p3Index] = PageTableEntry(newTable, ENTRY_PRESENT | ENTRY_WRITEABLE);
+	}
+	EFI_PHYSICAL_ADDRESS p2PhysicalAddress = TableEntryPhysicalAddress(p3PhysicalAddress, p3Index);
+
+	UINT16 p2Index = VirtualAddressP2Index(pageStart);
+	UINT64* p2Entries = (UINT64*) p2PhysicalAddress;
+	// If the given entry is already mapped there is nothing more to do 
+	if(TableEntryFlags(p2PhysicalAddress, p2Index) & ENTRY_PRESENT)
+	{
+		SN_LOG_WARN(L"An attempt was made to map an existing page table entry");
+		return EFI_INVALID_PARAMETER;
+	}
+	p2Entries[p2Index] = PageTableEntry(frameStart, flags | ENTRY_PRESENT | ENTRY_HUGE_PAGE);
 
 	return EFI_SUCCESS;
 }

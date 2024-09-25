@@ -43,7 +43,7 @@ EFI_STATUS CreateMemoryMap(
 
 	for(UINTN i = 0; i < memoryMapPages; i++)
 	{
-		status = MapMemoryPage(
+		status = MapMemoryPage4KiB(
 			memoryMapVirtualAddress,
 			mapPhysicalAddress + i * 4096,
 			kernelP4Table,
