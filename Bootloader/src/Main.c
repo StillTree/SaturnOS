@@ -214,7 +214,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	ContextSwitch(
 		kernelEntryPoint,
 		kernelP4Table,
-		virtualStackAddress - 16, // x86_64 System V ABI requires the stack to be 16 bit aligned
+		virtualStackAddress, // x86_64 System V ABI requires the stack to be 16 bit aligned so it hopefully is :D
 		bootInfoVirtualAddress);
 
 halt:
