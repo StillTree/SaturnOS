@@ -19,11 +19,11 @@ typedef U64 USIZE;
 
 namespace SaturnKernel
 {
-typedef struct MemoryMapEntry
-{
-	U64 physicalStart;
-	U64 physicalEnd;
-} MemoryMapEntry;
+	typedef struct MemoryMapEntry
+	{
+		U64 physicalStart;
+		U64 physicalEnd;
+	} MemoryMapEntry;
 
 	/// Boot information passed to the kernel by the bootloader.
 	struct KernelBootInfo
