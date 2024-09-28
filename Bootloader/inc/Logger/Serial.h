@@ -17,4 +17,3 @@ VOID SerialLoggerWriteChar(SerialLoggerData* logger, CHAR16 character);
 ///
 /// Note: The string has to be NULL-terminated.
 VOID SerialLoggerWriteString(SerialLoggerData* logger, CHAR16* string);
-

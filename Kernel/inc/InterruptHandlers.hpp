@@ -19,4 +19,3 @@ namespace SaturnKernel
 	[[noreturn]]
 	__attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, U64 errorCode);
 }
-

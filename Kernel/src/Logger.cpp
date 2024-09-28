@@ -6,26 +6,19 @@ namespace SaturnKernel
 {
 	Logger g_mainLogger;
 
-	void Logger::Init(
-		bool framebufferEnabled,
-		bool serialConsoleEnabled,
-		KernelBootInfo* bootInfo,
-		U16 serialConsolePort)
+	void Logger::Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo* bootInfo, U16 serialConsolePort)
 	{
 		this->framebufferEnabled   = framebufferEnabled;
 		this->serialConsoleEnabled = serialConsoleEnabled;
 
 		if(framebufferEnabled)
 		{
-			framebuffer =
-				{
-					reinterpret_cast<U32*>(bootInfo->framebufferAddress),
-					bootInfo->framebufferSize,
-					bootInfo->framebufferWidth,
-					bootInfo->framebufferHeight,
-					0,
-					0
-				};
+			framebuffer = { reinterpret_cast<U32*>(bootInfo->framebufferAddress),
+							bootInfo->framebufferSize,
+							bootInfo->framebufferWidth,
+							bootInfo->framebufferHeight,
+							0,
+							0 };
 		}
 
 		if(serialConsoleEnabled)
@@ -42,18 +35,18 @@ namespace SaturnKernel
 		{
 			switch(logLevel)
 			{
-				case LogLevel::Debug:
-					framebuffer.WriteString("[DEBUG]: ");
-					break;
-				case LogLevel::Info:
-					framebuffer.WriteString("[INFO ]: ");
-					break;
-				case LogLevel::Warn:
-					framebuffer.WriteString("[WARN ]: ");
-					break;
-				case LogLevel::Error:
-					framebuffer.WriteString("[ERROR]: ");
-					break;
+			case LogLevel::Debug:
+				framebuffer.WriteString("[DEBUG]: ");
+				break;
+			case LogLevel::Info:
+				framebuffer.WriteString("[INFO ]: ");
+				break;
+			case LogLevel::Warn:
+				framebuffer.WriteString("[WARN ]: ");
+				break;
+			case LogLevel::Error:
+				framebuffer.WriteString("[ERROR]: ");
+				break;
 			}
 		}
 
@@ -61,21 +54,21 @@ namespace SaturnKernel
 		{
 			switch(logLevel)
 			{
-				case LogLevel::Debug:
-					serialConsole.WriteString("[DEBUG]: ");
-					break;
-				case LogLevel::Info:
-					serialConsole.WriteString("[INFO ]: ");
-					break;
-				case LogLevel::Warn:
-					serialConsole.WriteString("[WARN ]: ");
-					break;
-				case LogLevel::Error:
-					serialConsole.WriteString("[ERROR]: ");
-					break;
+			case LogLevel::Debug:
+				serialConsole.WriteString("[DEBUG]: ");
+				break;
+			case LogLevel::Info:
+				serialConsole.WriteString("[INFO ]: ");
+				break;
+			case LogLevel::Warn:
+				serialConsole.WriteString("[WARN ]: ");
+				break;
+			case LogLevel::Error:
+				serialConsole.WriteString("[ERROR]: ");
+				break;
 			}
 		}
-		
+
 		va_list args;
 		va_start(args, format);
 
@@ -117,4 +110,3 @@ namespace SaturnKernel
 			serialConsole.WriteChar('\n');
 	}
 }
-

@@ -14,20 +14,20 @@ namespace SaturnKernel
 	{
 		U16 Limit;
 		U16 AddressLow;
-		U8  AddressMiddle;
-		U8  Access;
-		U8  FlagsAndLimit;
-		U8  AddressHigh;
+		U8 AddressMiddle;
+		U8 Access;
+		U8 FlagsAndLimit;
+		U8 AddressHigh;
 	};
 
 	struct __attribute__((packed)) GDTEntry64
 	{
 		U16 Limit;
 		U16 AddressLow;
-		U8  AddressMiddle;
-		U8  Access;
-		U8  FlagsAndLimit;
-		U8  AddressHigh;
+		U8 AddressMiddle;
+		U8 Access;
+		U8 FlagsAndLimit;
+		U8 AddressHigh;
 		U32 AddressHigher;
 		U32 Reserved;
 	};
@@ -57,4 +57,3 @@ namespace SaturnKernel
 }
 
 extern "C" void FlushGDT();
-

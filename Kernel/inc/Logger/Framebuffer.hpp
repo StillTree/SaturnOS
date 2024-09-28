@@ -11,11 +11,10 @@ namespace SaturnKernel
 		void Clear();
 
 		U32* framebuffer;
-		U64  framebufferSize;
-		U64  width;
-		U64  height;
-		U64  cursorPositionX;
-		U64  cursorPositionY;
+		U64 framebufferSize;
+		U64 width;
+		U64 height;
+		U64 cursorPositionX;
+		U64 cursorPositionY;
 	};
 }
-

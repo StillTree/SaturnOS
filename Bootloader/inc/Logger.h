@@ -1,15 +1,15 @@
 #pragma once
 
-#include "UefiTypes.h"
-#include "Logger/Serial.h"
 #include "Logger/Framebuffer.h"
+#include "Logger/Serial.h"
+#include "UefiTypes.h"
 
 /// Wrapper state around the two logger outputs.
 typedef struct SupernovaLoggerData
 {
-	BOOLEAN               logSerial;
-	SerialLoggerData      serial;
-	BOOLEAN               logFramebuffer;
+	BOOLEAN logSerial;
+	SerialLoggerData serial;
+	BOOLEAN logFramebuffer;
 	FramebufferLoggerData framebuffer;
 } SupernovaLoggerData;
 
@@ -33,7 +33,6 @@ VOID Log(SupernovaLoggerData* logger, SupernovaLogLevel level, CHAR16* message);
 extern SupernovaLoggerData g_mainLogger;
 
 #define SN_LOG_DEBUG(message) Log(&g_mainLogger, LogDebug, message)
-#define SN_LOG_INFO(message) Log(&g_mainLogger, LogInfo, message)
-#define SN_LOG_WARN(message) Log(&g_mainLogger, LogWarn, message)
+#define SN_LOG_INFO(message)  Log(&g_mainLogger, LogInfo, message)
+#define SN_LOG_WARN(message)  Log(&g_mainLogger, LogWarn, message)
 #define SN_LOG_ERROR(message) Log(&g_mainLogger, LogError, message)
-

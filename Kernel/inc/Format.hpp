@@ -9,4 +9,3 @@ namespace SaturnKernel
 
 	constexpr USIZE MAX_HEX_LENGTH = 16;
 }
-

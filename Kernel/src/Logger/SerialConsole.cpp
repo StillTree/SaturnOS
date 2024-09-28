@@ -10,7 +10,7 @@ namespace SaturnKernel
 
 		OutputU8(this->port + 1, 0x00);
 		OutputU8(this->port + 3, 0x80);
-		OutputU8(this->port,     0x03);
+		OutputU8(this->port, 0x03);
 		OutputU8(this->port + 1, 0x00);
 		OutputU8(this->port + 3, 0x03);
 		OutputU8(this->port + 2, 0xC7);
@@ -22,7 +22,8 @@ namespace SaturnKernel
 
 		// If we didn't get back the exact same byte that we sent in loopback mode,
 		// the device is not functioning corretly and should not be used
-		if(InputU8(this->port + 0) != 0xAE) {
+		if(InputU8(this->port + 0) != 0xAE)
+		{
 			// TODO: Some sort of error handling through return types
 			return;
 		}
@@ -50,4 +51,3 @@ namespace SaturnKernel
 		}
 	}
 }
-

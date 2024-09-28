@@ -1,6 +1,6 @@
-#include "UefiTypes.h"
 #include "Memory.h"
 #include "Logger.h"
+#include "UefiTypes.h"
 
 VOID MemoryFill(VOID* ptr, UINT8 value, UINTN size)
 {
@@ -13,12 +13,12 @@ VOID MemoryFill(VOID* ptr, UINT8 value, UINTN size)
 
 VOID MemoryCopy(VOID* ptr1, VOID* ptr2, UINTN size)
 {
-	UINT8* src = ptr1; 
-	UINT8* dest = ptr2; 
+	UINT8* src	= ptr1;
+	UINT8* dest = ptr2;
 
-	for(UINTN i = 0; i < size; i++) 
+	for(UINTN i = 0; i < size; i++)
 	{
-		dest[i] = src[i]; 
+		dest[i] = src[i];
 	}
 }
 
@@ -29,7 +29,7 @@ INT32 MemoryCompare(const VOID* ptr1, const VOID* ptr2, UINTN size)
 
 	for(UINTN i = 0; i < size; i++)
 	{
-		if (a[i] < b[i])
+		if(a[i] < b[i])
 			return -1;
 		else if(a[i] > b[i])
 			return 1;
@@ -88,7 +88,7 @@ EFI_STATUS InitEmptyPageTable(EFI_PHYSICAL_ADDRESS tableAddress)
 EFI_PHYSICAL_ADDRESS TableEntryPhysicalAddress(EFI_PHYSICAL_ADDRESS tableAddress, UINT16 index)
 {
 	UINT64* table = (UINT64*) tableAddress;
-	UINT64 entry = table[index];
+	UINT64 entry  = table[index];
 
 	return ((entry >> 12) & PAGE_FRAME_NUMBER_MASK) << 12;
 }
@@ -96,7 +96,7 @@ EFI_PHYSICAL_ADDRESS TableEntryPhysicalAddress(EFI_PHYSICAL_ADDRESS tableAddress
 UINT16 TableEntryFlags(EFI_PHYSICAL_ADDRESS tableAddress, UINT16 index)
 {
 	UINT64* table = (UINT64*) tableAddress;
-	UINT64 entry = table[index];
+	UINT64 entry  = table[index];
 
 	return entry & PAGE_ENTRY_FLAGS_MASK;
 }
@@ -126,7 +126,7 @@ EFI_STATUS MapMemoryPage4KiB(
 	if(!(TableEntryFlags(p4PhysicalAddress, p4Index) & ENTRY_PRESENT))
 	{
 		EFI_PHYSICAL_ADDRESS newTable = 0;
-		EFI_STATUS status = AllocateFrame(frameAllocator, &newTable);
+		EFI_STATUS status			  = AllocateFrame(frameAllocator, &newTable);
 		if(EFI_ERROR(status))
 		{
 			SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a physical memory frame");
@@ -140,7 +140,7 @@ EFI_STATUS MapMemoryPage4KiB(
 			return status;
 		}
 
-		UINT64* p4Entries = (UINT64*) p4PhysicalAddress;
+		UINT64* p4Entries  = (UINT64*) p4PhysicalAddress;
 		p4Entries[p4Index] = PageTableEntry(newTable, ENTRY_PRESENT | ENTRY_WRITEABLE);
 	}
 	EFI_PHYSICAL_ADDRESS p3PhysicalAddress = TableEntryPhysicalAddress(p4PhysicalAddress, p4Index);
@@ -150,7 +150,7 @@ EFI_STATUS MapMemoryPage4KiB(
 	if(!(TableEntryFlags(p3PhysicalAddress, p3Index) & ENTRY_PRESENT))
 	{
 		EFI_PHYSICAL_ADDRESS newTable = 0;
-		EFI_STATUS status = AllocateFrame(frameAllocator, &newTable);
+		EFI_STATUS status			  = AllocateFrame(frameAllocator, &newTable);
 		if(EFI_ERROR(status))
 		{
 			SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a physical memory frame");
@@ -164,7 +164,7 @@ EFI_STATUS MapMemoryPage4KiB(
 			return status;
 		}
 
-		UINT64* p3Entries = (UINT64*) p3PhysicalAddress;
+		UINT64* p3Entries  = (UINT64*) p3PhysicalAddress;
 		p3Entries[p3Index] = PageTableEntry(newTable, ENTRY_PRESENT | ENTRY_WRITEABLE);
 	}
 	EFI_PHYSICAL_ADDRESS p2PhysicalAddress = TableEntryPhysicalAddress(p3PhysicalAddress, p3Index);
@@ -174,7 +174,7 @@ EFI_STATUS MapMemoryPage4KiB(
 	if(!(TableEntryFlags(p2PhysicalAddress, p2Index) & ENTRY_PRESENT))
 	{
 		EFI_PHYSICAL_ADDRESS newTable = 0;
-		EFI_STATUS status = AllocateFrame(frameAllocator, &newTable);
+		EFI_STATUS status			  = AllocateFrame(frameAllocator, &newTable);
 		if(EFI_ERROR(status))
 		{
 			SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a physical memory frame");
@@ -188,14 +188,14 @@ EFI_STATUS MapMemoryPage4KiB(
 			return status;
 		}
 
-		UINT64* p2Entries = (UINT64*) p2PhysicalAddress;
+		UINT64* p2Entries  = (UINT64*) p2PhysicalAddress;
 		p2Entries[p2Index] = PageTableEntry(newTable, ENTRY_PRESENT | ENTRY_WRITEABLE);
 	}
 	EFI_PHYSICAL_ADDRESS p1PhysicalAddress = TableEntryPhysicalAddress(p2PhysicalAddress, p2Index);
 
-	UINT16 p1Index = VirtualAddressP1Index(pageStart);
+	UINT16 p1Index	  = VirtualAddressP1Index(pageStart);
 	UINT64* p1Entries = (UINT64*) p1PhysicalAddress;
-	// If the given entry is already mapped there is nothing more to do 
+	// If the given entry is already mapped there is nothing more to do
 	if(TableEntryFlags(p1PhysicalAddress, p1Index) & ENTRY_PRESENT)
 	{
 		SN_LOG_WARN(L"An attempt was made to map an existing page table entry");
@@ -226,7 +226,7 @@ EFI_STATUS MapMemoryPage2MiB(
 	if(!(TableEntryFlags(p4PhysicalAddress, p4Index) & ENTRY_PRESENT))
 	{
 		EFI_PHYSICAL_ADDRESS newTable = 0;
-		EFI_STATUS status = AllocateFrame(frameAllocator, &newTable);
+		EFI_STATUS status			  = AllocateFrame(frameAllocator, &newTable);
 		if(EFI_ERROR(status))
 		{
 			SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a physical memory frame");
@@ -240,7 +240,7 @@ EFI_STATUS MapMemoryPage2MiB(
 			return status;
 		}
 
-		UINT64* p4Entries = (UINT64*) p4PhysicalAddress;
+		UINT64* p4Entries  = (UINT64*) p4PhysicalAddress;
 		p4Entries[p4Index] = PageTableEntry(newTable, ENTRY_PRESENT | ENTRY_WRITEABLE);
 	}
 	EFI_PHYSICAL_ADDRESS p3PhysicalAddress = TableEntryPhysicalAddress(p4PhysicalAddress, p4Index);
@@ -250,7 +250,7 @@ EFI_STATUS MapMemoryPage2MiB(
 	if(!(TableEntryFlags(p3PhysicalAddress, p3Index) & ENTRY_PRESENT))
 	{
 		EFI_PHYSICAL_ADDRESS newTable = 0;
-		EFI_STATUS status = AllocateFrame(frameAllocator, &newTable);
+		EFI_STATUS status			  = AllocateFrame(frameAllocator, &newTable);
 		if(EFI_ERROR(status))
 		{
 			SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a physical memory frame");
@@ -264,14 +264,14 @@ EFI_STATUS MapMemoryPage2MiB(
 			return status;
 		}
 
-		UINT64* p3Entries = (UINT64*) p3PhysicalAddress;
+		UINT64* p3Entries  = (UINT64*) p3PhysicalAddress;
 		p3Entries[p3Index] = PageTableEntry(newTable, ENTRY_PRESENT | ENTRY_WRITEABLE);
 	}
 	EFI_PHYSICAL_ADDRESS p2PhysicalAddress = TableEntryPhysicalAddress(p3PhysicalAddress, p3Index);
 
-	UINT16 p2Index = VirtualAddressP2Index(pageStart);
+	UINT16 p2Index	  = VirtualAddressP2Index(pageStart);
 	UINT64* p2Entries = (UINT64*) p2PhysicalAddress;
-	// If the given entry is already mapped there is nothing more to do 
+	// If the given entry is already mapped there is nothing more to do
 	if(TableEntryFlags(p2PhysicalAddress, p2Index) & ENTRY_PRESENT)
 	{
 		SN_LOG_WARN(L"An attempt was made to map an existing page table entry");
@@ -281,4 +281,3 @@ EFI_STATUS MapMemoryPage2MiB(
 
 	return EFI_SUCCESS;
 }
-

@@ -9,4 +9,3 @@ namespace SaturnKernel
 	[[noreturn]]
 	void Panic(const I8* message);
 }
-

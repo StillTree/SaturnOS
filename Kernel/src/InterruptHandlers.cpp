@@ -1,6 +1,5 @@
 #include "InterruptHandlers.hpp"
 
-#include "Format.hpp"
 #include "Logger.hpp"
 #include "Panic.hpp"
 
@@ -58,4 +57,3 @@ namespace SaturnKernel
 		Hang();
 	}
 }
-

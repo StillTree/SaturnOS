@@ -5,7 +5,7 @@
 #include "Logger.hpp"
 
 #ifndef __x86_64__
-#error SaturnKernel requires an x86 64-bit architecture to run properly!
+	#error SaturnKernel requires an x86 64-bit architecture to run properly!
 #endif
 
 /// C linking so the linker and the bootloader don't absolutely shit themselves
@@ -34,4 +34,3 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 		__asm__("cli; hlt");
 	}
 }
-

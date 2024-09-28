@@ -1,7 +1,7 @@
 #pragma once
 
-#include "UefiTypes.h"
 #include "FrameAllocator.h"
+#include "UefiTypes.h"
 
 // So I could make this more descriptive by adding regions marked for example
 // as kernel executable, runtime services or anything else.
@@ -11,7 +11,7 @@
 typedef struct MemoryMapEntry
 {
 	EFI_PHYSICAL_ADDRESS physicalStart;
-	UINTN                physicalEnd;
+	UINTN physicalEnd;
 } MemoryMapEntry;
 
 /// Creates and maps for the kernel a memory map based on the known UEFI memory map and already allocated frames
@@ -25,4 +25,3 @@ EFI_STATUS CreateMemoryMap(
 	UINTN memoryMapSize,
 	UINTN descriptorSize,
 	EFI_VIRTUAL_ADDRESS memoryMapVirtualAddress);
-

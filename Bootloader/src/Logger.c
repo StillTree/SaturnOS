@@ -1,12 +1,17 @@
 #include "Logger.h"
 
-SupernovaLoggerData g_mainLogger = { FALSE, { 0 }, FALSE, { NULL, 0, 0, 0, 0, 0 } };
+SupernovaLoggerData g_mainLogger = {
+	FALSE,
+	{ 0 },
+	FALSE,
+	{ NULL, 0, 0, 0, 0, 0 }
+};
 
 EFI_STATUS InitLogger(EFI_SYSTEM_TABLE* systemTable, SupernovaLoggerData* logger, BOOLEAN logSerial, BOOLEAN logFramebuffer)
 {
 	EFI_STATUS status = EFI_SUCCESS;
 
-	logger->logSerial      = logSerial;
+	logger->logSerial	   = logSerial;
 	logger->logFramebuffer = logFramebuffer;
 
 	if(logSerial)
@@ -78,4 +83,3 @@ VOID Log(SupernovaLoggerData* logger, SupernovaLogLevel level, CHAR16* message)
 		FramebufferLoggerWriteChar(&logger->framebuffer, L'\n');
 	}
 }
-

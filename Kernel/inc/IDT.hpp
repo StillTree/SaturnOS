@@ -8,8 +8,8 @@ namespace SaturnKernel
 	{
 		U16 AddressLow;
 		U16 KernelCS;
-		U8  IST;
-		U8  Flags;
+		U8 IST;
+		U8 Flags;
 		U16 AddressMid;
 		U32 AddressHigh;
 		U32 Reserved;
@@ -27,4 +27,3 @@ namespace SaturnKernel
 
 	extern IDTEntry g_idt[256];
 }
-

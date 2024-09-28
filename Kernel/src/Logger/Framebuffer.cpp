@@ -2,7 +2,6 @@
 
 #include "Memory.hpp"
 
-
 namespace SaturnKernel
 {
 	extern const U8 g_fontBitmaps[96][20][10];
@@ -20,7 +19,7 @@ namespace SaturnKernel
 			}
 
 			this->cursorPositionY += 20;
-			this->cursorPositionX = 0;
+			this->cursorPositionX  = 0;
 			return;
 		}
 
@@ -39,8 +38,8 @@ namespace SaturnKernel
 		{
 			for(USIZE x = 0; x < 10; x++)
 			{
-				U8 pixelIntensity = g_fontBitmaps[charIndex][y][x];
-				USIZE framebufferIndex = (this->cursorPositionY + y) * this->width + (this->cursorPositionX + x);
+				U8 pixelIntensity					= g_fontBitmaps[charIndex][y][x];
+				USIZE framebufferIndex				= (this->cursorPositionY + y) * this->width + (this->cursorPositionX + x);
 				this->framebuffer[framebufferIndex] = (pixelIntensity << 16) | (pixelIntensity << 8) | pixelIntensity;
 			}
 		}
@@ -65,4 +64,3 @@ namespace SaturnKernel
 		this->cursorPositionX = 0;
 	}
 }
-

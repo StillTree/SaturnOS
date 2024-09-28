@@ -6,11 +6,11 @@
 typedef struct FramebufferLoggerData
 {
 	UINT32* framebuffer;
-	UINTN   framebufferSize;
-	UINTN   cursorPositionX;
-	UINTN   cursorPositionY;
-	UINTN   width;
-	UINTN   height;
+	UINTN framebufferSize;
+	UINTN cursorPositionX;
+	UINTN cursorPositionY;
+	UINTN width;
+	UINTN height;
 } FramebufferLoggerData;
 
 /// Initializes the given framebuffer logger state with the first available Graphics Output Protocol available.
@@ -25,4 +25,3 @@ VOID FramebufferLoggerWriteChar(FramebufferLoggerData* logger, CHAR16 character)
 ///
 /// Note: The string has to be NULL-terminated.
 VOID FramebufferLoggerWriteString(FramebufferLoggerData* logger, CHAR16* string);
-

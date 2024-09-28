@@ -13,4 +13,3 @@ namespace SaturnKernel
 		U16 port;
 	};
 }
-

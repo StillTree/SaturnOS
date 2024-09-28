@@ -10,4 +10,3 @@ namespace SaturnKernel
 
 	I32 MemoryCompare(const void* ptr1, const void* ptr2, USIZE size);
 }
-

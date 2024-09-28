@@ -13,12 +13,12 @@ namespace SaturnKernel
 
 	void MemoryCopy(void* ptr1, void* ptr2, USIZE size)
 	{
-		U8* src = static_cast<U8*>(ptr1); 
-		U8* dest = static_cast<U8*>(ptr2); 
+		U8* src	 = static_cast<U8*>(ptr1);
+		U8* dest = static_cast<U8*>(ptr2);
 
-		for(USIZE i = 0; i < size; i++) 
+		for(USIZE i = 0; i < size; i++)
 		{
-			dest[i] = src[i]; 
+			dest[i] = src[i];
 		}
 	}
 
@@ -29,7 +29,7 @@ namespace SaturnKernel
 
 		for(USIZE i = 0; i < size; i++)
 		{
-			if (a[i] < b[i])
+			if(a[i] < b[i])
 				return -1;
 			else if(a[i] > b[i])
 				return 1;
@@ -38,4 +38,3 @@ namespace SaturnKernel
 		return 0;
 	}
 }
-

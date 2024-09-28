@@ -2,8 +2,8 @@
 
 #include "FrameAllocator.h"
 #include "Logger.h"
-#include "elf.h"
 #include "Memory.h"
+#include "elf.h"
 
 EFI_STATUS LoadKernel(
 	UINT8* loadedFile,
@@ -13,23 +13,18 @@ EFI_STATUS LoadKernel(
 {
 	Elf64_Ehdr* elfHeader = (Elf64_Ehdr*) loadedFile;
 
-	if(MemoryCompare(&elfHeader->e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0 ||
-		elfHeader->e_ident[EI_CLASS] != ELFCLASS64 ||
-		elfHeader->e_ident[EI_DATA] != ELFDATA2LSB ||
-		elfHeader->e_type != ET_EXEC ||
-		elfHeader->e_machine != EM_X86_64 ||
-		elfHeader->e_version != EV_CURRENT)
-    {
+	if(MemoryCompare(&elfHeader->e_ident[EI_MAG0], ELFMAG, SELFMAG) != 0 || elfHeader->e_ident[EI_CLASS] != ELFCLASS64 ||
+	   elfHeader->e_ident[EI_DATA] != ELFDATA2LSB || elfHeader->e_type != ET_EXEC || elfHeader->e_machine != EM_X86_64 ||
+	   elfHeader->e_version != EV_CURRENT)
+	{
 		SN_LOG_ERROR(L"The loaded kernel executable is either not an ELF64 file or is compiled to an unsupported format");
 		return EFI_UNSUPPORTED;
-    }
+	}
 
 	Elf64_Phdr* programHeaders = (Elf64_Phdr*) (loadedFile + elfHeader->e_phoff);
-	
-	for(
-		Elf64_Phdr* header = programHeaders;
-        (UINT8*) header < (UINT8*) programHeaders + elfHeader->e_phnum * elfHeader->e_phentsize;
-        header = (Elf64_Phdr*) ((UINT8*) header + elfHeader->e_phentsize))
+
+	for(Elf64_Phdr* header = programHeaders; (UINT8*) header < (UINT8*) programHeaders + elfHeader->e_phnum * elfHeader->e_phentsize;
+		header			   = (Elf64_Phdr*) ((UINT8*) header + elfHeader->e_phentsize))
 	{
 		if(header->p_type != PT_LOAD)
 			continue;
@@ -40,7 +35,7 @@ EFI_STATUS LoadKernel(
 			// Allocate a memory frame, zero it out and copy the segments data to it
 			// and map it to the kernel's P4 Table, if there's an error somewhere - shit yourself.
 			EFI_PHYSICAL_ADDRESS frameAddress = 0;
-			EFI_STATUS status = AllocateFrame(frameAllocator, &frameAddress);
+			EFI_STATUS status				  = AllocateFrame(frameAllocator, &frameAddress);
 			if(EFI_ERROR(status))
 			{
 				SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a memory frame for the kernel");
@@ -70,4 +65,3 @@ EFI_STATUS LoadKernel(
 
 	return EFI_SUCCESS;
 }
-

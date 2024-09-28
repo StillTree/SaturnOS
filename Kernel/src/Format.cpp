@@ -30,14 +30,13 @@ namespace SaturnKernel
 			return;
 		}
 
-		USIZE i = NumberToHexStringLength(number) - 1;
+		USIZE i	  = NumberToHexStringLength(number) - 1;
 		buffer[i] = '\0';
 
 		while(number > 0 && i > 1)
 		{
 			buffer[--i] = HEX_DIGITS[number % 16];
-			number /= 16;
+			number	   /= 16;
 		}
 	}
 }
-

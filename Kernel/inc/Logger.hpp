@@ -16,17 +16,13 @@ namespace SaturnKernel
 
 	struct Logger
 	{
-		FramebufferLogger   framebuffer;
+		FramebufferLogger framebuffer;
 		SerialConsoleLogger serialConsole;
 
 		bool framebufferEnabled;
 		bool serialConsoleEnabled;
 
-		void Init(
-			bool framebufferEnabled,
-			bool serialConsoleEnabled,
-			KernelBootInfo* bootInfo,
-			U16 serialConsolePort);
+		void Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo* bootInfo, U16 serialConsolePort);
 		void Log(LogLevel logLevel, const I8* string, ...);
 	};
 
@@ -37,4 +33,3 @@ namespace SaturnKernel
 #define SK_LOG_INFO(...)  SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Info, __VA_ARGS__)
 #define SK_LOG_WARN(...)  SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Warn, __VA_ARGS__)
 #define SK_LOG_ERROR(...) SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Error, __VA_ARGS__)
-
