@@ -22,7 +22,7 @@ namespace SaturnKernel
 		bool framebufferEnabled;
 		bool serialConsoleEnabled;
 
-		void Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo* bootInfo, U16 serialConsolePort);
+		void Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort);
 		void Log(LogLevel logLevel, const I8* string, ...);
 	};
 

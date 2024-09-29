@@ -39,7 +39,7 @@ namespace SaturnKernel
 		U64 pml4Address;
 		__asm__ volatile("mov %%cr3, %0" : "=r"(pml4Address));
 
-		// TODO: Using the errorCode figure the rest of the shit out
+		// TODO: Using the errorCode figure the rest of this shit out
 
 		SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT");
 		SK_LOG_ERROR("Faulty virtual address = {}", faultVirtualAddress);

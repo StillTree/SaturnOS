@@ -35,4 +35,7 @@ namespace SaturnKernel
 		U64 memoryMapAddress;
 		U64 memoryMapEntries;
 	};
+
+	/// Globally accessible boot information.
+	extern KernelBootInfo g_bootInfo;
 }

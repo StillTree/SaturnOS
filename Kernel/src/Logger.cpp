@@ -6,17 +6,17 @@ namespace SaturnKernel
 {
 	Logger g_mainLogger;
 
-	void Logger::Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo* bootInfo, U16 serialConsolePort)
+	void Logger::Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort)
 	{
 		this->framebufferEnabled   = framebufferEnabled;
 		this->serialConsoleEnabled = serialConsoleEnabled;
 
 		if(framebufferEnabled)
 		{
-			framebuffer = { reinterpret_cast<U32*>(bootInfo->framebufferAddress),
-							bootInfo->framebufferSize,
-							bootInfo->framebufferWidth,
-							bootInfo->framebufferHeight,
+			framebuffer = { reinterpret_cast<U32*>(bootInfo.framebufferAddress),
+							bootInfo.framebufferSize,
+							bootInfo.framebufferWidth,
+							bootInfo.framebufferHeight,
 							0,
 							0 };
 		}

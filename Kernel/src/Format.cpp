@@ -39,4 +39,37 @@ namespace SaturnKernel
 			number	   /= 16;
 		}
 	}
+
+	USIZE NumberToDecimalStringLength(U64 number)
+	{
+		USIZE length = 1;
+
+		do
+		{
+			length++;
+			number /= 10;
+		}
+		while(number > 0);
+
+		return length;
+	}
+
+	void NumberToDecimalString(U64 number, I8* buffer)
+	{
+		if(number == 0)
+		{
+			buffer[0] = '0';
+			buffer[1] = '\0';
+			return;
+		}
+
+		USIZE i	  = NumberToDecimalStringLength(number) - 1;
+		buffer[i] = '\0';
+
+		while(number > 0 && i > 0)
+		{
+			buffer[--i] = (number % 10) + '0';
+			number	   /= 10;
+		}
+	}
 }

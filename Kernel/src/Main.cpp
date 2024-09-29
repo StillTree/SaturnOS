@@ -5,13 +5,19 @@
 #include "Logger.hpp"
 
 #ifndef __x86_64__
-	#error SaturnKernel requires an x86 64-bit architecture to run properly!
+	#error SaturnKernel requires the x86 64-bit architecture to run properly!
 #endif
+
+// Initially empty.
+SaturnKernel::KernelBootInfo SaturnKernel::g_bootInfo = {};
 
 /// C linking so the linker and the bootloader don't absolutely shit themselves
 extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 {
-	SaturnKernel::g_mainLogger.Init(true, true, bootInfo, 0x3f8);
+	// Copy the structure provided by the bootloader right at the beginning, so every part of the code can safely access it.
+	SaturnKernel::g_bootInfo = *bootInfo;
+
+	SaturnKernel::g_mainLogger.Init(true, true, SaturnKernel::g_bootInfo, 0x3f8);
 	SK_LOG_INFO("Initializing the SaturnOS Kernel");
 
 	__asm__("cli");
@@ -22,13 +28,6 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SaturnKernel::InitIDT();
 
 	__asm__ volatile("int3");
-	SK_LOG_INFO("Framebuffer address = {}", bootInfo->framebufferAddress);
-
-	SaturnKernel::MemoryMapEntry* entry = reinterpret_cast<SaturnKernel::MemoryMapEntry*>(bootInfo->memoryMapAddress);
-	for(USIZE i = 0; i < bootInfo->memoryMapEntries; i++)
-	{
-		SK_LOG_INFO("Memory map entry: physicalStart = {}, physicalEnd = {}", entry[i].physicalStart, entry[i].physicalEnd);
-	}
 
 	while(true)
 	{
