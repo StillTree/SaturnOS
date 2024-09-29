@@ -15,11 +15,10 @@ typedef struct MemoryMapEntry
 } MemoryMapEntry;
 
 /// Creates and maps for the kernel a memory map based on the known UEFI memory map and already allocated frames
-/// by the sequential frame allocator used. Outputs the number of entries and the pointer to the actual map.
+/// by the sequential frame allocator used. Outputs the number of entries in the kernel memory map.
 EFI_STATUS CreateMemoryMap(
 	FrameAllocatorData* frameAllocator,
 	EFI_PHYSICAL_ADDRESS kernelP4Table,
-	MemoryMapEntry** memoryMap,
 	UINTN* memoryMapEntries,
 	EFI_MEMORY_DESCRIPTOR* uefiMemoryMap,
 	UINTN memoryMapSize,

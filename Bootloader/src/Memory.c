@@ -41,7 +41,7 @@ INT32 MemoryCompare(const VOID* ptr1, const VOID* ptr2, UINTN size)
 EFI_PHYSICAL_ADDRESS PhysFrameContainingAddress(EFI_PHYSICAL_ADDRESS address)
 {
 	// As simple as it gets...
-	return address & ~0xFFF;
+	return address & ~0xfff;
 }
 
 inline UINT16 VirtualAddressPageOffset(EFI_VIRTUAL_ADDRESS address)

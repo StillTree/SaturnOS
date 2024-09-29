@@ -22,6 +22,7 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SaturnKernel::InitIDT();
 
 	__asm__ volatile("int3");
+	SK_LOG_INFO("Framebuffer address = {}", bootInfo->framebufferAddress);
 
 	SaturnKernel::MemoryMapEntry* entry = reinterpret_cast<SaturnKernel::MemoryMapEntry*>(bootInfo->memoryMapAddress);
 	for(USIZE i = 0; i < bootInfo->memoryMapEntries; i++)

@@ -76,8 +76,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	status = InitEmptyPageTable(kernelP4Table);
 	if(EFI_ERROR(status))
 	{
-		SN_LOG_ERROR(L"There was an error while trying to initialize an empty P4 "
-					 L"Page Table");
+		SN_LOG_ERROR(L"There was an error while trying to initialize an empty P4 Page Table");
 		goto halt;
 	}
 
@@ -87,6 +86,8 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	{
 		goto halt;
 	}
+
+	SN_LOG_INFO(L"Successfully successfully loaded the kernel executable into memory");
 
 	// TODO: Use some shit to determine the actual function size and if it needs 2 or even more pages to be mapped.
 	EFI_PHYSICAL_ADDRESS contextSwitchFnAddress = (UINTN) ContextSwitch;
@@ -152,18 +153,24 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
-	KernelBootInfo* bootInfo	 = (KernelBootInfo*) bootInfoPhysicalAddress;
-	bootInfo->framebufferSize	 = g_mainLogger.framebuffer.framebufferSize;
-	bootInfo->framebufferAddress = (UINTN) g_mainLogger.framebuffer.framebuffer;
-	bootInfo->framebufferWidth	 = g_mainLogger.framebuffer.width;
-	bootInfo->framebufferHeight	 = g_mainLogger.framebuffer.height;
+	KernelBootInfo* bootInfo	= (KernelBootInfo*) bootInfoPhysicalAddress;
+	bootInfo->framebufferSize	= g_mainLogger.framebuffer.framebufferSize;
+	bootInfo->framebufferWidth	= g_mainLogger.framebuffer.width;
+	bootInfo->framebufferHeight = g_mainLogger.framebuffer.height;
 
-	UINTN framebufferPages			 = (bootInfo->framebufferSize + 4095) / 4096;
-	UINTN framebufferPhysicalAddress = bootInfo->framebufferAddress;
+	// I don't know if the framebuffer is guaranteed to be page aligned (4096 bytes), so after aligning its physical beginning to the
+	// containing frame I get the value contained in the least significant 12 bits of the address (the page offset) and add it back to the
+	// virtual address if the framebuffer happens to not be exactly 4096 bytes aligned
+	UINTN framebufferPages			 = (g_mainLogger.framebuffer.framebufferSize + 4095) / 4096;
+	UINTN framebufferPhysicalAddress = PhysFrameContainingAddress((UINTN) g_mainLogger.framebuffer.framebuffer);
+	// We want the framebuffer's virtual address to be right after boot info's virtual address
+	UINTN framebufferVirtualAddress = bootInfoVirtualAddress + 4096;
+	UINTN framebufferFrameOffset	= (UINTN) g_mainLogger.framebuffer.framebuffer & 0xfff;
+	bootInfo->framebufferAddress	= framebufferVirtualAddress + framebufferFrameOffset;
 	for(UINTN i = 0; i < framebufferPages; i++)
 	{
 		status = MapMemoryPage4KiB(
-			framebufferPhysicalAddress,
+			framebufferVirtualAddress,
 			framebufferPhysicalAddress,
 			kernelP4Table,
 			&frameAllocator,
@@ -174,10 +181,10 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		}
 
 		framebufferPhysicalAddress += 4096;
+		framebufferVirtualAddress  += 4096;
 	}
 
-	// Mapping the whole (512 pages for now = 1 GiB) physical memory at an offset
-	// using 2MiB huge pages
+	// Mapping the whole (512 huge pages for now) physical memory at an offset using 2 MiB huge pages
 	const EFI_VIRTUAL_ADDRESS mappingOffset = 0xA0000000000; // 10 TiB in hex (I think...)
 	for(UINT64 i = 0; i < 512; i++)
 	{
@@ -193,23 +200,21 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		}
 	}
 
-	// After this function call no other frame allocations should be made
-	MemoryMapEntry* kernelMemoryMap = NULL;
-	UINTN kernelMemoryMapEntries	= 0;
-	status							= CreateMemoryMap(
-		 &frameAllocator,
-		 kernelP4Table,
-		 &kernelMemoryMap,
-		 &kernelMemoryMapEntries,
-		 memoryMap,
-		 memoryMapSize,
-		 descriptorSize,
-		 bootInfoVirtualAddress + 4096);
+	// After this function call, no other frame allocations should be made
+	UINTN kernelMemoryMapEntries = 0;
+	status						 = CreateMemoryMap(
+		  &frameAllocator,
+		  kernelP4Table,
+		  &kernelMemoryMapEntries,
+		  memoryMap,
+		  memoryMapSize,
+		  descriptorSize,
+		  framebufferVirtualAddress); // We want the memory map to be allocated in virtual memory right after the framebuffer
 	if(EFI_ERROR(status))
 	{
 		goto halt;
 	}
-	bootInfo->memoryMapAddress = bootInfoVirtualAddress + 4096;
+	bootInfo->memoryMapAddress = framebufferVirtualAddress;
 	bootInfo->memoryMapEntries = kernelMemoryMapEntries;
 
 	SN_LOG_INFO(L"Performing context switch");
@@ -217,8 +222,8 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	ContextSwitch(
 		kernelEntryPoint,
 		kernelP4Table,
-		virtualStackAddress, // x86_64 System V ABI requires the stack to be 16
-							 // bit aligned so it hopefully is :D
+		virtualStackAddress & ~1, // x86_64 System V ABI requires the stack to be 16
+								  // bit aligned so we do exactly that :D
 		bootInfoVirtualAddress);
 
 halt:
@@ -227,7 +232,7 @@ halt:
 		__asm__("cli; hlt");
 	}
 
-	// If we actually get here, smoething went catastrophically wrong 💀
+	// If we ever actually get here, smoething went catastrophically wrong 💀
 	return EFI_SUCCESS;
 }
 
@@ -247,9 +252,9 @@ VOID ContextSwitch(
 					 "push $0\n\t"			// To be honest, I don't know if that even does something
 					 "call *%3\n\t"			// Call the kernel function
 					 "outb %b4, %w5\n\t"	// If we exit the kernel's function which shouldn't
-											// happen, we print a colon to the COM1 serial output
+											// happen, we print "^" to the COM1 serial output
 					 :
-					 : "r"(kernelP4Table), "r"(stackAddress), "r"(bootInfoAddress), "r"(entryPoint), "a"(':'), "Nd"(0x3f8)
+					 : "r"(kernelP4Table), "r"(stackAddress), "r"(bootInfoAddress), "r"(entryPoint), "a"('^'), "Nd"(0x3f8)
 					 : "memory");
 
 	// We should not ever exit this function...

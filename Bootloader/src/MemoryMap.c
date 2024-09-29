@@ -1,11 +1,11 @@
 #include "MemoryMap.h"
 
+#include "Logger.h"
 #include "Memory.h"
 
 EFI_STATUS CreateMemoryMap(
 	FrameAllocatorData* frameAllocator,
 	EFI_PHYSICAL_ADDRESS kernelP4Table,
-	MemoryMapEntry** memoryMap,
 	UINTN* memoryMapEntries,
 	EFI_MEMORY_DESCRIPTOR* uefiMemoryMap,
 	UINTN memoryMapSize,
@@ -69,18 +69,18 @@ EFI_STATUS CreateMemoryMap(
 
 		firstEntry[entry].physicalEnd	= descriptor->PhysicalStart + descriptor->NumberOfPages * 4096 - 1;
 		firstEntry[entry].physicalStart = descriptor->PhysicalStart;
-		entry++;
 
 		// This if should technically only be entered once
 		if(frameAllocator->previousFrame > descriptor->PhysicalStart)
 		{
 			// These are all guaranteed to be 4096 aligned so I don't need to worry about that
-			firstEntry[entry - 1].physicalStart = frameAllocator->previousFrame + 4096;
-			firstEntry[entry - 1].physicalEnd	= descriptor->PhysicalStart + descriptor->NumberOfPages * 4096 - 1;
+			firstEntry[entry].physicalStart = frameAllocator->previousFrame + 4096;
+			firstEntry[entry].physicalEnd	= descriptor->PhysicalStart + descriptor->NumberOfPages * 4096 - 1;
 		}
+
+		entry++;
 	}
 
-	*memoryMap		  = firstEntry;
 	*memoryMapEntries = entries;
 
 	return status;
