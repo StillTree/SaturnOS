@@ -1,6 +1,8 @@
 #include "InterruptHandlers.hpp"
 
+#include "InOut.hpp"
 #include "Logger.hpp"
+#include "PIC.hpp"
 #include "Panic.hpp"
 
 namespace SaturnKernel
@@ -55,5 +57,13 @@ namespace SaturnKernel
 		SK_LOG_ERROR("}");
 
 		Hang();
+	}
+
+	__attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame*)
+	{
+		U8 scanCode = InputU8(0x60);
+		SK_LOG_INFO("{}", scanCode);
+
+		EOISignal(1);
 	}
 }

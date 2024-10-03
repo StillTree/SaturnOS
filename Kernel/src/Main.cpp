@@ -3,6 +3,7 @@
 #include "GDT.hpp"
 #include "IDT.hpp"
 #include "Logger.hpp"
+#include "PIC.hpp"
 
 #ifndef __x86_64__
 	#error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -27,10 +28,15 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Initializing the IDT");
 	SaturnKernel::InitIDT();
 
+	SK_LOG_INFO("Initializing the Intel PIC 8259");
+	SaturnKernel::ReinitializePIC();
+
+	__asm__("sti");
+
 	__asm__ volatile("int3");
 
 	while(true)
 	{
-		__asm__("cli; hlt");
+		__asm__("hlt");
 	}
 }

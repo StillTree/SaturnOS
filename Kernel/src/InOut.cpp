@@ -14,4 +14,9 @@ namespace SaturnKernel
 
 		return result;
 	}
+
+	void IOWait()
+	{
+		OutputU8(0x80, 0);
+	}
 }

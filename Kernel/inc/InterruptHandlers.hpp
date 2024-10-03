@@ -18,4 +18,6 @@ namespace SaturnKernel
 	__attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, U64);
 	[[noreturn]]
 	__attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, U64 errorCode);
+
+	__attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame*);
 }
