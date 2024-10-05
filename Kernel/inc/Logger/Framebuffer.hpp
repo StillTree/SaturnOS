@@ -8,6 +8,7 @@ namespace SaturnKernel
 	{
 		void WriteChar(U8 character);
 		void WriteString(const I8* string);
+		void ShiftLine();
 		void Clear();
 
 		U32* framebuffer;
