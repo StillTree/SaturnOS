@@ -19,7 +19,7 @@ namespace SaturnKernel
 			}
 
 			cursorPositionY += 20;
-			cursorPositionX  = 0;
+			cursorPositionX	 = 0;
 			return;
 		}
 
@@ -50,8 +50,8 @@ namespace SaturnKernel
 		{
 			for(USIZE x = 0; x < 10; x++)
 			{
-				U8 pixelIntensity					= g_fontBitmaps[charIndex][y][x];
-				USIZE framebufferIndex				= (cursorPositionY + y) * width + (cursorPositionX + x);
+				U8 pixelIntensity			  = g_fontBitmaps[charIndex][y][x];
+				USIZE framebufferIndex		  = (cursorPositionY + y) * width + (cursorPositionX + x);
 				framebuffer[framebufferIndex] = (pixelIntensity << 16) | (pixelIntensity << 8) | pixelIntensity;
 			}
 		}
