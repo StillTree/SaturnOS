@@ -1,6 +1,7 @@
 #include "InterruptHandlers.hpp"
 
 #include "InOut.hpp"
+#include "Keyboard.hpp"
 #include "Logger.hpp"
 #include "PIC.hpp"
 #include "Panic.hpp"
@@ -11,11 +12,11 @@ namespace SaturnKernel
 	{
 		SK_LOG_ERROR("EXCEPTION OCCURED: BREAKPOINT, InterruptFrame");
 		SK_LOG_ERROR("{");
-		SK_LOG_ERROR("    StackPointer = {}", frame->StackPointer);
-		SK_LOG_ERROR("    Flags = {}", frame->Flags);
-		SK_LOG_ERROR("    CodeSegment = {}", frame->CodeSegment);
-		SK_LOG_ERROR("    SegmentSelector = {}", frame->SegmentSelector);
-		SK_LOG_ERROR("    Instruction Pointer = {}", frame->InstructionPointer);
+		SK_LOG_ERROR("\tStackPointer = {}", frame->StackPointer);
+		SK_LOG_ERROR("\tFlags = {}", frame->Flags);
+		SK_LOG_ERROR("\tCodeSegment = {}", frame->CodeSegment);
+		SK_LOG_ERROR("\tSegmentSelector = {}", frame->SegmentSelector);
+		SK_LOG_ERROR("\tInstruction Pointer = {}", frame->InstructionPointer);
 		SK_LOG_ERROR("}");
 	}
 
@@ -23,11 +24,11 @@ namespace SaturnKernel
 	{
 		SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: DOUBLE FAULT, InterruptFrame");
 		SK_LOG_ERROR("{");
-		SK_LOG_ERROR("    StackPointer = {}", frame->StackPointer);
-		SK_LOG_ERROR("    Flags = {}", frame->Flags);
-		SK_LOG_ERROR("    CodeSegment = {}", frame->CodeSegment);
-		SK_LOG_ERROR("    SegmentSelector = {}", frame->SegmentSelector);
-		SK_LOG_ERROR("    Instruction Pointer = {}", frame->InstructionPointer);
+		SK_LOG_ERROR("\tStackPointer = {}", frame->StackPointer);
+		SK_LOG_ERROR("\tFlags = {}", frame->Flags);
+		SK_LOG_ERROR("\tCodeSegment = {}", frame->CodeSegment);
+		SK_LOG_ERROR("\tSegmentSelector = {}", frame->SegmentSelector);
+		SK_LOG_ERROR("\tInstruction Pointer = {}", frame->InstructionPointer);
 		SK_LOG_ERROR("}");
 
 		Hang();
@@ -49,11 +50,11 @@ namespace SaturnKernel
 		SK_LOG_ERROR("Error code = {}", errorCode);
 		SK_LOG_ERROR("InterruptFrame");
 		SK_LOG_ERROR("{");
-		SK_LOG_ERROR("    StackPointer = {}", frame->StackPointer);
-		SK_LOG_ERROR("    Flags = {}", frame->Flags);
-		SK_LOG_ERROR("    CodeSegment = {}", frame->CodeSegment);
-		SK_LOG_ERROR("    SegmentSelector = {}", frame->SegmentSelector);
-		SK_LOG_ERROR("    Instruction Pointer = {}", frame->InstructionPointer);
+		SK_LOG_ERROR("\tStackPointer = {}", frame->StackPointer);
+		SK_LOG_ERROR("\tFlags = {}", frame->Flags);
+		SK_LOG_ERROR("\tCodeSegment = {}", frame->CodeSegment);
+		SK_LOG_ERROR("\tSegmentSelector = {}", frame->SegmentSelector);
+		SK_LOG_ERROR("\tInstruction Pointer = {}", frame->InstructionPointer);
 		SK_LOG_ERROR("}");
 
 		Hang();
@@ -62,8 +63,13 @@ namespace SaturnKernel
 	__attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame*)
 	{
 		U8 scanCode = InputU8(0x60);
-		SK_LOG_INFO("{}", scanCode);
+		I8 character = TranslateScanCode(scanCode);
+		if(character != '?')
+		{
+			g_mainLogger.framebuffer.WriteChar(character);
+			g_mainLogger.serialConsole.WriteChar(character);
+		}
 
-		EOISignal(1);
+		EOISignal(33);
 	}
 }

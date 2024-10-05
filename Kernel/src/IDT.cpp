@@ -32,7 +32,6 @@ namespace SaturnKernel
 		idtRegister.Address = reinterpret_cast<U64>(&g_idt);
 
 		__asm__ volatile("lidt %0\n\t"
-						 //"sti\n\t"
 						 :
 						 : "m"(idtRegister));
 	}

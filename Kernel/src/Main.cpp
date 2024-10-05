@@ -21,7 +21,7 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SaturnKernel::g_mainLogger.Init(true, true, SaturnKernel::g_bootInfo, 0x3f8);
 	SK_LOG_INFO("Initializing the SaturnOS Kernel");
 
-	__asm__("cli");
+	SaturnKernel::DisableInterrupts();
 
 	SK_LOG_INFO("Initializing the GDT");
 	SaturnKernel::InitGDT();
@@ -31,12 +31,10 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Initializing the Intel PIC 8259");
 	SaturnKernel::ReinitializePIC();
 
-	__asm__("sti");
+	SaturnKernel::EnableInterrupts();
 
 	__asm__ volatile("int3");
 
 	while(true)
-	{
 		__asm__("hlt");
-	}
 }

@@ -6,7 +6,7 @@ namespace SaturnKernel
 {
 	void EOISignal(U8 interruptVector)
 	{
-		if(interruptVector >= 8)
+		if(interruptVector - PIC_OFFSET >= 8)
 			OutputU8(PIC_SLAVE_COMMAND, PIC_EOI_SIGNAL);
 
 		OutputU8(PIC_MASTER_COMMAND, PIC_EOI_SIGNAL);

@@ -29,6 +29,18 @@ namespace SaturnKernel
 			return;
 		}
 
+		if(character == L'\t')
+		{
+			if(this->cursorPositionX + 40 >= width)
+			{
+				WriteChar('\n');
+				return;
+			}
+
+			this->cursorPositionX += 40;
+			return;
+		}
+
 		if(this->cursorPositionX + 9 >= this->width)
 		{
 			WriteChar('\n');

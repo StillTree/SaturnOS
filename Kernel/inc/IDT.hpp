@@ -25,5 +25,15 @@ namespace SaturnKernel
 	void SetIDTEntry(U8 vector, U64 handler);
 	void InitIDT();
 
+	inline void EnableInterrupts()
+	{
+		__asm__ volatile("sti");
+	}
+
+	inline void DisableInterrupts()
+	{
+		__asm__ volatile("cli");
+	}
+
 	extern IDTEntry g_idt[256];
 }
