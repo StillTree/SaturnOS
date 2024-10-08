@@ -37,8 +37,11 @@ namespace SaturnKernel
 
 		m_memoryMap			= memoryMap;
 		m_currentEntryIndex = 0;
-		m_memoryMapEntries	= memoryMapEntries - 1;
-		m_lastFrame			= memoryMap[0].physicalStart - 4096;
+		// Since my code will check if we exceeed the provided memory map bounds using the number of entries we can just ignore the last
+		// NULL-descriptor
+		// TODO: Check if its a NULL-descritptor and only then ignore it
+		m_memoryMapEntries = memoryMapEntries - 1;
+		m_lastFrame		   = memoryMap[0].physicalStart - 4096;
 	}
 
 	/// A helper function that allocates the next free frame from the current descriptor,
@@ -80,7 +83,6 @@ namespace SaturnKernel
 			}
 		}
 
-		SK_LOG_ERROR("There are no more possible frames to be allocated");
 		return 0xffffffffffffffff;
 	}
 }
