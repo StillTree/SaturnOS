@@ -1,5 +1,6 @@
 #include "Core.hpp"
 
+#include "FrameAllocator.hpp"
 #include "GDT.hpp"
 #include "IDT.hpp"
 #include "Logger.hpp"
@@ -10,7 +11,8 @@
 #endif
 
 // Initially empty.
-SaturnKernel::KernelBootInfo SaturnKernel::g_bootInfo = {};
+SaturnKernel::KernelBootInfo SaturnKernel::g_bootInfo	= {};
+SaturnKernel::SequentialFrameAllocator g_frameAllocator = {};
 
 /// C linking so the linker and the bootloader don't absolutely shit themselves
 extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
@@ -34,6 +36,10 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 	SaturnKernel::EnableInterrupts();
 
 	__asm__ volatile("int3");
+
+	g_frameAllocator.Init(
+		reinterpret_cast<SaturnKernel::MemoryMapEntry*>(SaturnKernel::g_bootInfo.memoryMapAddress),
+		SaturnKernel::g_bootInfo.memoryMapEntries);
 
 	while(true)
 		__asm__("hlt");

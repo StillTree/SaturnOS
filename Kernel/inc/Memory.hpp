@@ -10,4 +10,8 @@ namespace SaturnKernel
 	void MemoryCopy(void* ptr1, void* ptr2, USIZE size);
 	/// C's memcmp but without a shitty name.
 	I32 MemoryCompare(const void* ptr1, const void* ptr2, USIZE size);
+
+	/// Returns the starting address for a physical frame that contains the given address
+	/// (literally just aligns the address to the lower 4096 byte).
+	U64 PhysFrameContainingAddress(U64 address);
 }

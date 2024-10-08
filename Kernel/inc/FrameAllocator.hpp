@@ -9,6 +9,8 @@ namespace SaturnKernel
 		U64 AllocateFrame();
 
 	private:
+		U64 AllocateCurrentDescriptorFrame();
+
 		U64 m_lastFrame;
 		MemoryMapEntry* m_memoryMap;
 		USIZE m_memoryMapEntries;

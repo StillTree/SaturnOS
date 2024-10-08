@@ -37,4 +37,10 @@ namespace SaturnKernel
 
 		return 0;
 	}
+
+	U64 PhysFrameContainingAddress(U64 address)
+	{
+		// As simple as it gets...
+		return address & ~0xfff;
+	}
 }

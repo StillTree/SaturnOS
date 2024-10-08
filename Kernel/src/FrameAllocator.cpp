@@ -1,15 +1,35 @@
 #include "FrameAllocator.hpp"
 
 #include "Logger.hpp"
+#include "Memory.hpp"
 
 namespace SaturnKernel
 {
+	static U64 NextMapEntryFrame(const MemoryMapEntry& currentEntry, U64 lastFrame)
+	{
+		const U64 minFrame = PhysFrameContainingAddress(currentEntry.physicalStart);
+		const U64 maxFrame = PhysFrameContainingAddress(currentEntry.physicalEnd);
+
+		// If the last allocated frame is outside the bounds of the memory descriptor,
+		// we know that the first frame will be available so we return it.
+		if(lastFrame < minFrame)
+		{
+			return minFrame;
+		}
+
+		// Check if there is one more frame to allocate, and if there is we use it.
+		if(lastFrame < maxFrame)
+		{
+			return lastFrame + 4096;
+		}
+
+		return 0xffffffffffffffff;
+	}
+
 	void SequentialFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries)
 	{
-		// The memory map will only contain usable entries so we can just set the physical starting address as the last allocated frame and
-		// don't give a shit if the memory map has any entries at all 🗿
-
-		if(m_memoryMapEntries < 1)
+		// The memory map will only contain usable entries so we can just set the physical starting address as the last allocated frame
+		if(memoryMapEntries < 1)
 		{
 			SK_LOG_ERROR("There are no usable memory map entries to allocate frames from");
 			return;
@@ -17,11 +37,50 @@ namespace SaturnKernel
 
 		m_memoryMap			= memoryMap;
 		m_currentEntryIndex = 0;
-		m_memoryMapEntries	= memoryMapEntries;
+		m_memoryMapEntries	= memoryMapEntries - 1;
 		m_lastFrame			= memoryMap[0].physicalStart - 4096;
+	}
+
+	/// A helper function that allocates the next free frame from the current descriptor,
+	/// only if one's available, otherwise returns an error.
+	U64 SequentialFrameAllocator::AllocateCurrentDescriptorFrame()
+	{
+		U64 frame = NextMapEntryFrame(m_memoryMap[m_currentEntryIndex], m_lastFrame);
+		if(frame == 0xffffffffffffffff)
+			return frame;
+
+		// Because the available frame is being consumed we deem it as the previous, used one.
+		m_lastFrame = frame;
+
+		return frame;
 	}
 
 	U64 SequentialFrameAllocator::AllocateFrame()
 	{
+		// If there is an available frame within the current descriptor's bounds, return it.
+		U64 frame = AllocateCurrentDescriptorFrame();
+		if(frame != 0xffffffffffffffff)
+			return frame;
+
+		// If we are on the last descriptor we ran out of memory... Nice.
+		if(m_currentEntryIndex + 1 >= m_memoryMapEntries)
+			return 0xffffffffffffffff;
+
+		// And if not, we need to find the next available memory descriptor.
+		// If its "usable", allocate the first available frame from it.
+		for(USIZE i = m_currentEntryIndex + 1; i < m_memoryMapEntries; i++)
+		{
+			frame = NextMapEntryFrame(m_memoryMap[i], m_lastFrame);
+			if(frame != 0xffffffffffffffff)
+			{
+				m_currentEntryIndex = i;
+				m_lastFrame			= frame;
+
+				return frame;
+			}
+		}
+
+		SK_LOG_ERROR("There are no more possible frames to be allocated");
+		return 0xffffffffffffffff;
 	}
 }
