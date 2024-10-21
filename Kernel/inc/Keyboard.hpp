@@ -2,6 +2,6 @@
 
 namespace SaturnKernel
 {
-	I8 TranslateScanCode(U8 scanCode);
-	extern const I8 g_set1ScanCodes[];
+	auto TranslateScanCode(U8 scanCode) -> I8;
+	extern const I8 SET1_SCAN_CODES[];
 }

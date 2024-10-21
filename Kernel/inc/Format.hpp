@@ -4,10 +4,10 @@
 
 namespace SaturnKernel
 {
-	USIZE NumberToHexStringLength(U64 number);
+	auto NumberToHexStringLength(U64 number) -> USIZE;
 	void NumberToHexString(U64 number, I8* buffer);
 
-	USIZE NumberToDecimalStringLength(U64 number);
+	auto NumberToDecimalStringLength(U64 number) -> USIZE;
 	void NumberToDecimalString(U64 number, I8* buffer);
 
 	constexpr USIZE MAX_HEX_LENGTH	   = 16;

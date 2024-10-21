@@ -4,12 +4,12 @@ namespace SaturnKernel
 {
 	TSS g_tss;
 	GDT g_gdt;
-	U8 g_DoubleFaultStack[20480];
-	U8 g_PageFaultStack[20480];
+	U8 g_doubleFaultStack[20480];
+	U8 g_pageFaultStack[20480];
 
-	GDTEntry64 SetGDTEntry64(U64 address, U32 limit, U8 access, U8 flags)
+	auto SetGDTEntry64(U64 address, U32 limit, U8 access, U8 flags) -> GDTEntry64
 	{
-		GDTEntry64 entry;
+		GDTEntry64 entry	= {};
 		entry.AddressLow	= address;
 		entry.AddressMiddle = address >> 16;
 		entry.AddressHigh	= address >> 24;
@@ -22,9 +22,9 @@ namespace SaturnKernel
 		return entry;
 	}
 
-	GDTEntry32 SetGDTEntry32(U32 address, U32 limit, U8 access, U8 flags)
+	auto SetGDTEntry32(U32 address, U32 limit, U8 access, U8 flags) -> GDTEntry32
 	{
-		GDTEntry32 entry;
+		GDTEntry32 entry	= {};
 		entry.AddressLow	= address;
 		entry.AddressMiddle = address >> 16;
 		entry.AddressHigh	= address >> 24;
@@ -42,8 +42,8 @@ namespace SaturnKernel
 		g_tss.Reserved3			 = 0;
 		g_tss.Reserved4			 = 0;
 		g_tss.IOPermissionBitMap = sizeof(g_tss);
-		g_tss.IST[0]			 = reinterpret_cast<U64>(g_DoubleFaultStack + sizeof(U8) * 20480);
-		g_tss.IST[1]			 = reinterpret_cast<U64>(g_PageFaultStack + sizeof(U8) * 20480);
+		g_tss.IST[0]			 = reinterpret_cast<U64>(g_doubleFaultStack + (sizeof(U8) * 20480));
+		g_tss.IST[1]			 = reinterpret_cast<U64>(g_pageFaultStack + (sizeof(U8) * 20480));
 
 		g_gdt.Null		 = SetGDTEntry32(0, 0, 0, 0);
 		g_gdt.KernelCode = SetGDTEntry32(0, 0xfffff, 0x9a, 0xa);
@@ -52,9 +52,9 @@ namespace SaturnKernel
 		g_gdt.UserData	 = SetGDTEntry32(0, 0xfffff, 0xf2, 0xc);
 		g_gdt.TSS		 = SetGDTEntry64(reinterpret_cast<U64>(&g_tss), sizeof(g_tss) - 1, 0x89, 0);
 
-		GDTDescriptor gdtDescriptor;
-		gdtDescriptor.Address = reinterpret_cast<U64>(&g_gdt);
-		gdtDescriptor.Size	  = sizeof(GDT) - 1;
+		GDTDescriptor gdtDescriptor = {};
+		gdtDescriptor.Address		= reinterpret_cast<U64>(&g_gdt);
+		gdtDescriptor.Size			= sizeof(GDT) - 1;
 
 		__asm__ volatile("lgdt %0" : : "m"(gdtDescriptor));
 		__asm__ volatile("ltr %0" : : "r"(0x28));

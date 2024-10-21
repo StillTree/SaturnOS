@@ -6,10 +6,10 @@ namespace SaturnKernel
 	{
 		void Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries);
 
-		U64 AllocateFrame();
+		auto AllocateFrame() -> U64;
 
 	private:
-		U64 AllocateCurrentDescriptorFrame();
+		auto AllocateCurrentDescriptorFrame() -> U64;
 
 		U64 m_lastFrame;
 		MemoryMapEntry* m_memoryMap;

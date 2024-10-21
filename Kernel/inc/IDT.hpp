@@ -25,11 +25,13 @@ namespace SaturnKernel
 	void SetIDTEntry(U8 vector, U64 handler);
 	void InitIDT();
 
+	/// Executes the `sti` instruction.
 	inline void EnableInterrupts()
 	{
 		__asm__ volatile("sti");
 	}
 
+	/// Executes the `cli` instruction.
 	inline void DisableInterrupts()
 	{
 		__asm__ volatile("cli");

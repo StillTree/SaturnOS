@@ -5,10 +5,10 @@
 
 namespace SaturnKernel
 {
-	static U64 NextMapEntryFrame(const MemoryMapEntry& currentEntry, U64 lastFrame)
+	static auto NextMapEntryFrame(const MemoryMapEntry& currentEntry, U64 lastFrame) -> U64
 	{
-		const U64 minFrame = PhysFrameContainingAddress(currentEntry.physicalStart);
-		const U64 maxFrame = PhysFrameContainingAddress(currentEntry.physicalEnd);
+		const U64 minFrame = PhysFrameContainingAddress(currentEntry.PhysicalStart);
+		const U64 maxFrame = PhysFrameContainingAddress(currentEntry.PhysicalEnd);
 
 		// If the last allocated frame is outside the bounds of the memory descriptor,
 		// we know that the first frame will be available so we return it.
@@ -41,12 +41,12 @@ namespace SaturnKernel
 		// NULL-descriptor
 		// TODO: Check if its a NULL-descritptor and only then ignore it
 		m_memoryMapEntries = memoryMapEntries - 1;
-		m_lastFrame		   = memoryMap[0].physicalStart - 4096;
+		m_lastFrame		   = memoryMap[0].PhysicalStart - 4096;
 	}
 
 	/// A helper function that allocates the next free frame from the current descriptor,
 	/// only if one's available, otherwise returns an error.
-	U64 SequentialFrameAllocator::AllocateCurrentDescriptorFrame()
+	auto SequentialFrameAllocator::AllocateCurrentDescriptorFrame() -> U64
 	{
 		U64 frame = NextMapEntryFrame(m_memoryMap[m_currentEntryIndex], m_lastFrame);
 		if(frame == 0xffffffffffffffff)
@@ -58,7 +58,7 @@ namespace SaturnKernel
 		return frame;
 	}
 
-	U64 SequentialFrameAllocator::AllocateFrame()
+	auto SequentialFrameAllocator::AllocateFrame() -> U64
 	{
 		// If there is an available frame within the current descriptor's bounds, return it.
 		U64 frame = AllocateCurrentDescriptorFrame();

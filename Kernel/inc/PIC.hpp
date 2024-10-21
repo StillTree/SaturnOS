@@ -21,7 +21,7 @@ namespace SaturnKernel
 		Mouse	 = 1 << 12
 	};
 
-	inline IRQMask operator|(IRQMask a, IRQMask b)
+	inline auto operator|(IRQMask a, IRQMask b) -> IRQMask
 	{
 		return static_cast<IRQMask>(static_cast<U16>(a) | static_cast<U16>(b));
 	}

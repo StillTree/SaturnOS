@@ -12,4 +12,3 @@ FlushGDT:
 	push $0x8
 	push %rdi
 	lretq
-

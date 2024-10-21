@@ -8,63 +8,65 @@ namespace SaturnKernel
 
 	void Logger::Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort)
 	{
-		this->framebufferEnabled   = framebufferEnabled;
-		this->serialConsoleEnabled = serialConsoleEnabled;
+		this->FramebufferEnabled   = framebufferEnabled;
+		this->SerialConsoleEnabled = serialConsoleEnabled;
 
 		if(framebufferEnabled)
 		{
-			framebuffer = { reinterpret_cast<U32*>(bootInfo.framebufferAddress),
-							bootInfo.framebufferSize,
-							bootInfo.framebufferWidth,
-							bootInfo.framebufferHeight,
-							0,
-							0 };
+			Framebuffer = { .Framebuffer	 = reinterpret_cast<U32*>(bootInfo.FramebufferAddress),
+							.FramebufferSize = bootInfo.FramebufferSize,
+							.Width			 = bootInfo.FramebufferWidth,
+							.Height			 = bootInfo.FramebufferHeight,
+							.CursorPositionX = 0,
+							.CursorPositionY = 0 };
 		}
 
 		if(serialConsoleEnabled)
 		{
-			serialConsole.Init(serialConsolePort);
+			SerialConsole.Init(serialConsolePort);
 		}
 
-		framebuffer.Clear();
+		Framebuffer.Clear();
 	}
 
 	void Logger::Log(LogLevel logLevel, const I8* format, ...)
 	{
-		if(framebufferEnabled)
+		if(FramebufferEnabled)
 		{
 			switch(logLevel)
 			{
-			case LogLevel::Debug:
-				framebuffer.WriteString("[DEBUG]: ");
+			using enum LogLevel;
+			case Debug:
+				Framebuffer.WriteString("[DEBUG]: ");
 				break;
-			case LogLevel::Info:
-				framebuffer.WriteString("[INFO ]: ");
+			case Info:
+				Framebuffer.WriteString("[INFO ]: ");
 				break;
-			case LogLevel::Warn:
-				framebuffer.WriteString("[WARN ]: ");
+			case Warn:
+				Framebuffer.WriteString("[WARN ]: ");
 				break;
-			case LogLevel::Error:
-				framebuffer.WriteString("[ERROR]: ");
+			case Error:
+				Framebuffer.WriteString("[ERROR]: ");
 				break;
 			}
 		}
 
-		if(serialConsoleEnabled)
+		if(SerialConsoleEnabled)
 		{
 			switch(logLevel)
 			{
-			case LogLevel::Debug:
-				serialConsole.WriteString("[DEBUG]: ");
+			using enum LogLevel;
+			case Debug:
+				SerialConsole.WriteString("[DEBUG]: ");
 				break;
-			case LogLevel::Info:
-				serialConsole.WriteString("[INFO ]: ");
+			case Info:
+				SerialConsole.WriteString("[INFO ]: ");
 				break;
-			case LogLevel::Warn:
-				serialConsole.WriteString("[WARN ]: ");
+			case Warn:
+				SerialConsole.WriteString("[WARN ]: ");
 				break;
-			case LogLevel::Error:
-				serialConsole.WriteString("[ERROR]: ");
+			case Error:
+				SerialConsole.WriteString("[ERROR]: ");
 				break;
 			}
 		}
@@ -81,21 +83,21 @@ namespace SaturnKernel
 				U64 number = va_arg(args, U64);
 				NumberToHexString(number, hexOutput);
 
-				if(framebufferEnabled)
-					framebuffer.WriteString(hexOutput);
+				if(FramebufferEnabled)
+					Framebuffer.WriteString(hexOutput);
 
-				if(serialConsoleEnabled)
-					serialConsole.WriteString(hexOutput);
+				if(SerialConsoleEnabled)
+					SerialConsole.WriteString(hexOutput);
 
 				i++;
 			}
 			else
 			{
-				if(framebufferEnabled)
-					framebuffer.WriteChar(format[i]);
+				if(FramebufferEnabled)
+					Framebuffer.WriteChar(format[i]);
 
-				if(serialConsoleEnabled)
-					serialConsole.WriteChar(format[i]);
+				if(SerialConsoleEnabled)
+					SerialConsole.WriteChar(format[i]);
 			}
 
 			i++;
@@ -103,10 +105,10 @@ namespace SaturnKernel
 
 		va_end(args);
 
-		if(framebufferEnabled)
-			framebuffer.WriteChar('\n');
+		if(FramebufferEnabled)
+			Framebuffer.WriteChar('\n');
 
-		if(serialConsoleEnabled)
-			serialConsole.WriteChar('\n');
+		if(SerialConsoleEnabled)
+			SerialConsole.WriteChar('\n');
 	}
 }

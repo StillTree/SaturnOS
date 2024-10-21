@@ -7,9 +7,9 @@ namespace SaturnKernel
 	struct SerialConsoleLogger
 	{
 		void Init(U16 port);
-		void WriteChar(U8 character);
-		void WriteString(const I8* string);
+		void WriteChar(U8 character) const;
+		void WriteString(const I8* string) const;
 
-		U16 port;
+		U16 Port;
 	};
 }

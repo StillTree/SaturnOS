@@ -6,7 +6,7 @@
 
 namespace SaturnKernel
 {
-	extern const U8 g_fontBitmaps[96][20][10];
+	extern const U8 FONT_BITMAPS[96][20][10];
 
 	void Hang()
 	{
@@ -20,9 +20,9 @@ namespace SaturnKernel
 
 		if(character == L'\n')
 		{
-			if(positionY + 40 >= g_bootInfo.framebufferHeight)
+			if(positionY + 40 >= g_bootInfo.FramebufferHeight)
 			{
-				MemoryFill(reinterpret_cast<void*>(g_bootInfo.memoryMapAddress), 0, g_bootInfo.framebufferSize);
+				MemoryFill(reinterpret_cast<void*>(g_bootInfo.MemoryMapAddress), 0, g_bootInfo.FramebufferSize);
 				return;
 			}
 
@@ -37,7 +37,7 @@ namespace SaturnKernel
 			return;
 		}
 
-		if(positionX + 9 >= g_bootInfo.framebufferWidth)
+		if(positionX + 9 >= g_bootInfo.FramebufferWidth)
 		{
 			PanicFramebufferWriteChar('\n', framebuffer, positionX, positionY);
 		}
@@ -46,8 +46,8 @@ namespace SaturnKernel
 		{
 			for(USIZE x = 0; x < 10; x++)
 			{
-				U8 pixelIntensity			  = g_fontBitmaps[charIndex][y][x];
-				USIZE framebufferIndex		  = (positionY + y) * g_bootInfo.framebufferWidth + (positionX + x);
+				U8 pixelIntensity			  = FONT_BITMAPS[charIndex][y][x];
+				USIZE framebufferIndex		  = ((positionY + y) * g_bootInfo.FramebufferWidth) + (positionX + x);
 				framebuffer[framebufferIndex] = (pixelIntensity << 16) | (pixelIntensity << 8) | pixelIntensity;
 			}
 		}
@@ -113,9 +113,9 @@ namespace SaturnKernel
 		USIZE cursorPositionY = 0;
 		// The bootloader will refuse to boot the system if there is no viable framebuffer to use, so a framebuffer is guaranteed to be
 		// present.
-		U32* framebuffer = reinterpret_cast<U32*>(g_bootInfo.framebufferAddress);
+		U32* framebuffer = reinterpret_cast<U32*>(g_bootInfo.FramebufferAddress);
 
-		MemoryFill(framebuffer, 0, g_bootInfo.framebufferSize);
+		MemoryFill(framebuffer, 0, g_bootInfo.FramebufferSize);
 		// We don't know if the COM1 serial output device has been initialized in any way, so we initialize it here ourselves
 		PanicReinitializeSerialConsole();
 

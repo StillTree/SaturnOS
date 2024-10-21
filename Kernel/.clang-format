@@ -39,8 +39,6 @@ EmptyLineBeforeAccessModifier: LogicalBlock
 
 IndentPPDirectives: BeforeHash
 
-InsertNewlineAtEOF: true
-
 AccessModifierOffset: -4
 
 SpacesInLineCommentPrefix:
@@ -64,6 +62,11 @@ AlignConsecutiveAssignments:
 
 BraceWrapping:
   BeforeWhile: true
+  AfterUnion: true
+
+BreakTemplateDeclarations: No
+
+BreakConstructorInitializers: BeforeColon
+PackConstructorInitializers: Never
 
 SpaceBeforeParens: Never
-

@@ -22,7 +22,7 @@ namespace SaturnKernel
 		}
 	}
 
-	I32 MemoryCompare(const void* ptr1, const void* ptr2, USIZE size)
+	auto MemoryCompare(const void* ptr1, const void* ptr2, USIZE size) -> I32
 	{
 		const U8* a = static_cast<const U8*>(ptr1);
 		const U8* b = static_cast<const U8*>(ptr2);
@@ -31,14 +31,15 @@ namespace SaturnKernel
 		{
 			if(a[i] < b[i])
 				return -1;
-			else if(a[i] > b[i])
+
+			if(a[i] > b[i])
 				return 1;
 		}
 
 		return 0;
 	}
 
-	U64 PhysFrameContainingAddress(U64 address)
+	auto PhysFrameContainingAddress(U64 address) -> U64
 	{
 		// As simple as it gets...
 		return address & ~0xfff;

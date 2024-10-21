@@ -41,11 +41,12 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 
 	SaturnKernel::EnableInterrupts();
 
-	__asm__ volatile("int3");
-
+	SK_LOG_INFO("Initializing the frame allocator");
 	g_frameAllocator.Init(
-		reinterpret_cast<SaturnKernel::MemoryMapEntry*>(SaturnKernel::g_bootInfo.memoryMapAddress),
-		SaturnKernel::g_bootInfo.memoryMapEntries);
+		reinterpret_cast<SaturnKernel::MemoryMapEntry*>(SaturnKernel::g_bootInfo.MemoryMapAddress),
+		SaturnKernel::g_bootInfo.MemoryMapEntries);
+
+	__asm__ volatile("int3");
 
 	while(true)
 		__asm__("hlt");

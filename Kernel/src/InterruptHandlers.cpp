@@ -20,7 +20,7 @@ namespace SaturnKernel
 		SK_LOG_ERROR("}");
 	}
 
-	__attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, U64)
+	__attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, U64 /*unused*/)
 	{
 		SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: DOUBLE FAULT, InterruptFrame");
 		SK_LOG_ERROR("{");
@@ -36,10 +36,10 @@ namespace SaturnKernel
 
 	__attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, U64 errorCode)
 	{
-		U64 faultVirtualAddress;
+		U64 faultVirtualAddress = -1;
 		__asm__ volatile("mov %%cr2, %0" : "=r"(faultVirtualAddress));
 
-		U64 pml4Address;
+		U64 pml4Address = -1;
 		__asm__ volatile("mov %%cr3, %0" : "=r"(pml4Address));
 
 		// TODO: Using the errorCode figure the rest of this shit out
@@ -60,14 +60,14 @@ namespace SaturnKernel
 		Hang();
 	}
 
-	__attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame*)
+	__attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /*unused*/)
 	{
-		U8 scanCode = InputU8(0x60);
+		U8 scanCode	 = InputU8(0x60);
 		I8 character = TranslateScanCode(scanCode);
 		if(character != '?')
 		{
-			g_mainLogger.framebuffer.WriteChar(character);
-			g_mainLogger.serialConsole.WriteChar(character);
+			g_mainLogger.Framebuffer.WriteChar(character);
+			g_mainLogger.SerialConsole.WriteChar(character);
 		}
 
 		EOISignal(33);
