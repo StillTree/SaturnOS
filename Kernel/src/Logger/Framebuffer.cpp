@@ -6,7 +6,7 @@ namespace SaturnKernel
 {
 	extern const U8 FONT_BITMAPS[96][20][10];
 
-	void FramebufferLogger::WriteChar(U8 character)
+	auto FramebufferLogger::WriteChar(U8 character) -> void
 	{
 		USIZE charIndex = character > 126 ? 95 : character - 32;
 
@@ -59,7 +59,7 @@ namespace SaturnKernel
 		CursorPositionX += 9;
 	}
 
-	void FramebufferLogger::WriteString(const I8* string)
+	auto FramebufferLogger::WriteString(const I8* string) -> void
 	{
 		USIZE i = 0;
 		while(string[i])
@@ -68,14 +68,14 @@ namespace SaturnKernel
 		}
 	}
 
-	void FramebufferLogger::ShiftLine()
+	auto FramebufferLogger::ShiftLine() -> void
 	{
 		MemoryCopy(Framebuffer + (20 * Width), Framebuffer, CursorPositionY * Width * 4);
 		CursorPositionX = 0;
 		MemoryFill(Framebuffer + (CursorPositionY * Width), 0, 20 * Width * 4);
 	}
 
-	void FramebufferLogger::Clear()
+	auto FramebufferLogger::Clear() -> void
 	{
 		MemoryFill(Framebuffer, 0, FramebufferSize);
 

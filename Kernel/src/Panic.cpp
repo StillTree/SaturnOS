@@ -8,13 +8,13 @@ namespace SaturnKernel
 {
 	extern const U8 FONT_BITMAPS[96][20][10];
 
-	void Hang()
+	auto Hang() -> void
 	{
 		while(true)
 			__asm__ volatile("cli; hlt");
 	}
 
-	static void PanicFramebufferWriteChar(U8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY)
+	static auto PanicFramebufferWriteChar(U8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
 	{
 		USIZE charIndex = character > 126 ? 95 : character - 32;
 
@@ -22,7 +22,7 @@ namespace SaturnKernel
 		{
 			if(positionY + 40 >= g_bootInfo.FramebufferHeight)
 			{
-				MemoryFill(reinterpret_cast<void*>(g_bootInfo.MemoryMapAddress), 0, g_bootInfo.FramebufferSize);
+				MemoryFill(g_bootInfo.MemoryMap, 0, g_bootInfo.FramebufferSize);
 				return;
 			}
 
@@ -55,7 +55,7 @@ namespace SaturnKernel
 		positionX += 9;
 	}
 
-	static void PanicReinitializeSerialConsole()
+	static auto PanicReinitializeSerialConsole() -> void
 	{
 		OutputU8(0x3f8 + 1, 0x00);
 		OutputU8(0x3f8 + 3, 0x80);
@@ -80,7 +80,7 @@ namespace SaturnKernel
 		OutputU8(0x3f8 + 4, 0x0f);
 	}
 
-	static void PanicSerialWriteChar(U8 character)
+	static auto PanicSerialWriteChar(U8 character) -> void
 	{
 		if(character > 126)
 		{
@@ -90,7 +90,7 @@ namespace SaturnKernel
 		OutputU8(0x3f8, character);
 	}
 
-	static void PanicWriteString(const I8* string, U32* framebuffer, USIZE& positionX, USIZE& positionY)
+	static auto PanicWriteString(const I8* string, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
 	{
 		USIZE i = 0;
 		while(string[i])
@@ -101,19 +101,19 @@ namespace SaturnKernel
 		}
 	}
 
-	static void PanicWriteChar(I8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY)
+	static auto PanicWriteChar(I8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
 	{
 		PanicSerialWriteChar(character);
 		PanicFramebufferWriteChar(character, framebuffer, positionX, positionY);
 	}
 
-	void Panic(const I8* message, const I8* fileName, USIZE lineNumber)
+	auto Panic(const I8* message, const I8* fileName, USIZE lineNumber) -> void
 	{
 		USIZE cursorPositionX = 0;
 		USIZE cursorPositionY = 0;
 		// The bootloader will refuse to boot the system if there is no viable framebuffer to use, so a framebuffer is guaranteed to be
 		// present.
-		U32* framebuffer = reinterpret_cast<U32*>(g_bootInfo.FramebufferAddress);
+		U32* framebuffer = g_bootInfo.Framebuffer;
 
 		MemoryFill(framebuffer, 0, g_bootInfo.FramebufferSize);
 		// We don't know if the COM1 serial output device has been initialized in any way, so we initialize it here ourselves

@@ -1,10 +1,12 @@
 #include "Core.hpp"
 
+#include "Result.hpp"
+
 namespace SaturnKernel
 {
 	struct SequentialFrameAllocator
 	{
-		void Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries);
+		auto Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>;
 
 		auto AllocateFrame() -> U64;
 

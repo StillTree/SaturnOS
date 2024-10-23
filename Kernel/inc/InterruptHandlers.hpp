@@ -13,11 +13,11 @@ namespace SaturnKernel
 		U64 SegmentSelector;
 	};
 
-	__attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame);
+	__attribute__((interrupt)) auto BreakpointInterruptHandler(InterruptFrame* frame) -> void;
 	[[noreturn]]
-	__attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, U64);
+	__attribute__((interrupt)) auto DoubleFaultInterruptHandler(InterruptFrame* frame, U64) -> void;
 	[[noreturn]]
-	__attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, U64 errorCode);
+	__attribute__((interrupt)) auto PageFaultInterruptHandler(InterruptFrame* frame, U64 errorCode) -> void;
 
-	__attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame*);
+	__attribute__((interrupt)) auto KeyboardInterruptHandler(InterruptFrame*) -> void;
 }

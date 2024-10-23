@@ -1,14 +1,15 @@
 #pragma once
 
 #include "Core.hpp"
+#include "Result.hpp"
 
 namespace SaturnKernel
 {
 	struct SerialConsoleLogger
 	{
-		void Init(U16 port);
-		void WriteChar(U8 character) const;
-		void WriteString(const I8* string) const;
+		auto Init(U16 port) -> Result<void>;
+		auto WriteChar(U8 character) const -> void;
+		auto WriteString(const I8* string) const -> void;
 
 		U16 Port;
 	};

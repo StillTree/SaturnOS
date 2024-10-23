@@ -2,7 +2,7 @@
 
 namespace SaturnKernel
 {
-	void MemoryFill(void* ptr, U8 value, USIZE size)
+	auto MemoryFill(void* ptr, U8 value, USIZE size) -> void
 	{
 		U8* p = static_cast<U8*>(ptr);
 		while(size > 0)
@@ -11,7 +11,7 @@ namespace SaturnKernel
 		}
 	}
 
-	void MemoryCopy(void* ptr1, void* ptr2, USIZE size)
+	auto MemoryCopy(void* ptr1, void* ptr2, USIZE size) -> void
 	{
 		U8* src	 = static_cast<U8*>(ptr1);
 		U8* dest = static_cast<U8*>(ptr2);

@@ -4,7 +4,7 @@
 
 namespace SaturnKernel
 {
-	void EOISignal(U8 interruptVector)
+	auto EOISignal(U8 interruptVector) -> void
 	{
 		if(interruptVector - PIC_OFFSET >= 8)
 			OutputU8(PIC_SLAVE_COMMAND, PIC_EOI_SIGNAL);
@@ -12,13 +12,13 @@ namespace SaturnKernel
 		OutputU8(PIC_MASTER_COMMAND, PIC_EOI_SIGNAL);
 	}
 
-	void SetIRQMask(IRQMask mask)
+	auto static SetIRQMask(IRQMask mask) -> void
 	{
 		OutputU8(PIC_MASTER_DATA, ~static_cast<U16>(mask));
 		OutputU8(PIC_SLAVE_DATA, ~(static_cast<U16>(mask) >> 8));
 	}
 
-	void ReinitializePIC()
+	auto ReinitializePIC() -> void
 	{
 		// Start the initialization process
 		OutputU8(PIC_MASTER_COMMAND, 0x11);

@@ -1,4 +1,5 @@
 #include "Logger.hpp"
+
 #include "Format.hpp"
 #include <stdarg.h>
 
@@ -6,36 +7,41 @@ namespace SaturnKernel
 {
 	Logger g_mainLogger;
 
-	void Logger::Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort)
+	auto Logger::Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort) -> void
 	{
 		this->FramebufferEnabled   = framebufferEnabled;
 		this->SerialConsoleEnabled = serialConsoleEnabled;
 
 		if(framebufferEnabled)
 		{
-			Framebuffer = { .Framebuffer	 = reinterpret_cast<U32*>(bootInfo.FramebufferAddress),
+			Framebuffer = { .Framebuffer	 = bootInfo.Framebuffer,
 							.FramebufferSize = bootInfo.FramebufferSize,
 							.Width			 = bootInfo.FramebufferWidth,
 							.Height			 = bootInfo.FramebufferHeight,
 							.CursorPositionX = 0,
 							.CursorPositionY = 0 };
+
+			Framebuffer.Clear();
 		}
 
 		if(serialConsoleEnabled)
 		{
-			SerialConsole.Init(serialConsolePort);
+			auto result = SerialConsole.Init(serialConsolePort);
+			if(result.IsError())
+			{
+				SK_LOG_WARN("The serial output device at port 0x3f8 is not functioning correctly");
+				SerialConsoleEnabled = false;
+			}
 		}
-
-		Framebuffer.Clear();
 	}
 
-	void Logger::Log(LogLevel logLevel, const I8* format, ...)
+	auto Logger::Log(LogLevel logLevel, const I8* format, ...) -> void
 	{
 		if(FramebufferEnabled)
 		{
 			switch(logLevel)
 			{
-			using enum LogLevel;
+				using enum LogLevel;
 			case Debug:
 				Framebuffer.WriteString("[DEBUG]: ");
 				break;
@@ -55,7 +61,7 @@ namespace SaturnKernel
 		{
 			switch(logLevel)
 			{
-			using enum LogLevel;
+				using enum LogLevel;
 			case Debug:
 				SerialConsole.WriteString("[DEBUG]: ");
 				break;

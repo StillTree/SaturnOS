@@ -21,18 +21,17 @@ namespace SaturnKernel
 		U64 Address;
 	};
 
-	void LoadIDT(void* address);
-	void SetIDTEntry(U8 vector, U64 handler);
-	void InitIDT();
+	auto SetIDTEntry(U8 vector, U64 handler) -> void;
+	auto InitIDT() -> void;
 
 	/// Executes the `sti` instruction.
-	inline void EnableInterrupts()
+	inline auto EnableInterrupts() -> void
 	{
 		__asm__ volatile("sti");
 	}
 
 	/// Executes the `cli` instruction.
-	inline void DisableInterrupts()
+	inline auto DisableInterrupts() -> void
 	{
 		__asm__ volatile("cli");
 	}

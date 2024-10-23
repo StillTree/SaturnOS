@@ -26,13 +26,13 @@ namespace SaturnKernel
 		return 0xffffffffffffffff;
 	}
 
-	void SequentialFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries)
+	auto SequentialFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>
 	{
 		// The memory map will only contain usable entries so we can just set the physical starting address as the last allocated frame
 		if(memoryMapEntries < 1)
 		{
 			SK_LOG_ERROR("There are no usable memory map entries to allocate frames from");
-			return;
+			return Result<void>::MakeErr(ErrorCode::NotEnoughMemoryPages);
 		}
 
 		m_memoryMap			= memoryMap;
@@ -42,6 +42,8 @@ namespace SaturnKernel
 		// TODO: Check if its a NULL-descritptor and only then ignore it
 		m_memoryMapEntries = memoryMapEntries - 1;
 		m_lastFrame		   = memoryMap[0].PhysicalStart - 4096;
+
+		return Result<void>::MakeOk();
 	}
 
 	/// A helper function that allocates the next free frame from the current descriptor,

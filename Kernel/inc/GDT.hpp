@@ -53,7 +53,7 @@ namespace SaturnKernel
 		U16 IOPermissionBitMap;
 	};
 
-	void InitGDT();
+	auto InitGDT() -> void;
 }
 
 extern "C" void FlushGDT();

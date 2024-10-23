@@ -22,8 +22,8 @@ namespace SaturnKernel
 		bool FramebufferEnabled;
 		bool SerialConsoleEnabled;
 
-		void Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort);
-		void Log(LogLevel logLevel, const I8* format, ...);
+		auto Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort) -> void;
+		auto Log(LogLevel logLevel, const I8* format, ...) -> void;
 	};
 
 	extern Logger g_mainLogger;

@@ -18,7 +18,7 @@ namespace SaturnKernel
 		return length;
 	}
 
-	void NumberToHexString(U64 number, I8* buffer)
+	auto NumberToHexString(U64 number, I8* buffer) -> void
 	{
 		buffer[0] = '0';
 		buffer[1] = 'x';
@@ -54,7 +54,7 @@ namespace SaturnKernel
 		return length;
 	}
 
-	void NumberToDecimalString(U64 number, I8* buffer)
+	auto NumberToDecimalString(U64 number, I8* buffer) -> void
 	{
 		if(number == 0)
 		{

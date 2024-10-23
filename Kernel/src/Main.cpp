@@ -15,11 +15,13 @@ SaturnKernel::KernelBootInfo SaturnKernel::g_bootInfo	= {};
 SaturnKernel::SequentialFrameAllocator g_frameAllocator = {};
 
 /// C linking so the linker and the bootloader don't absolutely shit themselves
-extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
+extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 {
 	// Copy the structure provided by the bootloader right at the beginning, so every part of the code can safely access it.
 	SaturnKernel::g_bootInfo = *bootInfo;
 
+	// There is a guarantee that the bootloader will set up the framebuffer,
+	// so this function doesn't throw but just warns when the serial output device is not available.
 	SaturnKernel::g_mainLogger.Init(true, true, SaturnKernel::g_bootInfo, 0x3f8);
 
 	SK_LOG_INFO("Initializing the SaturnOS Kernel\n");
@@ -41,12 +43,16 @@ extern "C" void KernelMain(SaturnKernel::KernelBootInfo* bootInfo)
 
 	SaturnKernel::EnableInterrupts();
 
-	SK_LOG_INFO("Initializing the frame allocator");
-	g_frameAllocator.Init(
-		reinterpret_cast<SaturnKernel::MemoryMapEntry*>(SaturnKernel::g_bootInfo.MemoryMapAddress),
+	SK_LOG_INFO("Initializing the sequential frame allocator");
+	auto result = g_frameAllocator.Init(
+		static_cast<SaturnKernel::MemoryMapEntry*>(SaturnKernel::g_bootInfo.MemoryMap),
 		SaturnKernel::g_bootInfo.MemoryMapEntries);
+	if(result.IsError())
+	{
+		SK_LOG_ERROR("Could not initialize the frame allocator");
+	}
 
-	__asm__ volatile("int3");
+	// __asm__ volatile("int3");
 
 	while(true)
 		__asm__("hlt");

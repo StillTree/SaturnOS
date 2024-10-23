@@ -6,7 +6,7 @@ namespace SaturnKernel
 {
 	IDTEntry g_idt[256];
 
-	void SetIDTEntry(U8 vector, U64 handlerFn, U8 flags, U8 istNumber)
+	auto SetIDTEntry(U8 vector, U64 handlerFn, U8 flags, U8 istNumber) -> void
 	{
 		IDTEntry& entry	  = g_idt[vector];
 		entry.AddressLow  = handlerFn;
@@ -18,7 +18,7 @@ namespace SaturnKernel
 		entry.Reserved	  = 0;
 	}
 
-	void InitIDT()
+	auto InitIDT() -> void
 	{
 		// TODO: The rest of exception handlers
 		SetIDTEntry(3, reinterpret_cast<U64>(BreakpointInterruptHandler), 0x8e, 0);

@@ -35,7 +35,7 @@ namespace SaturnKernel
 		return entry;
 	}
 
-	void InitGDT()
+	auto InitGDT() -> void
 	{
 		g_tss.Reserved1			 = 0;
 		g_tss.Reserved2			 = 0;

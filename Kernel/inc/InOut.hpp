@@ -4,7 +4,7 @@
 
 namespace SaturnKernel
 {
-	void OutputU8(U16 port, U8 value);
+	auto OutputU8(U16 port, U8 value) -> void;
 	auto InputU8(U16 port) -> U8;
-	void IOWait();
+	auto IOWait() -> void;
 }

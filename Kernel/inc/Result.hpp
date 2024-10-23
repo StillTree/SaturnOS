@@ -1,10 +1,14 @@
+#pragma once
+
 #include "Core.hpp"
 
 namespace SaturnKernel
 {
 	enum class ErrorCode : U8
 	{
-		Success
+		Success = 0,
+		NotEnoughMemoryPages,
+		SerialOutputUnavailabe,
 	};
 
 	struct OkType
@@ -32,7 +36,7 @@ namespace SaturnKernel
 		template <typename... Args> static auto MakeOk(Args&&... args) -> Result<T>;
 		static auto MakeErr(ErrorCode e) -> Result<T>;
 
-		[[nodiscard]] auto IsOk() const noexcept -> bool;
+		[[nodiscard]] auto IsError() const noexcept -> bool;
 
 	private:
 		/// Constructor for success case, moves.
@@ -59,14 +63,16 @@ namespace SaturnKernel
 		Result(const Result<void>& other)					 = delete;
 		auto operator=(const Result<void>& other) -> Result& = delete;
 
-		Result(Result<void>&& other) noexcept;
-		auto operator=(Result<void>&& other) noexcept -> Result&;
+		Result(Result<void>&& other) noexcept = default;
+		auto operator=(Result<void>&& other) noexcept -> Result& = default;
+
+		~Result() = default;
 
 		static auto MakeOk() -> Result<void>;
 
-		static auto MakeError(ErrorCode e) -> Result<void>;
+		static auto MakeErr(ErrorCode e) -> Result<void>;
 
-		[[nodiscard]] auto IsOk() const noexcept -> bool;
+		[[nodiscard]] auto IsError() const noexcept -> bool;
 
 	private:
 		/// Constructor for success case.

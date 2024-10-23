@@ -4,7 +4,7 @@
 
 namespace SaturnKernel
 {
-	void SerialConsoleLogger::Init(U16 port)
+	auto SerialConsoleLogger::Init(U16 port) -> Result<void>
 	{
 		this->Port = port;
 
@@ -24,15 +24,16 @@ namespace SaturnKernel
 		// the device is not functioning corretly and should not be used
 		if(InputU8(this->Port + 0) != 0xae)
 		{
-			// TODO: Some sort of error handling through return types
-			return;
+			return Result<void>::MakeErr(ErrorCode::SerialOutputUnavailabe);
 		}
 
 		// If it is functioning correctly we set it in normal operation mode
 		OutputU8(this->Port + 4, 0x0f);
+
+		return Result<void>::MakeOk();
 	}
 
-	void SerialConsoleLogger::WriteChar(U8 character) const
+	auto SerialConsoleLogger::WriteChar(U8 character) const -> void
 	{
 		if(character > 126)
 		{
@@ -42,7 +43,7 @@ namespace SaturnKernel
 		OutputU8(this->Port, character);
 	}
 
-	void SerialConsoleLogger::WriteString(const I8* string) const
+	auto SerialConsoleLogger::WriteString(const I8* string) const -> void
 	{
 		USIZE i = 0;
 		while(string[i])

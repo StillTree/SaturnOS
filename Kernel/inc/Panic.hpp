@@ -6,10 +6,10 @@ namespace SaturnKernel
 {
 	/// Hangs the kernel process, disabling interrupts and using the `hlt` assembly instruction.
 	[[noreturn]]
-	void Hang();
+	auto Hang() -> void;
 	/// A helper function. Use the `PANIC` macro instead.
 	[[noreturn]]
-	void Panic(const I8* message, const I8* fileName, USIZE lineNumber);
+	auto Panic(const I8* message, const I8* fileName, USIZE lineNumber) -> void;
 }
 
 /// Kernel panics, halting the whole system and printing the provided message.

@@ -6,10 +6,10 @@ namespace SaturnKernel
 {
 	struct FramebufferLogger
 	{
-		void WriteChar(U8 character);
-		void WriteString(const I8* string);
-		void ShiftLine();
-		void Clear();
+		auto WriteChar(U8 character) -> void;
+		auto WriteString(const I8* string) -> void;
+		auto ShiftLine() -> void;
+		auto Clear() -> void;
 
 		U32* Framebuffer;
 		U64 FramebufferSize;

@@ -26,6 +26,6 @@ namespace SaturnKernel
 		return static_cast<IRQMask>(static_cast<U16>(a) | static_cast<U16>(b));
 	}
 
-	void EOISignal(U8 interruptVector);
-	void ReinitializePIC();
+	auto EOISignal(U8 interruptVector) -> void;
+	auto ReinitializePIC() -> void;
 }

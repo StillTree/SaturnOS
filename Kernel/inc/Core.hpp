@@ -30,11 +30,11 @@ namespace SaturnKernel
 	/// Boot information passed to the kernel by the bootloader.
 	struct KernelBootInfo
 	{
-		U64 FramebufferAddress;
+		U32* Framebuffer;
 		U64 FramebufferSize;
 		U64 FramebufferWidth;
 		U64 FramebufferHeight;
-		U64 MemoryMapAddress;
+		void* MemoryMap;
 		U64 MemoryMapEntries;
 	};
 

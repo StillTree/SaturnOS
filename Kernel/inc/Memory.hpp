@@ -5,9 +5,9 @@
 namespace SaturnKernel
 {
 	/// C's memset but without a shitty name.
-	void MemoryFill(void* ptr, U8 value, USIZE size);
+	auto MemoryFill(void* ptr, U8 value, USIZE size) -> void;
 	/// C's memcpy but without a shitty name.
-	void MemoryCopy(void* ptr1, void* ptr2, USIZE size);
+	auto MemoryCopy(void* ptr1, void* ptr2, USIZE size) -> void;
 	/// C's memcmp but without a shitty name.
 	auto MemoryCompare(const void* ptr1, const void* ptr2, USIZE size) -> I32;
 

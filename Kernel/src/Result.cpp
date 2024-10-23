@@ -47,9 +47,9 @@ namespace SaturnKernel
 	{
 	}
 
-	template <typename T> [[nodiscard]] auto Result<T>::IsOk() const noexcept -> bool
+	template <typename T> [[nodiscard]] auto Result<T>::IsError() const noexcept -> bool
 	{
-		return m_isOk;
+		return !m_isOk;
 	}
 
 	template <typename T> Result<T>::~Result()
@@ -65,23 +65,9 @@ namespace SaturnKernel
 		return Result(OK);
 	}
 
-	auto Result<void>::MakeError(ErrorCode e) -> Result<void>
+	auto Result<void>::MakeErr(ErrorCode e) -> Result<void>
 	{
 		return Result(ERR, e);
-	}
-
-	Result<void>::Result(Result<void>&& other) noexcept
-		: Error(other.Error)
-	{
-		other.Error = ErrorCode::Success;
-	}
-
-	auto Result<void>::operator=(Result<void>&& other) noexcept -> Result&
-	{
-		Error = other.Error;
-		other.Error = ErrorCode::Success;
-
-		return *this;
 	}
 
 	Result<void>::Result(OkType /*unused*/)
@@ -94,8 +80,8 @@ namespace SaturnKernel
 	{
 	}
 
-	[[nodiscard]] auto Result<void>::IsOk() const noexcept -> bool
+	[[nodiscard]] auto Result<void>::IsError() const noexcept -> bool
 	{
-		return Error == ErrorCode::Success;
+		return Error != ErrorCode::Success;
 	}
 }
