@@ -5,6 +5,7 @@
 #include "Logger.hpp"
 #include "PIC.hpp"
 #include "Panic.hpp"
+#include "Memory/PageTable.hpp"
 
 namespace SaturnKernel
 {
@@ -39,8 +40,7 @@ namespace SaturnKernel
 		U64 faultVirtualAddress = -1;
 		__asm__ volatile("mov %%cr2, %0" : "=r"(faultVirtualAddress));
 
-		U64 pml4Address = -1;
-		__asm__ volatile("mov %%cr3, %0" : "=r"(pml4Address));
+		U64 pml4Address = PageTable4Address();
 
 		// TODO: Using the errorCode figure the rest of this shit out
 

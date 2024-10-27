@@ -5,6 +5,8 @@ Checks: |
   clang-analyzer-*,
   cppcoreguidelines-*,
   -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-avoid-do-while,
   misc-*,
   modernize-*,
   -modernize-avoid-c-arrays,

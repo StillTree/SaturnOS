@@ -1,29 +1,34 @@
-#include "FrameAllocator.hpp"
+#include "Memory/FrameAllocator.hpp"
 
 #include "Logger.hpp"
 #include "Memory.hpp"
+#include "Memory/Frame.hpp"
 
 namespace SaturnKernel
 {
-	static auto NextMapEntryFrame(const MemoryMapEntry& currentEntry, U64 lastFrame) -> U64
+	static auto NextMapEntryFrame(const MemoryMapEntry& currentEntry, const Frame<Size4KiB>& lastFrame) -> Result<Frame<Size4KiB>>
 	{
-		const U64 minFrame = PhysFrameContainingAddress(currentEntry.PhysicalStart);
-		const U64 maxFrame = PhysFrameContainingAddress(currentEntry.PhysicalEnd);
+		const Frame<Size4KiB> minFrame(currentEntry.PhysicalStart);
+		const Frame<Size4KiB> maxFrame(currentEntry.PhysicalEnd);
 
 		// If the last allocated frame is outside the bounds of the memory descriptor,
 		// we know that the first frame will be available so we return it.
 		if(lastFrame < minFrame)
-		{
-			return minFrame;
-		}
+			return Result<Frame<Size4KiB>>::MakeOk(minFrame);
 
 		// Check if there is one more frame to allocate, and if there is we use it.
 		if(lastFrame < maxFrame)
-		{
-			return lastFrame + 4096;
-		}
+			return Result<Frame<Size4KiB>>::MakeOk(lastFrame + 1);
 
-		return 0xffffffffffffffff;
+		return Result<Frame<Size4KiB>>::MakeErr(ErrorCode::NotEnoughMemoryPages);
+	}
+
+	SequentialFrameAllocator::SequentialFrameAllocator()
+		: m_lastFrame(0),
+		  m_memoryMap(nullptr),
+		  m_memoryMapEntries(0),
+		  m_currentEntryIndex(0)
+	{
 	}
 
 	auto SequentialFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>
@@ -41,50 +46,50 @@ namespace SaturnKernel
 		// NULL-descriptor
 		// TODO: Check if its a NULL-descritptor and only then ignore it
 		m_memoryMapEntries = memoryMapEntries - 1;
-		m_lastFrame		   = memoryMap[0].PhysicalStart - 4096;
+		m_lastFrame		   = Frame<Size4KiB>(memoryMap[0].PhysicalStart) - 1;
 
 		return Result<void>::MakeOk();
 	}
 
 	/// A helper function that allocates the next free frame from the current descriptor,
 	/// only if one's available, otherwise returns an error.
-	auto SequentialFrameAllocator::AllocateCurrentDescriptorFrame() -> U64
+	auto SequentialFrameAllocator::AllocateCurrentDescriptorFrame() -> Result<Frame<Size4KiB>>
 	{
-		U64 frame = NextMapEntryFrame(m_memoryMap[m_currentEntryIndex], m_lastFrame);
-		if(frame == 0xffffffffffffffff)
+		auto frame = NextMapEntryFrame(m_memoryMap[m_currentEntryIndex], m_lastFrame);
+		if(frame.IsError())
 			return frame;
 
 		// Because the available frame is being consumed we deem it as the previous, used one.
-		m_lastFrame = frame;
+		m_lastFrame = frame.Value;
 
 		return frame;
 	}
 
-	auto SequentialFrameAllocator::AllocateFrame() -> U64
+	auto SequentialFrameAllocator::AllocateFrame() -> Result<Frame<Size4KiB>>
 	{
 		// If there is an available frame within the current descriptor's bounds, return it.
-		U64 frame = AllocateCurrentDescriptorFrame();
-		if(frame != 0xffffffffffffffff)
+		auto frame = AllocateCurrentDescriptorFrame();
+		if(!frame.IsError())
 			return frame;
 
 		// If we are on the last descriptor we ran out of memory... Nice.
 		if(m_currentEntryIndex + 1 >= m_memoryMapEntries)
-			return 0xffffffffffffffff;
+			return Result<Frame<Size4KiB>>::MakeErr(ErrorCode::OutOfMemory);
 
 		// And if not, we need to find the next available memory descriptor.
 		// If its "usable", allocate the first available frame from it.
 		for(USIZE i = m_currentEntryIndex + 1; i < m_memoryMapEntries; i++)
 		{
 			frame = NextMapEntryFrame(m_memoryMap[i], m_lastFrame);
-			if(frame != 0xffffffffffffffff)
+			if(!frame.IsError())
 			{
 				m_currentEntryIndex = i;
-				m_lastFrame			= frame;
+				m_lastFrame			= frame.Value;
 
 				return frame;
 			}
 		}
 
-		return 0xffffffffffffffff;
+		return Result<Frame<Size4KiB>>::MakeErr(ErrorCode::OutOfMemory);
 	}
 }

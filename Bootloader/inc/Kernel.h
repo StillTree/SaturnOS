@@ -13,6 +13,7 @@ typedef struct KernelBootInfo
 	UINTN framebufferHeight;
 	EFI_VIRTUAL_ADDRESS memoryMapAddress;
 	UINTN memoryMapEntries;
+	UINTN physicalMemoryOffset;
 } KernelBootInfo;
 
 /// Loads the kernel ELF64 executable into memory and maps it to the provided P4 table.

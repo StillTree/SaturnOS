@@ -9,6 +9,7 @@ namespace SaturnKernel
 		Success = 0,
 		NotEnoughMemoryPages,
 		SerialOutputUnavailabe,
+		OutOfMemory,
 	};
 
 	struct OkType
@@ -28,21 +29,64 @@ namespace SaturnKernel
 		Result(const Result<T>& other)					  = delete;
 		auto operator=(const Result<T>& other) -> Result& = delete;
 
-		Result(Result<T>&& other) noexcept;
-		auto operator=(Result<T>&& other) noexcept -> Result&;
+		Result(Result<T>&& other) noexcept
+			: m_isOk(other.m_isOk)
+		{
+			if(other.m_isOk)
+				Value = T(Move(other.Value));
+			else
+				Error = other.Error;
+		}
 
-		~Result();
+		auto operator=(Result<T>&& other) noexcept -> Result&
+		{
+			if(m_isOk)
+				Value.~T();
 
-		template <typename... Args> static auto MakeOk(Args&&... args) -> Result<T>;
-		static auto MakeErr(ErrorCode e) -> Result<T>;
+			m_isOk = other.m_isOk;
+			if(m_isOk)
+				Value = T(Move(other.Value));
+			else
+				Error = other.Error;
 
-		[[nodiscard]] auto IsError() const noexcept -> bool;
+			return *this;
+		}
+
+		~Result()
+		{
+			if(m_isOk)
+				Value.~T();
+		}
+
+		template <typename... Args> static auto MakeOk(Args&&... args) -> Result<T>
+		{
+			return Result(OK, T(Forward<Args>(args)...));
+		}
+
+		static auto MakeErr(ErrorCode e) -> Result<T>
+		{
+			return Result(ERR, e);
+		}
+
+		[[nodiscard]] auto IsError() const noexcept -> bool
+		{
+			return !m_isOk;
+		}
 
 	private:
 		/// Constructor for success case, moves.
-		explicit Result(OkType, T&& v);
+		Result(OkType /*unused*/, T&& v)
+			: Value(Move(v)),
+			  m_isOk(true)
+		{
+		}
+
 		/// Constructor for error case.
-		explicit Result(ErrType, ErrorCode e);
+		Result(ErrType /*unused*/, ErrorCode e)
+			: Error(e),
+			  m_isOk(false)
+		{
+		}
 
 	public:
 		union
@@ -63,22 +107,38 @@ namespace SaturnKernel
 		Result(const Result<void>& other)					 = delete;
 		auto operator=(const Result<void>& other) -> Result& = delete;
 
-		Result(Result<void>&& other) noexcept = default;
+		Result(Result<void>&& other) noexcept					 = default;
 		auto operator=(Result<void>&& other) noexcept -> Result& = default;
 
 		~Result() = default;
 
-		static auto MakeOk() -> Result<void>;
+		static auto MakeOk() -> Result<void>
+		{
+			return Result(OK);
+		}
 
-		static auto MakeErr(ErrorCode e) -> Result<void>;
+		static auto MakeErr(ErrorCode e) -> Result<void>
+		{
+			return { ERR, e };
+		}
 
-		[[nodiscard]] auto IsError() const noexcept -> bool;
+		[[nodiscard]] auto IsError() const noexcept -> bool
+		{
+			return Error != ErrorCode::Success;
+		}
 
 	private:
 		/// Constructor for success case.
-		explicit Result(OkType);
+		explicit Result(OkType /*unused*/)
+			: Error(ErrorCode::Success)
+		{
+		}
+
 		/// Constructor for error case.
-		explicit Result(ErrType, ErrorCode e);
+		Result(ErrType /*unused*/, ErrorCode e)
+			: Error(e)
+		{
+		}
 
 	public:
 		ErrorCode Error;

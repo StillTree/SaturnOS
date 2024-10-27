@@ -36,6 +36,7 @@ namespace SaturnKernel
 		U64 FramebufferHeight;
 		void* MemoryMap;
 		U64 MemoryMapEntries;
+		U64 PhysicalMemoryOffset;
 	};
 
 	/// Globally accessible boot information.

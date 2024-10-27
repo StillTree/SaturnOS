@@ -1,9 +1,9 @@
 #include "Core.hpp"
 
-#include "FrameAllocator.hpp"
 #include "GDT.hpp"
 #include "IDT.hpp"
 #include "Logger.hpp"
+#include "Memory/FrameAllocator.hpp"
 #include "PIC.hpp"
 
 #ifndef __x86_64__
@@ -51,6 +51,8 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	{
 		SK_LOG_ERROR("Could not initialize the frame allocator");
 	}
+
+	SK_LOG_DEBUG("Mapped Physical memory offset: {}", SaturnKernel::g_bootInfo.PhysicalMemoryOffset);
 
 	// __asm__ volatile("int3");
 
