@@ -73,6 +73,11 @@ namespace SaturnKernel
 			return !m_isOk;
 		}
 
+		[[nodiscard]] auto IsOk() const noexcept -> bool
+		{
+			return m_isOk;
+		}
+
 	private:
 		/// Constructor for success case, moves.
 		Result(OkType /*unused*/, T&& v)
@@ -125,6 +130,11 @@ namespace SaturnKernel
 		[[nodiscard]] auto IsError() const noexcept -> bool
 		{
 			return Error != ErrorCode::Success;
+		}
+
+		[[nodiscard]] auto IsOk() const noexcept -> bool
+		{
+			return Error == ErrorCode::Success;
 		}
 
 	private:

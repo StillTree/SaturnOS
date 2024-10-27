@@ -69,7 +69,7 @@ namespace SaturnKernel
 	{
 		// If there is an available frame within the current descriptor's bounds, return it.
 		auto frame = AllocateCurrentDescriptorFrame();
-		if(!frame.IsError())
+		if(frame.IsOk())
 			return frame;
 
 		// If we are on the last descriptor we ran out of memory... Nice.
@@ -81,7 +81,7 @@ namespace SaturnKernel
 		for(USIZE i = m_currentEntryIndex + 1; i < m_memoryMapEntries; i++)
 		{
 			frame = NextMapEntryFrame(m_memoryMap[i], m_lastFrame);
-			if(!frame.IsError())
+			if(frame.IsOk())
 			{
 				m_currentEntryIndex = i;
 				m_lastFrame			= frame.Value;
