@@ -5,22 +5,22 @@
 #include "Memory/Frame.hpp"
 #include "Result.hpp"
 
-namespace SaturnKernel
-{
-	struct SequentialFrameAllocator
-	{
-		SequentialFrameAllocator();
+namespace SaturnKernel {
 
-		auto Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>;
+struct SequentialFrameAllocator {
+	SequentialFrameAllocator();
 
-		auto AllocateFrame() -> Result<Frame<Size4KiB>>;
+	auto Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>;
 
-	private:
-		auto AllocateCurrentDescriptorFrame() -> Result<Frame<Size4KiB>>;
+	auto AllocateFrame() -> Result<Frame<Size4KiB>>;
 
-		Frame<Size4KiB> m_lastFrame;
-		MemoryMapEntry* m_memoryMap;
-		USIZE m_memoryMapEntries;
-		USIZE m_currentEntryIndex;
-	};
+private:
+	auto AllocateCurrentDescriptorFrame() -> Result<Frame<Size4KiB>>;
+
+	Frame<Size4KiB> m_lastFrame;
+	MemoryMapEntry* m_memoryMap;
+	USIZE m_memoryMapEntries;
+	USIZE m_currentEntryIndex;
+};
+
 }

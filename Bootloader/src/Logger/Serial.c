@@ -1,9 +1,6 @@
 #include "Logger/Serial.h"
 
-static inline VOID OutputByte(UINT16 port, UINT8 value)
-{
-	__asm__ volatile("outb %b0, %w1" : : "a"(value), "Nd"(port) : "memory");
-}
+static inline VOID OutputByte(UINT16 port, UINT8 value) { __asm__ volatile("outb %b0, %w1" : : "a"(value), "Nd"(port) : "memory"); }
 
 static inline UINT8 InputByte(UINT16 port)
 {
@@ -33,8 +30,7 @@ EFI_STATUS InitSerialLogger(EFI_SYSTEM_TABLE* systemTable, SerialLoggerData* log
 
 	// If we didn't get back the exact same byte that we sent in loopback mode,
 	// the device is not functioning corretly and should not be used
-	if(InputByte(logger->port + 0) != 0xAE)
-	{
+	if (InputByte(logger->port + 0) != 0xAE) {
 		systemTable->ConOut->OutputString(systemTable->ConOut, L"The serial output device is not functioning correctly\r\n");
 
 		return EFI_DEVICE_ERROR;
@@ -50,8 +46,7 @@ EFI_STATUS InitSerialLogger(EFI_SYSTEM_TABLE* systemTable, SerialLoggerData* log
 
 VOID SerialLoggerWriteChar(SerialLoggerData* logger, CHAR16 character)
 {
-	if(character > 255)
-	{
+	if (character > 255) {
 		character = L'?';
 	}
 
@@ -61,8 +56,7 @@ VOID SerialLoggerWriteChar(SerialLoggerData* logger, CHAR16 character)
 VOID SerialLoggerWriteString(SerialLoggerData* logger, CHAR16* string)
 {
 	UINTN i = 0;
-	while(string[i])
-	{
+	while (string[i]) {
 		SerialLoggerWriteChar(logger, string[i++]);
 	}
 }

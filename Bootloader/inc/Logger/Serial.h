@@ -3,8 +3,7 @@
 #include "Uefi.h"
 
 /// Serial logger's "state".
-typedef struct SerialLoggerData
-{
+typedef struct SerialLoggerData {
 	UINT16 port;
 } SerialLoggerData;
 

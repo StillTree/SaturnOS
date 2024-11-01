@@ -5,8 +5,7 @@
 #include "UefiTypes.h"
 
 /// Wrapper state around the two logger outputs.
-typedef struct SupernovaLoggerData
-{
+typedef struct SupernovaLoggerData {
 	BOOLEAN logSerial;
 	SerialLoggerData serial;
 	BOOLEAN logFramebuffer;
@@ -14,13 +13,7 @@ typedef struct SupernovaLoggerData
 } SupernovaLoggerData;
 
 /// The log level.
-typedef enum SupernovaLogLevel
-{
-	LogDebug,
-	LogInfo,
-	LogWarn,
-	LogError
-} SupernovaLogLevel;
+typedef enum SupernovaLogLevel { LogDebug, LogInfo, LogWarn, LogError } SupernovaLogLevel;
 
 /// Initializes the logger outputs based on the provided BOOLEANs
 /// and initializes the wrapper logger state for later use.
@@ -33,6 +26,6 @@ VOID Log(SupernovaLoggerData* logger, SupernovaLogLevel level, CHAR16* message);
 extern SupernovaLoggerData g_mainLogger;
 
 #define SN_LOG_DEBUG(message) Log(&g_mainLogger, LogDebug, message)
-#define SN_LOG_INFO(message)  Log(&g_mainLogger, LogInfo, message)
-#define SN_LOG_WARN(message)  Log(&g_mainLogger, LogWarn, message)
+#define SN_LOG_INFO(message) Log(&g_mainLogger, LogInfo, message)
+#define SN_LOG_WARN(message) Log(&g_mainLogger, LogWarn, message)
 #define SN_LOG_ERROR(message) Log(&g_mainLogger, LogError, message)

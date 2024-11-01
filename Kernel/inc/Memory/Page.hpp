@@ -4,25 +4,25 @@
 
 #include "Memory.hpp"
 
-namespace SaturnKernel
-{
-	template <typename T> struct Page;
+namespace SaturnKernel {
 
-	/// Represents a 4 KiB virtual memory page.
-	template <> struct Page<Size4KiB>
-	{
-		/// Aligns down the given address to the lower `SIZE_BYTES` byte if it already isn't.
-		explicit Page(U64 address);
+template <typename T> struct Page;
 
-		/// Increments the page, to the next one.
-		auto operator++(int) -> Page;
-		/// Decrements the page, to the previous one.
-		auto operator--(int) -> Page;
+/// Represents a 4 KiB virtual memory page.
+template <> struct Page<Size4KiB> {
+	/// Aligns down the given address to the lower `SIZE_BYTES` byte if it already isn't.
+	explicit Page(U64 address);
 
-		/// The page's first address.
-		U64 Address;
+	/// Increments the page, to the next one.
+	auto operator++(int) -> Page;
+	/// Decrements the page, to the previous one.
+	auto operator--(int) -> Page;
 
-		/// The page's size in bytes.
-		static constexpr U64 SIZE_BYTES = 4096;
-	};
+	/// The page's first address.
+	U64 Address;
+
+	/// The page's size in bytes.
+	static constexpr U64 SIZE_BYTES = 4096;
+};
+
 }

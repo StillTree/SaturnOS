@@ -7,11 +7,11 @@
 #include "PIC.hpp"
 
 #ifndef __x86_64__
-	#error SaturnKernel requires the x86 64-bit architecture to run properly!
+#error SaturnKernel requires the x86 64-bit architecture to run properly!
 #endif
 
 // Initially empty.
-SaturnKernel::KernelBootInfo SaturnKernel::g_bootInfo	= {};
+SaturnKernel::KernelBootInfo SaturnKernel::g_bootInfo = {};
 SaturnKernel::SequentialFrameAllocator g_frameAllocator = {};
 
 /// C linking so the linker and the bootloader don't absolutely shit themselves
@@ -45,10 +45,8 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 
 	SK_LOG_INFO("Initializing the sequential frame allocator");
 	auto result = g_frameAllocator.Init(
-		static_cast<SaturnKernel::MemoryMapEntry*>(SaturnKernel::g_bootInfo.MemoryMap),
-		SaturnKernel::g_bootInfo.MemoryMapEntries);
-	if(result.IsError())
-	{
+		static_cast<SaturnKernel::MemoryMapEntry*>(SaturnKernel::g_bootInfo.MemoryMap), SaturnKernel::g_bootInfo.MemoryMapEntries);
+	if (result.IsError()) {
 		SK_LOG_ERROR("Could not initialize the frame allocator");
 	}
 
@@ -56,6 +54,6 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 
 	// __asm__ volatile("int3");
 
-	while(true)
+	while (true)
 		__asm__("hlt");
 }

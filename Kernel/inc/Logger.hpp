@@ -4,32 +4,26 @@
 #include "Logger/Framebuffer.hpp"
 #include "Logger/SerialConsole.hpp"
 
-namespace SaturnKernel
-{
-	enum class LogLevel : U8
-	{
-		Debug,
-		Info,
-		Warn,
-		Error
-	};
+namespace SaturnKernel {
 
-	struct Logger
-	{
-		FramebufferLogger Framebuffer;
-		SerialConsoleLogger SerialConsole;
+enum class LogLevel : U8 { Debug, Info, Warn, Error };
 
-		bool FramebufferEnabled;
-		bool SerialConsoleEnabled;
+struct Logger {
+	FramebufferLogger Framebuffer;
+	SerialConsoleLogger SerialConsole;
 
-		auto Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort) -> void;
-		auto Log(LogLevel logLevel, const I8* format, ...) -> void;
-	};
+	bool FramebufferEnabled;
+	bool SerialConsoleEnabled;
 
-	extern Logger g_mainLogger;
+	auto Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort) -> void;
+	auto Log(LogLevel logLevel, const I8* format, ...) -> void;
+};
+
+extern Logger g_mainLogger;
+
 }
 
 #define SK_LOG_DEBUG(...) SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Debug, __VA_ARGS__)
-#define SK_LOG_INFO(...)  SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Info, __VA_ARGS__)
-#define SK_LOG_WARN(...)  SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Warn, __VA_ARGS__)
+#define SK_LOG_INFO(...) SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Info, __VA_ARGS__)
+#define SK_LOG_WARN(...) SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Warn, __VA_ARGS__)
 #define SK_LOG_ERROR(...) SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Error, __VA_ARGS__)

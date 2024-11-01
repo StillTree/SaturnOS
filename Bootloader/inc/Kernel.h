@@ -5,8 +5,7 @@
 
 /// Necessary information for the kernel to properly boot.
 /// It's passed in the first argument of the kernel's main function.
-typedef struct KernelBootInfo
-{
+typedef struct KernelBootInfo {
 	EFI_VIRTUAL_ADDRESS framebufferAddress;
 	UINTN framebufferSize;
 	UINTN framebufferWidth;
@@ -21,7 +20,4 @@ typedef struct KernelBootInfo
 ///
 /// Note: The whole kernel file must already be in memory before calling this function.
 EFI_STATUS LoadKernel(
-	UINT8* loadedFile,
-	FrameAllocatorData* frameAllocator,
-	EFI_PHYSICAL_ADDRESS p4TableAddress,
-	EFI_VIRTUAL_ADDRESS* entryPoint);
+	UINT8* loadedFile, FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDRESS p4TableAddress, EFI_VIRTUAL_ADDRESS* entryPoint);

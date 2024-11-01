@@ -2,14 +2,15 @@
 
 #include "Core.hpp"
 
-namespace SaturnKernel
-{
-	auto NumberToHexStringLength(U64 number) -> USIZE;
-	void NumberToHexString(U64 number, I8* buffer);
+namespace SaturnKernel {
 
-	auto NumberToDecimalStringLength(U64 number) -> USIZE;
-	void NumberToDecimalString(U64 number, I8* buffer);
+auto NumberToHexStringLength(U64 number) -> USIZE;
+void NumberToHexString(U64 number, I8* buffer);
 
-	constexpr USIZE MAX_HEX_LENGTH	   = 16;
-	constexpr USIZE MAX_DECIMAL_LENGTH = 20;
+auto NumberToDecimalStringLength(U64 number) -> USIZE;
+void NumberToDecimalString(U64 number, I8* buffer);
+
+constexpr USIZE MAX_HEX_LENGTH = 16;
+constexpr USIZE MAX_DECIMAL_LENGTH = 20;
+
 }

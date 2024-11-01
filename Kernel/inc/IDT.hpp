@@ -2,39 +2,32 @@
 
 #include "Core.hpp"
 
-namespace SaturnKernel
-{
-	struct __attribute__((packed)) IDTEntry
-	{
-		U16 AddressLow;
-		U16 KernelCS;
-		U8 IST;
-		U8 Flags;
-		U16 AddressMid;
-		U32 AddressHigh;
-		U32 Reserved;
-	};
+namespace SaturnKernel {
 
-	struct __attribute__((packed)) IDTRegister
-	{
-		U16 Size;
-		U64 Address;
-	};
+struct __attribute__((packed)) IDTEntry {
+	U16 AddressLow;
+	U16 KernelCS;
+	U8 IST;
+	U8 Flags;
+	U16 AddressMid;
+	U32 AddressHigh;
+	U32 Reserved;
+};
 
-	auto SetIDTEntry(U8 vector, U64 handler) -> void;
-	auto InitIDT() -> void;
+struct __attribute__((packed)) IDTRegister {
+	U16 Size;
+	U64 Address;
+};
 
-	/// Executes the `sti` instruction.
-	inline auto EnableInterrupts() -> void
-	{
-		__asm__ volatile("sti");
-	}
+auto SetIDTEntry(U8 vector, U64 handler) -> void;
+auto InitIDT() -> void;
 
-	/// Executes the `cli` instruction.
-	inline auto DisableInterrupts() -> void
-	{
-		__asm__ volatile("cli");
-	}
+/// Executes the `sti` instruction.
+inline auto EnableInterrupts() -> void { __asm__ volatile("sti"); }
 
-	extern IDTEntry g_idt[256];
+/// Executes the `cli` instruction.
+inline auto DisableInterrupts() -> void { __asm__ volatile("cli"); }
+
+extern IDTEntry g_idt[256];
+
 }

@@ -9,34 +9,28 @@ EFI_STATUS InitFramebufferLogger(EFI_SYSTEM_TABLE* systemTable, FramebufferLogge
 	EFI_STATUS status = EFI_SUCCESS;
 
 	EFI_GRAPHICS_OUTPUT_PROTOCOL* graphicsOutputProtocol = NULL;
-	status = systemTable->BootServices->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID**) &graphicsOutputProtocol);
-	if(EFI_ERROR(status))
-	{
+	status = systemTable->BootServices->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID**)&graphicsOutputProtocol);
+	if (EFI_ERROR(status)) {
 		systemTable->ConOut->OutputString(
-			systemTable->ConOut,
-			L"An unexpected error occured while trying to open the Graphics Output Protocol");
+			systemTable->ConOut, L"An unexpected error occured while trying to open the Graphics Output Protocol");
 		return status;
 	}
 
-	INTN suitableModeIndex								   = -1;
+	INTN suitableModeIndex = -1;
 	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* suitableModeInfo = NULL;
-	for(UINTN i = 0; i < graphicsOutputProtocol->Mode->MaxMode; i++)
-	{
+	for (UINTN i = 0; i < graphicsOutputProtocol->Mode->MaxMode; i++) {
 		EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* info = NULL;
-		UINTN infoSize							   = 0;
-		status									   = graphicsOutputProtocol->QueryMode(graphicsOutputProtocol, i, &infoSize, &info);
-		if(EFI_ERROR(status))
-		{
+		UINTN infoSize = 0;
+		status = graphicsOutputProtocol->QueryMode(graphicsOutputProtocol, i, &infoSize, &info);
+		if (EFI_ERROR(status)) {
 			systemTable->ConOut->OutputString(
-				systemTable->ConOut,
-				L"An unexpected error occured while trying to query the Graphics Output Protocol mode information");
+				systemTable->ConOut, L"An unexpected error occured while trying to query the Graphics Output Protocol mode information");
 			return status;
 		}
 
-		if(info->HorizontalResolution >= 800 && info->VerticalResolution >= 600 &&
-		   (info->PixelFormat == PixelRedGreenBlueReserved8BitPerColor || info->PixelFormat == PixelBlueGreenRedReserved8BitPerColor))
-		{
-			suitableModeInfo  = info;
+		if (info->HorizontalResolution >= 800 && info->VerticalResolution >= 600
+			&& (info->PixelFormat == PixelRedGreenBlueReserved8BitPerColor || info->PixelFormat == PixelBlueGreenRedReserved8BitPerColor)) {
+			suitableModeInfo = info;
 			suitableModeIndex = i;
 			break;
 		}
@@ -45,25 +39,23 @@ EFI_STATUS InitFramebufferLogger(EFI_SYSTEM_TABLE* systemTable, FramebufferLogge
 	}
 
 	// If both of these checks aren't true something truly terrible went wrong 💀
-	if(!suitableModeInfo || suitableModeIndex == -1)
-	{
+	if (!suitableModeInfo || suitableModeIndex == -1) {
 		systemTable->ConOut->OutputString(systemTable->ConOut, L"Could not find any suitable 800x600 Graphics Output modes");
 		return EFI_UNSUPPORTED;
 	}
 
 	status = graphicsOutputProtocol->SetMode(graphicsOutputProtocol, suitableModeIndex);
-	if(EFI_ERROR(status))
-	{
+	if (EFI_ERROR(status)) {
 		systemTable->ConOut->OutputString(systemTable->ConOut, L"An unexpected error occured while trying to set a Graphics Output mode");
 		return status;
 	}
 
-	logger->framebuffer		= (UINT32*) graphicsOutputProtocol->Mode->FrameBufferBase;
+	logger->framebuffer = (UINT32*)graphicsOutputProtocol->Mode->FrameBufferBase;
 	logger->framebufferSize = graphicsOutputProtocol->Mode->FrameBufferSize;
 	logger->cursorPositionX = 0;
 	logger->cursorPositionY = 0;
-	logger->width			= graphicsOutputProtocol->Mode->Info->HorizontalResolution;
-	logger->height			= graphicsOutputProtocol->Mode->Info->VerticalResolution;
+	logger->width = graphicsOutputProtocol->Mode->Info->HorizontalResolution;
+	logger->height = graphicsOutputProtocol->Mode->Info->VerticalResolution;
 
 	systemTable->BootServices->FreePool(suitableModeInfo);
 
@@ -92,41 +84,30 @@ VOID FramebufferLoggerWriteChar(FramebufferLoggerData* logger, CHAR16 character)
 {
 	UINTN charIndex = character > 126 ? 95 : character - 32;
 
-	if(character == L'\n')
-	{
-		if(logger->cursorPositionY + 40 >= logger->height)
-		{
+	if (character == L'\n') {
+		if (logger->cursorPositionY + 40 >= logger->height) {
 			FramebufferLoggerClear(logger);
 			return;
 		}
 
 		logger->cursorPositionY += 20;
-		logger->cursorPositionX	 = 0;
-		return;
-	}
-
-	if(character == L'\r')
-	{
 		logger->cursorPositionX = 0;
 		return;
 	}
 
-	if(logger->cursorPositionX + 9 >= logger->width)
-	{
+	if (character == L'\r') {
+		logger->cursorPositionX = 0;
+		return;
+	}
+
+	if (logger->cursorPositionX + 9 >= logger->width) {
 		FramebufferLoggerWriteChar(logger, L'\n');
 	}
 
-	for(UINTN y = 0; y < 20; y++)
-	{
-		for(UINTN x = 0; x < 10; x++)
-		{
-			FramebufferLoggerSetPixel(
-				logger,
-				x + logger->cursorPositionX,
-				y + logger->cursorPositionY,
-				g_fontBitmaps[charIndex][y][x],
-				g_fontBitmaps[charIndex][y][x],
-				g_fontBitmaps[charIndex][y][x]);
+	for (UINTN y = 0; y < 20; y++) {
+		for (UINTN x = 0; x < 10; x++) {
+			FramebufferLoggerSetPixel(logger, x + logger->cursorPositionX, y + logger->cursorPositionY, g_fontBitmaps[charIndex][y][x],
+				g_fontBitmaps[charIndex][y][x], g_fontBitmaps[charIndex][y][x]);
 		}
 	}
 
@@ -136,8 +117,7 @@ VOID FramebufferLoggerWriteChar(FramebufferLoggerData* logger, CHAR16 character)
 VOID FramebufferLoggerWriteString(FramebufferLoggerData* logger, CHAR16* string)
 {
 	UINTN i = 0;
-	while(string[i])
-	{
+	while (string[i]) {
 		FramebufferLoggerWriteChar(logger, string[i++]);
 	}
 }

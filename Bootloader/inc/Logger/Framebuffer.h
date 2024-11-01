@@ -3,8 +3,7 @@
 #include "Uefi.h"
 
 /// The framebuffer logger's state.
-typedef struct FramebufferLoggerData
-{
+typedef struct FramebufferLoggerData {
 	UINT32* framebuffer;
 	UINTN framebufferSize;
 	UINTN cursorPositionX;

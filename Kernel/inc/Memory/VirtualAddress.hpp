@@ -2,21 +2,21 @@
 
 #include "Core.hpp"
 
-namespace SaturnKernel
-{
-	struct VirtualAddress
-	{
-		explicit VirtualAddress(U64 address);
+namespace SaturnKernel {
 
-		[[nodiscard]] auto PageOffset() const -> U16;
-		[[nodiscard]] auto Page1Index() const -> U16;
-		[[nodiscard]] auto Page2Index() const -> U16;
-		[[nodiscard]] auto Page3Index() const -> U16;
-		[[nodiscard]] auto Page4Index() const -> U16;
+struct VirtualAddress {
+	explicit VirtualAddress(U64 address);
 
-		U64 Address;
-	};
+	[[nodiscard]] auto PageOffset() const -> U16;
+	[[nodiscard]] auto Page1Index() const -> U16;
+	[[nodiscard]] auto Page2Index() const -> U16;
+	[[nodiscard]] auto Page3Index() const -> U16;
+	[[nodiscard]] auto Page4Index() const -> U16;
 
-	inline constexpr U64 INDEX_MASK		  = ((1ULL << 9) - 1);
-	inline constexpr U64 PAGE_OFFSET_MASK = 0xfff;
+	U64 Address;
+};
+
+inline constexpr U64 INDEX_MASK = ((1ULL << 9) - 1);
+inline constexpr U64 PAGE_OFFSET_MASK = 0xfff;
+
 }

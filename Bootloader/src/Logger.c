@@ -1,33 +1,24 @@
 #include "Logger.h"
 
-SupernovaLoggerData g_mainLogger = {
-	FALSE,
-	{ 0 },
-	FALSE,
-	{ NULL, 0, 0, 0, 0, 0 }
-};
+SupernovaLoggerData g_mainLogger = { FALSE, { 0 }, FALSE, { NULL, 0, 0, 0, 0, 0 } };
 
 EFI_STATUS InitLogger(EFI_SYSTEM_TABLE* systemTable, SupernovaLoggerData* logger, BOOLEAN logSerial, BOOLEAN logFramebuffer)
 {
 	EFI_STATUS status = EFI_SUCCESS;
 
-	logger->logSerial	   = logSerial;
+	logger->logSerial = logSerial;
 	logger->logFramebuffer = logFramebuffer;
 
-	if(logSerial)
-	{
+	if (logSerial) {
 		status = InitSerialLogger(systemTable, &logger->serial);
-		if(EFI_ERROR(status))
-		{
+		if (EFI_ERROR(status)) {
 			return status;
 		}
 	}
 
-	if(logFramebuffer)
-	{
+	if (logFramebuffer) {
 		status = InitFramebufferLogger(systemTable, &logger->framebuffer);
-		if(EFI_ERROR(status))
-		{
+		if (EFI_ERROR(status)) {
 			return status;
 		}
 	}
@@ -39,10 +30,8 @@ EFI_STATUS InitLogger(EFI_SYSTEM_TABLE* systemTable, SupernovaLoggerData* logger
 
 VOID Log(SupernovaLoggerData* logger, SupernovaLogLevel level, CHAR16* message)
 {
-	if(logger->logSerial)
-	{
-		switch(level)
-		{
+	if (logger->logSerial) {
+		switch (level) {
 		case LogDebug:
 			SerialLoggerWriteString(&logger->serial, L"[DEBUG]: ");
 			break;
@@ -61,10 +50,8 @@ VOID Log(SupernovaLoggerData* logger, SupernovaLogLevel level, CHAR16* message)
 		SerialLoggerWriteChar(&logger->serial, L'\n');
 	}
 
-	if(logger->logFramebuffer)
-	{
-		switch(level)
-		{
+	if (logger->logFramebuffer) {
+		switch (level) {
 		case LogDebug:
 			FramebufferLoggerWriteString(&logger->framebuffer, L"[DEBUG]: ");
 			break;
