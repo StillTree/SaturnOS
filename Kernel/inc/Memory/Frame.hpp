@@ -19,8 +19,12 @@ template <> struct Frame<Size4KiB> {
 	auto operator++(int) -> Frame;
 	/// Decrements the frame, to the previous one.
 	auto operator--(int) -> Frame;
+	auto operator++() -> Frame;
+	auto operator--() -> Frame;
 	auto operator<(const Frame& other) const -> bool;
 	auto operator>(const Frame& other) const -> bool;
+	auto operator<=(const Frame& other) const -> bool;
+	auto operator>=(const Frame& other) const -> bool;
 	auto operator+(U64 other) const -> Frame;
 	auto operator-(U64 other) const -> Frame;
 

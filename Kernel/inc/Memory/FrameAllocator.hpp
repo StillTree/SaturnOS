@@ -12,15 +12,21 @@ struct SequentialFrameAllocator {
 
 	auto Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>;
 
-	auto AllocateFrame() -> Result<Frame<Size4KiB>>;
+	/// Allocates a single 4 KiB memory frame.
+	[[nodiscard]] auto AllocateFrame() -> Result<Frame<Size4KiB>>;
+	[[nodiscard]] auto DeallocateFrame(Frame<Size4KiB> frame) -> Result<void>;
 
 private:
-	auto AllocateCurrentDescriptorFrame() -> Result<Frame<Size4KiB>>;
+	/// Marks the provided frame in the bitmap as used/unused.
+	auto SetFrameStatus(Frame<Size4KiB> frame, bool used) -> void;
+	/// Returns the frame status, where `true` is allocated and `false` deallocated.
+	auto GetFrameStatus(Frame<Size4KiB> frame) -> bool;
 
-	Frame<Size4KiB> m_lastFrame;
 	MemoryMapEntry* m_memoryMap;
 	USIZE m_memoryMapEntries;
-	USIZE m_currentEntryIndex;
+	U8* m_frameBitmap;
+	Frame<Size4KiB> m_nextFrame;
+	Frame<Size4KiB> m_lastFrame;
 };
 
 }

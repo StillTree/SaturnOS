@@ -7,8 +7,10 @@ namespace SaturnKernel {
 enum class ErrorCode : U8 {
 	Success = 0,
 	NotEnoughMemoryPages,
+	NotEnoughMemoryFrames,
 	SerialOutputUnavailabe,
 	OutOfMemory,
+	FrameAlreadyDeallocated,
 };
 
 struct OkType { };

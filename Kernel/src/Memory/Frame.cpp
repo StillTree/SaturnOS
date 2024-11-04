@@ -21,9 +21,24 @@ auto Frame<Size4KiB>::operator--(int) -> Frame
 	return temp;
 }
 
+auto Frame<Size4KiB>::operator++() -> Frame
+{
+	Address += SIZE_BYTES;
+	return *this;
+}
+auto Frame<Size4KiB>::operator--() -> Frame
+{
+	Address -= SIZE_BYTES;
+	return *this;
+}
+
 auto Frame<Size4KiB>::operator<(const Frame& other) const -> bool { return Address < other.Address; }
 
 auto Frame<Size4KiB>::operator>(const Frame& other) const -> bool { return Address > other.Address; }
+
+auto Frame<Size4KiB>::operator<=(const Frame& other) const -> bool { return Address <= other.Address; }
+
+auto Frame<Size4KiB>::operator>=(const Frame& other) const -> bool { return Address >= other.Address; }
 
 auto Frame<Size4KiB>::operator+(U64 other) const -> Frame { return Frame(Address + (other * 4096)); }
 

@@ -5,6 +5,7 @@
 #include "Logger.hpp"
 #include "Memory/FrameAllocator.hpp"
 #include "PIC.hpp"
+#include "Result.hpp"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
