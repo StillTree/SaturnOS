@@ -6,7 +6,7 @@
 
 namespace SaturnKernel {
 
-SequentialFrameAllocator::SequentialFrameAllocator()
+BitmapFrameAllocator::BitmapFrameAllocator()
 	: m_memoryMap(nullptr)
 	, m_memoryMapEntries(0)
 	, m_frameBitmap(nullptr)
@@ -14,7 +14,7 @@ SequentialFrameAllocator::SequentialFrameAllocator()
 {
 }
 
-auto SequentialFrameAllocator::SetFrameStatus(Frame<Size4KiB> frame, bool used) -> void
+auto BitmapFrameAllocator::SetFrameStatus(Frame<Size4KiB> frame, bool used) -> void
 {
 	const USIZE frameIndex = frame.Address / Frame<Size4KiB>::SIZE_BYTES;
 	const USIZE mapIndex = (frameIndex) / 8;
@@ -27,7 +27,7 @@ auto SequentialFrameAllocator::SetFrameStatus(Frame<Size4KiB> frame, bool used) 
 	}
 }
 
-auto SequentialFrameAllocator::GetFrameStatus(Frame<Size4KiB> frame) -> bool
+auto BitmapFrameAllocator::GetFrameStatus(Frame<Size4KiB> frame) -> bool
 {
 	const USIZE frameIndex = frame.Address / Frame<Size4KiB>::SIZE_BYTES;
 	const USIZE mapIndex = (frameIndex) / 8;
@@ -36,7 +36,7 @@ auto SequentialFrameAllocator::GetFrameStatus(Frame<Size4KiB> frame) -> bool
 	return (m_frameBitmap[mapIndex] & (1 << bitIndex)) >> bitIndex == 1;
 }
 
-auto SequentialFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>
+auto BitmapFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>
 {
 	// I assume the last entry is a "NULL-descriptor" so I just skip it
 	const Frame<Size4KiB> lastFrame(memoryMap[memoryMapEntries - 2].PhysicalEnd + 1);
@@ -75,7 +75,7 @@ auto SequentialFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEn
 	return Result<void>::MakeOk();
 }
 
-auto SequentialFrameAllocator::AllocateFrame() -> Result<Frame<Size4KiB>>
+auto BitmapFrameAllocator::AllocateFrame() -> Result<Frame<Size4KiB>>
 {
 	for(Frame<Size4KiB> frame(0); frame <= m_lastFrame; frame++) {
 		if(!GetFrameStatus(frame)) {
@@ -87,7 +87,7 @@ auto SequentialFrameAllocator::AllocateFrame() -> Result<Frame<Size4KiB>>
 	return Result<Frame<Size4KiB>>::MakeErr(ErrorCode::OutOfMemory);
 }
 
-auto SequentialFrameAllocator::DeallocateFrame(Frame<Size4KiB> frame) -> Result<void>
+auto BitmapFrameAllocator::DeallocateFrame(Frame<Size4KiB> frame) -> Result<void>
 {
 	bool allocated = GetFrameStatus(frame);
 

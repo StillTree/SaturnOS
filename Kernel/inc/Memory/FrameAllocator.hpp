@@ -7,8 +7,8 @@
 
 namespace SaturnKernel {
 
-struct SequentialFrameAllocator {
-	SequentialFrameAllocator();
+struct BitmapFrameAllocator {
+	BitmapFrameAllocator();
 
 	auto Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>;
 

@@ -13,7 +13,7 @@
 
 // Initially empty.
 SaturnKernel::KernelBootInfo SaturnKernel::g_bootInfo = {};
-SaturnKernel::SequentialFrameAllocator g_frameAllocator = {};
+SaturnKernel::BitmapFrameAllocator g_frameAllocator = {};
 
 /// C linking so the linker and the bootloader don't absolutely shit themselves
 extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
