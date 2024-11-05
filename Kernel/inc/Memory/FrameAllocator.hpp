@@ -25,7 +25,6 @@ private:
 	MemoryMapEntry* m_memoryMap;
 	USIZE m_memoryMapEntries;
 	U8* m_frameBitmap;
-	Frame<Size4KiB> m_nextFrame;
 	Frame<Size4KiB> m_lastFrame;
 };
 

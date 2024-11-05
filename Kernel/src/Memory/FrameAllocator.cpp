@@ -10,7 +10,6 @@ SequentialFrameAllocator::SequentialFrameAllocator()
 	: m_memoryMap(nullptr)
 	, m_memoryMapEntries(0)
 	, m_frameBitmap(nullptr)
-	, m_nextFrame(0)
 	, m_lastFrame(0)
 {
 }
@@ -45,7 +44,6 @@ auto SequentialFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEn
 	// The number of needed frames to allocate the frame bitmap is calculated with the followinf formula:
 	// number of the last frame / 8 rounded up / frame size (4096) rounded up
 	const USIZE neededFrames = ((((lastFrame.Address / 4096) + 7) / 8) + Frame<Size4KiB>::SIZE_BYTES - 1) / Frame<Size4KiB>::SIZE_BYTES;
-	SK_LOG_DEBUG("Frames needed to allocate the frame bitmap: {}", neededFrames);
 
 	if (neededFrames >= ((memoryMap[0].PhysicalEnd + 1 - memoryMap[0].PhysicalStart) / Frame<Size4KiB>::SIZE_BYTES)) {
 		SK_LOG_ERROR("There is not enough contiguous physical frames to allocate the frame bitmap");
@@ -58,7 +56,6 @@ auto SequentialFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEn
 
 	// Because we "allocate" the needed contiguous frames, we offset the descriptor physical start to reflect it
 	memoryMap[0].PhysicalStart += neededFrames * Frame<Size4KiB>::SIZE_BYTES;
-	m_nextFrame = Frame<Size4KiB>(m_memoryMap[0].PhysicalStart);
 	m_lastFrame = Frame<Size4KiB>(m_memoryMap[m_memoryMapEntries - 2].PhysicalEnd);
 
 	// We set every frame as used
@@ -80,12 +77,11 @@ auto SequentialFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEn
 
 auto SequentialFrameAllocator::AllocateFrame() -> Result<Frame<Size4KiB>>
 {
-	while(m_nextFrame <= m_lastFrame) {
-		if(!GetFrameStatus(m_nextFrame)) {
-			return Result<Frame<Size4KiB>>::MakeOk(m_nextFrame++);
+	for(Frame<Size4KiB> frame(0); frame <= m_lastFrame; frame++) {
+		if(!GetFrameStatus(frame)) {
+			SetFrameStatus(frame, true);
+			return Result<Frame<Size4KiB>>::MakeOk(frame);
 		}
-
-		m_nextFrame++;
 	}
 
 	return Result<Frame<Size4KiB>>::MakeErr(ErrorCode::OutOfMemory);
