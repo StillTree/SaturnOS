@@ -37,6 +37,10 @@ struct PageTableEntry {
 	auto PhysicalFrameAddress(U64 address) -> void;
 
 	U64 Entry;
+
+	static constexpr U64 FRAME_ADDRESS_MASK = (1ULL << 40) - 1;
+	static constexpr U64 FLAGS_MASK = 0xfff;
+	static constexpr U64 PAGE_TABLE_ENTRIES = 512;
 };
 
 inline auto PageTable4Address() -> U64
@@ -46,9 +50,5 @@ inline auto PageTable4Address() -> U64
 
 	return pml4Address;
 }
-
-constexpr inline U64 FRAME_ADDRESS_MASK = (1ULL << 40) - 1;
-constexpr inline U64 FLAGS_MASK = 0xfff;
-constexpr inline U64 PAGE_TABLE_ENTRIES = 512;
 
 }
