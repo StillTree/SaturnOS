@@ -33,6 +33,9 @@ struct PageTableEntry {
 	[[nodiscard]] auto Flags() const -> PageTableEntryFlags;
 	[[nodiscard]] auto PhysicalFrameAddress() const -> U64;
 
+	auto Flags(PageTableEntryFlags flags) -> void;
+	auto PhysicalFrameAddress(U64 address) -> void;
+
 	U64 Entry;
 };
 
@@ -45,6 +48,7 @@ inline auto PageTable4Address() -> U64
 }
 
 constexpr inline U64 FRAME_ADDRESS_MASK = (1ULL << 40) - 1;
+constexpr inline U64 FLAGS_MASK = 0xfff;
 constexpr inline U64 PAGE_TABLE_ENTRIES = 512;
 
 }

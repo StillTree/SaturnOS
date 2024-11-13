@@ -7,6 +7,7 @@
 
 namespace SaturnKernel {
 
+/// A physical frame allocator based on a memory map bitmap.
 struct BitmapFrameAllocator {
 	BitmapFrameAllocator();
 
@@ -27,5 +28,7 @@ private:
 	U8* m_frameBitmap;
 	Frame<Size4KiB> m_lastFrame;
 };
+
+extern BitmapFrameAllocator g_frameAllocator;
 
 }

@@ -13,6 +13,9 @@ struct VirtualAddress {
 	[[nodiscard]] auto Page3Index() const -> U16;
 	[[nodiscard]] auto Page4Index() const -> U16;
 
+	auto operator+=(U64 other) -> VirtualAddress&;
+	auto operator-=(U64 other) -> VirtualAddress&;
+
 	U64 Address;
 };
 

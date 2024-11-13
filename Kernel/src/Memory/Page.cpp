@@ -7,6 +7,11 @@ Page<Size4KiB>::Page(U64 address)
 {
 }
 
+Page<Size4KiB>::Page(VirtualAddress address)
+	: Address(address.Address & ~0xfff)
+{
+}
+
 auto Page<Size4KiB>::operator++(int) -> Page
 {
 	Page temp = *this;

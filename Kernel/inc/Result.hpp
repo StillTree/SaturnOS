@@ -11,6 +11,7 @@ enum class ErrorCode : U8 {
 	SerialOutputUnavailabe,
 	OutOfMemory,
 	FrameAlreadyDeallocated,
+	FrameAlreadyMapped,
 };
 
 struct OkType { };

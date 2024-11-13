@@ -1,10 +1,12 @@
-#include "Memory/FrameAllocator.hpp"
+#include "Memory/BitmapFrameAllocator.hpp"
 
 #include "Logger.hpp"
 #include "Memory.hpp"
 #include "Memory/Frame.hpp"
 
 namespace SaturnKernel {
+
+BitmapFrameAllocator g_frameAllocator = {};
 
 BitmapFrameAllocator::BitmapFrameAllocator()
 	: m_memoryMap(nullptr)
@@ -77,11 +79,13 @@ auto BitmapFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntrie
 
 auto BitmapFrameAllocator::AllocateFrame() -> Result<Frame<Size4KiB>>
 {
-	for(Frame<Size4KiB> frame(0); frame <= m_lastFrame; frame++) {
-		if(!GetFrameStatus(frame)) {
-			SetFrameStatus(frame, true);
-			return Result<Frame<Size4KiB>>::MakeOk(frame);
-		}
+	SK_LOG_INFO("alloc");
+	for (Frame<Size4KiB> frame(0); frame <= m_lastFrame; frame++) {
+		if (GetFrameStatus(frame))
+			continue;
+
+		SetFrameStatus(frame, true);
+		return Result<Frame<Size4KiB>>::MakeOk(frame);
 	}
 
 	return Result<Frame<Size4KiB>>::MakeErr(ErrorCode::OutOfMemory);
@@ -91,7 +95,7 @@ auto BitmapFrameAllocator::DeallocateFrame(Frame<Size4KiB> frame) -> Result<void
 {
 	bool allocated = GetFrameStatus(frame);
 
-	if(!allocated) {
+	if (!allocated) {
 		SK_LOG_WARN("An attempt was made to deallocate an unallocated memory frame");
 		return Result<void>::MakeErr(ErrorCode::FrameAlreadyDeallocated);
 	}

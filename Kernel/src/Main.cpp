@@ -3,7 +3,7 @@
 #include "GDT.hpp"
 #include "IDT.hpp"
 #include "Logger.hpp"
-#include "Memory/FrameAllocator.hpp"
+#include "Memory/BitmapFrameAllocator.hpp"
 #include "PIC.hpp"
 #include "Result.hpp"
 
@@ -13,7 +13,6 @@
 
 // Initially empty.
 SaturnKernel::KernelBootInfo SaturnKernel::g_bootInfo = {};
-SaturnKernel::BitmapFrameAllocator g_frameAllocator = {};
 
 /// C linking so the linker and the bootloader don't absolutely shit themselves
 extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
@@ -45,13 +44,16 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	SaturnKernel::EnableInterrupts();
 
 	SK_LOG_INFO("Initializing the sequential frame allocator");
-	auto result = g_frameAllocator.Init(
+	auto result = SaturnKernel::g_frameAllocator.Init(
 		static_cast<SaturnKernel::MemoryMapEntry*>(SaturnKernel::g_bootInfo.MemoryMap), SaturnKernel::g_bootInfo.MemoryMapEntries);
 	if (result.IsError()) {
 		SK_LOG_ERROR("Could not initialize the frame allocator");
 	}
 
 	SK_LOG_DEBUG("Mapped Physical memory offset: {}", SaturnKernel::g_bootInfo.PhysicalMemoryOffset);
+
+	// TODO: Flushing the TLB
+	// TODO: Parsing error codes in the page fault handler
 
 	// __asm__ volatile("int3");
 
