@@ -8,7 +8,7 @@ Page<Size4KiB>::Page(U64 address)
 }
 
 Page<Size4KiB>::Page(VirtualAddress address)
-	: Address(address.Address & ~0xfff)
+	: Address(address.Value & ~0xfff)
 {
 }
 
@@ -25,5 +25,9 @@ auto Page<Size4KiB>::operator--(int) -> Page
 	Address -= SIZE_BYTES;
 	return temp;
 }
+
+auto Page<Size4KiB>::operator<=(const Page& other) const -> bool { return Address <= other.Address; }
+
+auto Page<Size4KiB>::operator>=(const Page& other) const -> bool { return Address >= other.Address; }
 
 }

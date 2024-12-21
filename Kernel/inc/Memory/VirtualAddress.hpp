@@ -15,8 +15,10 @@ struct VirtualAddress {
 
 	auto operator+=(U64 other) -> VirtualAddress&;
 	auto operator-=(U64 other) -> VirtualAddress&;
+	auto operator<=(const VirtualAddress& other) const -> bool;
+	auto operator>=(const VirtualAddress& other) const -> bool;
 
-	U64 Address;
+	U64 Value;
 };
 
 inline constexpr U64 INDEX_MASK = ((1ULL << 9) - 1);

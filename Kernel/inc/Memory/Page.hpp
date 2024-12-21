@@ -18,6 +18,8 @@ template <> struct Page<Size4KiB> {
 
 	auto operator++(int) -> Page;
 	auto operator--(int) -> Page;
+	auto operator<=(const Page& other) const -> bool;
+	auto operator>=(const Page& other) const -> bool;
 
 	/// The page's first address.
 	VirtualAddress Address;

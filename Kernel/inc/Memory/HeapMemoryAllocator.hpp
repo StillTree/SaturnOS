@@ -5,20 +5,37 @@
 namespace SaturnKernel {
 
 struct HeapBlockHeader {
-	USIZE BlockSize;
-	HeapBlockHeader* NextBlock;
+	/// Including the header's size, so in essence the usable size + 2 in bytes.
+	USIZE Size;
+	/// A pointer to the next heap block, `nullptr` if it's the last one.
+	HeapBlockHeader* Next;
 };
 
+/// A linked list memory allocator for the kernel's needs.
 struct HeapMemoryAllocator {
 	HeapMemoryAllocator();
 
 	auto Init(USIZE heapSize, VirtualAddress heapBeginning) -> Result<void>;
 
-	auto Allocate(USIZE blockSize) -> Result<VirtualAddress>;
-	auto Deallocate(VirtualAddress blockAddress) -> Result<void>;
+	/// Allocates a memory block and returns a pointer to it.
+	auto Allocate(USIZE size, USIZE alignment) -> Result<void*>;
+	/// Deallocates the given memory block.
+	auto Deallocate(VirtualAddress blockAddress, USIZE size) -> Result<void>;
+
+	/// A debugging method that I will just leave here for convenience's sake.
+	auto PrintHeaders() -> void;
 
 private:
-	HeapBlockHeader* m_head;
+	/// Places a memory region with the provided size at the given memory address and adds it to the list.
+	///
+	/// Note: This method just creates the region as is, without any checks!
+	auto AddFreeRegion(U64 address, USIZE size) -> Result<void>;
+	/// Resizes the given block and if able, creates a new one with the remaining space.
+	auto SplitBlock(HeapBlockHeader* block, USIZE newSize) -> Result<void>;
+
+	HeapBlockHeader m_head;
 };
+
+extern HeapMemoryAllocator g_heapMemoryAllocator;
 
 }

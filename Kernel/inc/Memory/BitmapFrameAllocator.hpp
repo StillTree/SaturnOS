@@ -20,7 +20,7 @@ struct BitmapFrameAllocator {
 private:
 	/// Marks the provided frame in the bitmap as used/unused.
 	auto SetFrameStatus(Frame<Size4KiB> frame, bool used) -> void;
-	/// Returns the frame status, where `true` is allocated and `false` deallocated.
+	/// Returns the frame status, where `true` means allocated and `false` deallocated.
 	auto GetFrameStatus(Frame<Size4KiB> frame) -> bool;
 
 	MemoryMapEntry* m_memoryMap;

@@ -72,7 +72,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
-	SN_LOG_INFO(L"Successfully successfully loaded the kernel executable into memory");
+	SN_LOG_INFO(L"Successfully loaded the kernel executable into memory");
 
 	// TODO: Use some shit to determine the actual function size and if it needs 2 or even more pages to be mapped.
 	EFI_PHYSICAL_ADDRESS contextSwitchFnAddress = (UINTN)ContextSwitch;

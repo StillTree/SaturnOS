@@ -79,7 +79,6 @@ auto BitmapFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntrie
 
 auto BitmapFrameAllocator::AllocateFrame() -> Result<Frame<Size4KiB>>
 {
-	SK_LOG_INFO("alloc");
 	for (Frame<Size4KiB> frame(0); frame <= m_lastFrame; frame++) {
 		if (GetFrameStatus(frame))
 			continue;
