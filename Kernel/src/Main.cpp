@@ -69,10 +69,6 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 		SK_LOG_ERROR("Could not initialize the kernel's heap memory pool");
 	}
 
-	FlushTLB();
-
-	SK_LOG_INFO("yoo!");
-
 	// __asm__ volatile("int3");
 
 	while (true)
