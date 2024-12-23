@@ -7,6 +7,7 @@
 #include "Memory/HeapMemoryAllocator.hpp"
 #include "PIC.hpp"
 #include "Result.hpp"
+#include "Memory.hpp"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -54,17 +55,23 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 
 	SK_LOG_DEBUG("Mapped Physical memory offset: {}", g_bootInfo.PhysicalMemoryOffset);
 
-	// TODO: Flushing the TLB
 	// TODO: Parsing error codes in the page fault handler
 	// TODO: Proper variadic template logging function
 	// TODO: A faster way of allocating dynamic memory,
 	//       perhaps a fixed-size block allocator
+	// TODO: Physical address struct
+	// TODO: AsPtr methods on address structs
+	// TODO: CPUID
 
 	SK_LOG_INFO("Initializing the kernel's memory heap");
 	result = g_heapMemoryAllocator.Init(102400, VirtualAddress(0x6969'6969'0000));
 	if (result.IsError()) {
 		SK_LOG_ERROR("Could not initialize the kernel's heap memory pool");
 	}
+
+	FlushTLB();
+
+	SK_LOG_INFO("yoo!");
 
 	// __asm__ volatile("int3");
 

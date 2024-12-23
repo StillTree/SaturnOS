@@ -3,7 +3,7 @@
 #include "STL.hpp"
 
 // Yes, yes, I am aware I could have used the stdint.h header,
-// but it runs only on x86 64-bit so it doesn't matter if I use them or the variable sized builtins
+// but the kernel only runs on x86, 64-bit, so it doesn't matter if I use these or the variable sized builtins
 using I8 = char;
 using I16 = short;
 using I32 = int;
