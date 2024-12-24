@@ -7,7 +7,6 @@
 #include "Memory/HeapMemoryAllocator.hpp"
 #include "PIC.hpp"
 #include "Result.hpp"
-#include "Memory.hpp"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -59,8 +58,6 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	// TODO: Proper variadic template logging function
 	// TODO: A faster way of allocating dynamic memory,
 	//       perhaps a fixed-size block allocator
-	// TODO: Physical address struct
-	// TODO: AsPtr methods on address structs
 	// TODO: CPUID
 
 	SK_LOG_INFO("Initializing the kernel's memory heap");

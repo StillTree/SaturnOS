@@ -1,9 +1,9 @@
 # Headers
 
-All of the UEFI headers and the `elf.h` one are not written by me
-and are taken from EDK II and the GNU standard C library respectively.
+All of the UEFI headers, as well as, `elf.h` are not written by me
+and are taken from EDK II and the GNU Standard C Library respectively.
 
-Below I prorovide these libraries' licenses.
+Below I prorovided these libraries' licenses.
 
 ## EDK II - BSD-2-Clause Patent License
 
@@ -61,7 +61,7 @@ ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 ```
 
-## The GNU standard C Library - LGPLv3
+## The GNU Standard C Library - LGPLv3
 
 ```md
 # GNU LESSER GENERAL PUBLIC LICENSE

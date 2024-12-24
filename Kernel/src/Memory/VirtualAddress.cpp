@@ -17,6 +17,8 @@ VirtualAddress::VirtualAddress(U64 address)
 
 [[nodiscard]] auto VirtualAddress::Page4Index() const -> U16 { return (Value >> 39) & INDEX_MASK; }
 
+template <typename T> [[nodiscard]] auto VirtualAddress::AsPointer() const -> T* { return reinterpret_cast<T*>(Value); }
+
 auto VirtualAddress::operator+=(U64 other) -> VirtualAddress&
 {
 	Value += other;

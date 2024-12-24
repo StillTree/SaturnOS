@@ -13,6 +13,8 @@ struct VirtualAddress {
 	[[nodiscard]] auto Page3Index() const -> U16;
 	[[nodiscard]] auto Page4Index() const -> U16;
 
+	template <typename T> [[nodiscard]] auto AsPointer() const -> T*;
+
 	auto operator+=(U64 other) -> VirtualAddress&;
 	auto operator-=(U64 other) -> VirtualAddress&;
 	auto operator<=(const VirtualAddress& other) const -> bool;

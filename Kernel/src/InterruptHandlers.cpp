@@ -40,7 +40,7 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 	U64 faultVirtualAddress = -1;
 	__asm__ volatile("mov %%cr2, %0" : "=r"(faultVirtualAddress));
 
-	U64 pml4Address = PageTable4Address();
+	U64 pml4Address = PageTable4Address().Value;
 
 	// TODO: Using the errorCode figure the rest of this shit out
 

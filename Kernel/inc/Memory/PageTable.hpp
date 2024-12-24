@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.hpp"
+#include "Memory/PhysicalAddress.hpp"
 
 namespace SaturnKernel {
 
@@ -31,10 +32,10 @@ struct PageTableEntry {
 	explicit PageTableEntry(U64 entry);
 
 	[[nodiscard]] auto Flags() const -> PageTableEntryFlags;
-	[[nodiscard]] auto PhysicalFrameAddress() const -> U64;
+	[[nodiscard]] auto PhysicalFrameAddress() const -> PhysicalAddress;
 
 	auto Flags(PageTableEntryFlags flags) -> void;
-	auto PhysicalFrameAddress(U64 address) -> void;
+	auto PhysicalFrameAddress(PhysicalAddress address) -> void;
 
 	U64 Entry;
 
@@ -43,12 +44,13 @@ struct PageTableEntry {
 	static constexpr U64 PAGE_TABLE_ENTRIES = 512;
 };
 
-inline auto PageTable4Address() -> U64
+/// Returns the PML4 table's physical memory address, read from the CR3 register.
+inline auto PageTable4Address() -> PhysicalAddress
 {
 	U64 pml4Address = -1;
 	__asm__ volatile("mov %%cr3, %0" : "=r"(pml4Address));
 
-	return pml4Address;
+	return PhysicalAddress(pml4Address);
 }
 
 }

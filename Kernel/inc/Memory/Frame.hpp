@@ -5,6 +5,7 @@
 #include "Memory.hpp"
 #include "Memory/Page.hpp"
 #include "Memory/PageTable.hpp"
+#include "Memory/PhysicalAddress.hpp"
 #include "Result.hpp"
 
 namespace SaturnKernel {
@@ -14,7 +15,7 @@ template <typename T> struct Frame;
 /// Represents a 4 KiB physical memory frame.
 template <> struct Frame<Size4KiB> {
 	/// Aligns down the given address to the lower `SIZE_BYTES` byte if it already isn't.
-	explicit Frame<Size4KiB>(U64 address);
+	explicit Frame(U64 address);
 
 	auto operator++(int) -> Frame;
 	auto operator--(int) -> Frame;
@@ -35,7 +36,7 @@ template <> struct Frame<Size4KiB> {
 	auto MapTo(const Page<Size4KiB>& page, PageTableEntryFlags flags) const -> Result<void>;
 
 	/// The frame's first address.
-	U64 Address;
+	PhysicalAddress Address;
 
 	/// The frame's size in bytes.
 	static constexpr U64 SIZE_BYTES = 4096;

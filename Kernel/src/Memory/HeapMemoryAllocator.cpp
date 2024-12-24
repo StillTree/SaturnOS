@@ -21,13 +21,16 @@ auto HeapMemoryAllocator::Init(USIZE heapSize, VirtualAddress heapBeginning) -> 
 
 	for (Page<Size4KiB> heapPage(heapBeginning); heapPage <= maxPage; heapPage++) {
 		auto frame = g_frameAllocator.AllocateFrame();
-
 		if (frame.IsError()) {
 			SK_LOG_ERROR("An unexpected error occured while trying to allocate a memory frame for the kernel's heap");
 			return Result<void>::MakeErr(frame.Error);
 		}
 
-		frame.Value.MapTo(heapPage, PageTableEntryFlags::Present | PageTableEntryFlags::Writeable);
+		auto result = frame.Value.MapTo(heapPage, PageTableEntryFlags::Present | PageTableEntryFlags::Writeable);
+		if(result.IsError()) {
+			SK_LOG_ERROR("An unexpected error occured while trying to map the kernel's heap memory frames");
+			return Result<void>::MakeErr(result.Error);
+		}
 	}
 
 	auto* wholeHeap = reinterpret_cast<HeapBlockHeader*>(heapBeginning.Value);
@@ -82,8 +85,11 @@ auto HeapMemoryAllocator::Allocate(USIZE size, USIZE alignment) -> Result<void*>
 			currentHeader->Next = currentHeader->Next->Next;
 
 			// Not doing that, would leave a gap of forever unusable memory in the heap
-			if(alignmentOffset >= sizeof(HeapBlockHeader))
-				AddFreeRegion(blockAddress, alignmentOffset);
+			if(alignmentOffset >= sizeof(HeapBlockHeader)) {
+				auto result = AddFreeRegion(blockAddress, alignmentOffset);
+				if (result.IsError())
+					return Result<void*>::MakeErr(result.Error);
+			}
 
 			return Result<void*>::MakeOk(alignedAddress);
 		}

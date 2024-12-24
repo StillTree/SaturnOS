@@ -44,19 +44,16 @@ auto Frame<Size4KiB>::operator<=(const Frame& other) const -> bool { return Addr
 
 auto Frame<Size4KiB>::operator>=(const Frame& other) const -> bool { return Address >= other.Address; }
 
-auto Frame<Size4KiB>::operator+(U64 other) const -> Frame { return Frame(Address + (other * 4096)); }
+auto Frame<Size4KiB>::operator+(U64 other) const -> Frame { return Frame(Address.Value + (other * 4096)); }
 
-auto Frame<Size4KiB>::operator-(U64 other) const -> Frame { return Frame(Address - (other * 4096)); }
+auto Frame<Size4KiB>::operator-(U64 other) const -> Frame { return Frame(Address.Value - (other * 4096)); }
 
-[[nodiscard]] auto Frame<Size4KiB>::UsableAddress() const -> void*
-{
-	return reinterpret_cast<void*>(Address + g_bootInfo.PhysicalMemoryOffset);
-}
+[[nodiscard]] auto Frame<Size4KiB>::UsableAddress() const -> void* { return Address.AsPointer<void>(); }
 
 auto Frame<Size4KiB>::MapTo(const Page<Size4KiB>& page, PageTableEntryFlags flags) const -> Result<void>
 {
 	U16 p4Index = page.Address.Page4Index();
-	auto* p4Table = reinterpret_cast<PageTableEntry*>(PageTable4Address() + g_bootInfo.PhysicalMemoryOffset);
+	auto* p4Table = PageTable4Address().AsPointer<PageTableEntry>();
 
 	// If there is no Level 3 table at the expected level 4's index, we need to create it.
 	if ((p4Table[p4Index].Flags() & PageTableEntryFlags::Present) != PageTableEntryFlags::Present) {
@@ -74,7 +71,7 @@ auto Frame<Size4KiB>::MapTo(const Page<Size4KiB>& page, PageTableEntryFlags flag
 	}
 
 	U16 p3Index = page.Address.Page3Index();
-	auto* p3Table = reinterpret_cast<PageTableEntry*>(p4Table[p4Index].PhysicalFrameAddress() + g_bootInfo.PhysicalMemoryOffset);
+	auto* p3Table = p4Table[p4Index].PhysicalFrameAddress().AsPointer<PageTableEntry>();
 
 	// If there is no Level 2 table at the expected level 3's index, we need to create it.
 	if ((p3Table[p3Index].Flags() & PageTableEntryFlags::Present) != PageTableEntryFlags::Present) {
@@ -92,7 +89,7 @@ auto Frame<Size4KiB>::MapTo(const Page<Size4KiB>& page, PageTableEntryFlags flag
 	}
 
 	U16 p2Index = page.Address.Page2Index();
-	auto* p2Table = reinterpret_cast<PageTableEntry*>(p3Table[p3Index].PhysicalFrameAddress() + g_bootInfo.PhysicalMemoryOffset);
+	auto* p2Table = p3Table[p3Index].PhysicalFrameAddress().AsPointer<PageTableEntry>();
 
 	// If there is no Level 1 table at the expected level 2's index, we need to create it.
 	if ((p2Table[p2Index].Flags() & PageTableEntryFlags::Present) != PageTableEntryFlags::Present) {
@@ -110,7 +107,7 @@ auto Frame<Size4KiB>::MapTo(const Page<Size4KiB>& page, PageTableEntryFlags flag
 	}
 
 	U16 p1Index = page.Address.Page1Index();
-	auto* p1Table = reinterpret_cast<PageTableEntry*>(p2Table[p2Index].PhysicalFrameAddress() + g_bootInfo.PhysicalMemoryOffset);
+	auto* p1Table = p2Table[p2Index].PhysicalFrameAddress().AsPointer<PageTableEntry>();
 
 	// If we are trying to map an existing page, something went really wrong...
 	if ((p1Table[p1Index].Flags() & PageTableEntryFlags::Present) == PageTableEntryFlags::Present) {

@@ -12,9 +12,9 @@ template <typename T> struct Page;
 /// Represents a 4 KiB virtual memory page.
 template <> struct Page<Size4KiB> {
 	/// Aligns down the given address to the lower `SIZE_BYTES` byte if it already isn't.
-	explicit Page<Size4KiB>(U64 address);
+	explicit Page(U64 address);
 	/// Aligns down the given address to the lower `SIZE_BYTES` byte if it already isn't.
-	explicit Page<Size4KiB>(VirtualAddress address);
+	explicit Page(VirtualAddress address);
 
 	auto operator++(int) -> Page;
 	auto operator--(int) -> Page;
