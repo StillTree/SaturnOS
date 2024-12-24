@@ -1,9 +1,15 @@
 #pragma once
 
 #include "Core.hpp"
+#include "Memory/PhysicalAddress.hpp"
 #include "Memory/VirtualAddress.hpp"
 
 namespace SaturnKernel {
+
+struct MemoryMapEntry {
+	PhysicalAddress PhysicalStart;
+	PhysicalAddress PhysicalEnd;
+};
 
 struct Size4KiB { };
 struct Size2MiB { };

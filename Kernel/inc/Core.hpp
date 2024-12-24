@@ -21,11 +21,6 @@ using USIZE = U64;
 
 namespace SaturnKernel {
 
-struct MemoryMapEntry {
-	U64 PhysicalStart;
-	U64 PhysicalEnd;
-};
-
 /// Boot information passed to the kernel by the bootloader.
 struct KernelBootInfo {
 	U32* Framebuffer;
