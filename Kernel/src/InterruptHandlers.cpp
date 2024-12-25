@@ -35,6 +35,19 @@ __attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* fram
 	Hang();
 }
 
+enum class PageFaultErrorCode : U16 {
+	Present = 1,
+	Write = 1 << 1,
+	User = 1 << 2,
+	ReservedWrite = 1 << 3,
+	InstructionFetch = 1 << 4,
+	ProtectionKey = 1 << 5,
+	ShadowStack = 1 << 6,
+	SoftwareGuardExtensions = 1 << 15,
+};
+
+auto operator&(U16 a, PageFaultErrorCode b) -> U16 { return a & static_cast<U16>(b); }
+
 __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, U64 errorCode)
 {
 	U64 faultVirtualAddress = -1;
@@ -42,12 +55,43 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 
 	U64 pml4Address = PageTable4Address().Value;
 
-	// TODO: Using the errorCode figure the rest of this shit out
-
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT");
 	SK_LOG_ERROR("Faulty virtual address = {}", faultVirtualAddress);
 	SK_LOG_ERROR("PML4 address = {}", pml4Address);
-	SK_LOG_ERROR("Error code = {}", errorCode);
+	SK_LOG_ERROR("Error code = {}, caused by:", errorCode);
+
+	if ((errorCode & PageFaultErrorCode::Present) != 0) {
+		SK_LOG_ERROR("\tPresent");
+	}
+
+	if ((errorCode & PageFaultErrorCode::Write) != 0) {
+		SK_LOG_ERROR("\tWrite");
+	}
+
+	if ((errorCode & PageFaultErrorCode::User) != 0) {
+		SK_LOG_ERROR("\tUser");
+	}
+
+	if ((errorCode & PageFaultErrorCode::ReservedWrite) != 0) {
+		SK_LOG_ERROR("\tReservedWrite");
+	}
+
+	if ((errorCode & PageFaultErrorCode::InstructionFetch) != 0) {
+		SK_LOG_ERROR("\tInstructionFetch");
+	}
+
+	if ((errorCode & PageFaultErrorCode::ProtectionKey) != 0) {
+		SK_LOG_ERROR("\tProtectionKey");
+	}
+
+	if ((errorCode & PageFaultErrorCode::ShadowStack) != 0) {
+		SK_LOG_ERROR("\tShadowStack");
+	}
+
+	if ((errorCode & PageFaultErrorCode::SoftwareGuardExtensions) != 0) {
+		SK_LOG_ERROR("\tSoftwareGuardExtensions");
+	}
+
 	SK_LOG_ERROR("InterruptFrame");
 	SK_LOG_ERROR("{");
 	SK_LOG_ERROR("\tStackPointer = {}", frame->StackPointer);

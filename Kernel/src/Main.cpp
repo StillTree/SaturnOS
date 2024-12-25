@@ -54,7 +54,6 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 
 	SK_LOG_DEBUG("Mapped Physical memory offset: {}", g_bootInfo.PhysicalMemoryOffset);
 
-	// TODO: Parsing error codes in the page fault handler
 	// TODO: Proper variadic template logging function
 	// TODO: A faster way of allocating dynamic memory,
 	//       perhaps a fixed-size block allocator
