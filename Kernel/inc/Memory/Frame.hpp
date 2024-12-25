@@ -16,6 +16,8 @@ template <typename T> struct Frame;
 template <> struct Frame<Size4KiB> {
 	/// Aligns down the given address to the lower `SIZE_BYTES` byte if it already isn't.
 	explicit Frame(U64 address);
+	/// Aligns down the given address to the lower `SIZE_BYTES` byte if it already isn't.
+	explicit Frame(PhysicalAddress address);
 
 	auto operator++(int) -> Frame;
 	auto operator--(int) -> Frame;

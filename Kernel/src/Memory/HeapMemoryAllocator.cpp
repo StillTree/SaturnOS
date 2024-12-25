@@ -15,7 +15,7 @@ HeapMemoryAllocator::HeapMemoryAllocator()
 
 auto HeapMemoryAllocator::Init(USIZE heapSize, VirtualAddress heapBeginning) -> Result<void>
 {
-	const Page<Size4KiB> maxPage(heapBeginning.Value + heapSize);
+	const Page<Size4KiB> maxPage(heapBeginning + heapSize);
 
 	heapSize &= ~0xfff;
 
@@ -28,7 +28,7 @@ auto HeapMemoryAllocator::Init(USIZE heapSize, VirtualAddress heapBeginning) -> 
 
 		auto result = frame.Value.MapTo(heapPage, PageTableEntryFlags::Present | PageTableEntryFlags::Writeable);
 		if(result.IsError()) {
-			SK_LOG_ERROR("An unexpected error occured while trying to map the kernel's heap memory frames");
+			SK_LOG_ERROR("An unexpected error occured while trying to map a memory frame for the kernel's heap");
 			return Result<void>::MakeErr(result.Error);
 		}
 	}
@@ -42,15 +42,15 @@ auto HeapMemoryAllocator::Init(USIZE heapSize, VirtualAddress heapBeginning) -> 
 	return Result<void>::MakeOk();
 }
 
-auto HeapMemoryAllocator::AddFreeRegion(U64 address, USIZE size) -> Result<void>
+auto HeapMemoryAllocator::AddFreeRegion(VirtualAddress address, USIZE size) -> Result<void>
 {
 	if (size < sizeof(HeapBlockHeader))
-		return Result<void>::MakeErr(ErrorCode::SerialOutputUnavailabe);
+		return Result<void>::MakeErr(ErrorCode::HeapBlockTooSmall);
 
-	if ((address & (alignof(HeapBlockHeader) - 1)) != 0)
-		return Result<void>::MakeErr(ErrorCode::SerialOutputUnavailabe);
+	if ((address.Value & (alignof(HeapBlockHeader) - 1)) != 0)
+		return Result<void>::MakeErr(ErrorCode::HeapBlockIncorrectAlignment);
 
-	auto* newBlock = reinterpret_cast<HeapBlockHeader*>(address);
+	auto* newBlock = address.AsPointer<HeapBlockHeader>();
 	newBlock->Size = size;
 	newBlock->Next = m_head.Next;
 
@@ -62,6 +62,8 @@ auto HeapMemoryAllocator::AddFreeRegion(U64 address, USIZE size) -> Result<void>
 
 auto HeapMemoryAllocator::Allocate(USIZE size, USIZE alignment) -> Result<void*>
 {
+	// I ensure that the allocated size can be actually freed later
+	// and that the later freed region's header is correctly aligned.
 	size = size < sizeof(HeapBlockHeader) ? sizeof(HeapBlockHeader) : size;
 	alignment = alignment < alignof(HeapBlockHeader) ? alignof(HeapBlockHeader) : alignment;
 
@@ -86,7 +88,7 @@ auto HeapMemoryAllocator::Allocate(USIZE size, USIZE alignment) -> Result<void*>
 
 			// Not doing that, would leave a gap of forever unusable memory in the heap
 			if(alignmentOffset >= sizeof(HeapBlockHeader)) {
-				auto result = AddFreeRegion(blockAddress, alignmentOffset);
+				auto result = AddFreeRegion(VirtualAddress(blockAddress), alignmentOffset);
 				if (result.IsError())
 					return Result<void*>::MakeErr(result.Error);
 			}
@@ -102,18 +104,13 @@ auto HeapMemoryAllocator::Allocate(USIZE size, USIZE alignment) -> Result<void*>
 
 auto HeapMemoryAllocator::SplitBlock(HeapBlockHeader* block, USIZE newSize) -> Result<void>
 {
-	if (newSize >= block->Size)
-		return Result<void>::MakeErr(ErrorCode::SerialOutputUnavailabe);
-
-	if (newSize < sizeof(HeapBlockHeader))
-		return Result<void>::MakeErr(ErrorCode::SerialOutputUnavailabe);
-
+	// I ensure that the new size is also correctly aligned so that this doesn't case any issues with neighbouring blocks
 	newSize = (newSize + alignof(HeapBlockHeader) - 1) & ~(alignof(HeapBlockHeader) - 1);
 
-	USIZE sizeDifference = block->Size - newSize;
+	if (newSize + sizeof(HeapBlockHeader) > block->Size || newSize < sizeof(HeapBlockHeader))
+		return Result<void>::MakeErr(ErrorCode::HeapBlockIncorrectSplitSize);
 
-	if (sizeDifference < sizeof(HeapBlockHeader))
-		return Result<void>::MakeErr(ErrorCode::SerialOutputUnavailabe);
+	USIZE sizeDifference = block->Size - newSize;
 
 	block->Size = newSize;
 
@@ -140,7 +137,7 @@ auto HeapMemoryAllocator::Deallocate(VirtualAddress blockAddress, USIZE size) ->
 {
 	size = size < sizeof(HeapBlockHeader) ? sizeof(HeapBlockHeader) : size;
 
-	return AddFreeRegion(blockAddress.Value, size);
+	return AddFreeRegion(blockAddress, size);
 }
 
 }

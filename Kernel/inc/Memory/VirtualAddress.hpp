@@ -13,10 +13,12 @@ struct VirtualAddress {
 	[[nodiscard]] auto Page3Index() const -> U16;
 	[[nodiscard]] auto Page4Index() const -> U16;
 
-	template <typename T> [[nodiscard]] auto AsPointer() const -> T*;
+	template <typename T> [[nodiscard]] auto AsPointer() const -> T* { return reinterpret_cast<T*>(Value); }
 
 	auto operator+=(U64 other) -> VirtualAddress&;
+	auto operator+(U64 other) const -> VirtualAddress;
 	auto operator-=(U64 other) -> VirtualAddress&;
+	auto operator-(U64 other) const -> VirtualAddress;
 	auto operator<=(const VirtualAddress& other) const -> bool;
 	auto operator>=(const VirtualAddress& other) const -> bool;
 

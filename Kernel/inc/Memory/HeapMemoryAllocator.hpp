@@ -29,7 +29,7 @@ private:
 	/// Places a memory region with the provided size at the given memory address and adds it to the list.
 	///
 	/// Note: This method just creates the region as is, without any checks!
-	auto AddFreeRegion(U64 address, USIZE size) -> Result<void>;
+	auto AddFreeRegion(VirtualAddress address, USIZE size) -> Result<void>;
 	/// Resizes the given block and if able, creates a new one with the remaining space.
 	auto SplitBlock(HeapBlockHeader* block, USIZE newSize) -> Result<void>;
 

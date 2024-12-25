@@ -13,7 +13,11 @@ struct PhysicalAddress {
 	}
 
 	auto operator+=(U64 other) -> PhysicalAddress&;
+	auto operator+(U64 other) const -> PhysicalAddress;
 	auto operator-=(U64 other) -> PhysicalAddress&;
+	auto operator-(U64 other) const -> PhysicalAddress;
+	auto operator-(PhysicalAddress other) const -> U64;
+	auto operator/(U64 other) const -> U64;
 	auto operator<(const PhysicalAddress& other) const -> bool;
 	auto operator>(const PhysicalAddress& other) const -> bool;
 	auto operator<=(const PhysicalAddress& other) const -> bool;

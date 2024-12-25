@@ -17,18 +17,26 @@ VirtualAddress::VirtualAddress(U64 address)
 
 [[nodiscard]] auto VirtualAddress::Page4Index() const -> U16 { return (Value >> 39) & INDEX_MASK; }
 
-template <typename T> [[nodiscard]] auto VirtualAddress::AsPointer() const -> T* { return reinterpret_cast<T*>(Value); }
-
 auto VirtualAddress::operator+=(U64 other) -> VirtualAddress&
 {
 	Value += other;
 	return *this;
 }
 
+auto VirtualAddress::operator+(U64 other) const -> VirtualAddress 
+{
+	return VirtualAddress(Value + other);
+}
+
 auto VirtualAddress::operator-=(U64 other) -> VirtualAddress&
 {
 	Value -= other;
 	return *this;
+}
+
+auto VirtualAddress::operator-(U64 other) const -> VirtualAddress 
+{
+	return VirtualAddress(Value - other);
 }
 
 auto VirtualAddress::operator<=(const VirtualAddress& other) const -> bool { return Value <= other.Value; }

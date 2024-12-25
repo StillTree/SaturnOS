@@ -11,6 +11,11 @@ Frame<Size4KiB>::Frame(U64 address)
 {
 }
 
+Frame<Size4KiB>::Frame(PhysicalAddress address)
+	: Address(address.Value & ~0xfff)
+{
+}
+
 auto Frame<Size4KiB>::operator++(int) -> Frame
 {
 	Frame temp = *this;

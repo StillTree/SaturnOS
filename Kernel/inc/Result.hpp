@@ -12,6 +12,9 @@ enum class ErrorCode : U8 {
 	OutOfMemory,
 	FrameAlreadyDeallocated,
 	FrameAlreadyMapped,
+	HeapBlockTooSmall,
+	HeapBlockIncorrectAlignment,
+	HeapBlockIncorrectSplitSize,
 };
 
 struct OkType { };
