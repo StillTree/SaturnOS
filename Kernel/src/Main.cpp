@@ -1,5 +1,6 @@
 #include "Core.hpp"
 
+#include "CPUID.hpp"
 #include "GDT.hpp"
 #include "IDT.hpp"
 #include "Logger.hpp"
@@ -7,6 +8,7 @@
 #include "Memory/HeapMemoryAllocator.hpp"
 #include "PIC.hpp"
 #include "Result.hpp"
+#include <cpuid.h>
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -46,18 +48,19 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 
 	EnableInterrupts();
 
+	SK_LOG_INFO("Saving the CPUID processor information");
+	auto result = g_cpuInformation.SaveInfo();
+	if (result.IsError()) {
+		SK_LOG_ERROR("Could not read the CPUID information");
+	}
+
 	SK_LOG_INFO("Initializing the sequential frame allocator");
-	auto result = g_frameAllocator.Init(static_cast<MemoryMapEntry*>(g_bootInfo.MemoryMap), g_bootInfo.MemoryMapEntries);
+	result = g_frameAllocator.Init(static_cast<MemoryMapEntry*>(g_bootInfo.MemoryMap), g_bootInfo.MemoryMapEntries);
 	if (result.IsError()) {
 		SK_LOG_ERROR("Could not initialize the frame allocator");
 	}
 
 	SK_LOG_DEBUG("Mapped Physical memory offset: {}", g_bootInfo.PhysicalMemoryOffset);
-
-	// TODO: Proper variadic template logging function
-	// TODO: A faster way of allocating dynamic memory,
-	//       perhaps a fixed-size block allocator
-	// TODO: CPUID
 
 	SK_LOG_INFO("Initializing the kernel's memory heap");
 	result = g_heapMemoryAllocator.Init(102400, VirtualAddress(0x6969'6969'0000));
