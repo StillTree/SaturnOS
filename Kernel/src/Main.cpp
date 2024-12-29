@@ -8,7 +8,6 @@
 #include "Memory/HeapMemoryAllocator.hpp"
 #include "PIC.hpp"
 #include "Result.hpp"
-#include <cpuid.h>
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
