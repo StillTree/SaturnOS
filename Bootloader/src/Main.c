@@ -1,3 +1,4 @@
+#include "ACPI.h"
 #include "EspFileSystem.h"
 #include "FrameAllocator.h"
 #include "Kernel.h"
@@ -10,6 +11,7 @@ EFI_GUID gEfiGraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
 EFI_GUID gEfiSimpleTextOutProtocolGuid = EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL_GUID;
 EFI_GUID gEfiSimpleFileSystemProtocolGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
 EFI_GUID gEfiLoadedImageProtocolGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
+EFI_GUID gEfiAcpi20TableGuid = EFI_ACPI_20_TABLE_GUID;
 
 EFI_STATUS ExitBootServices(
 	EFI_HANDLE* imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_MEMORY_DESCRIPTOR** memoryMap, UINTN* descriptorSize, UINTN* memoryMapSize);
@@ -37,6 +39,12 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	rootVolume->Close(rootVolume);
+
+	XSDP* xsdpPointer = NULL;
+	status = FindXSDT(systemTable, (VOID**)&xsdpPointer);
+	if (EFI_ERROR(status)) {
+		goto halt;
+	}
 
 	UINTN descriptorSize = 0;
 	UINTN memoryMapSize = 0;
@@ -121,6 +129,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	KernelBootInfo* bootInfo = (KernelBootInfo*)bootInfoPhysicalAddress;
+	bootInfo->xsdtAddress = (EFI_PHYSICAL_ADDRESS)xsdpPointer->XsdtAddress;
 	bootInfo->framebufferSize = g_mainLogger.framebuffer.framebufferSize;
 	bootInfo->framebufferWidth = g_mainLogger.framebuffer.width;
 	bootInfo->framebufferHeight = g_mainLogger.framebuffer.height;

@@ -12,6 +12,11 @@ struct PhysicalAddress {
 		return reinterpret_cast<T*>(Value + g_bootInfo.PhysicalMemoryOffset);
 	}
 
+	template <typename T> [[nodiscard]] auto AsRawPointer() const -> T*
+	{
+		return reinterpret_cast<T*>(Value);
+	}
+
 	auto operator+=(U64 other) -> PhysicalAddress&;
 	auto operator+(U64 other) const -> PhysicalAddress;
 	auto operator-=(U64 other) -> PhysicalAddress&;

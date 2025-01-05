@@ -2,7 +2,7 @@
 
 This is a repository (monorepo?) for storing all necessary components for runnning my own hobby operating system.
 
-> Compiled and tested using GCC, other compilers not tried.
+> Compiled and tested using GCC, other compilers will most definitely require some minor code changes.
 
 ## Structure
 

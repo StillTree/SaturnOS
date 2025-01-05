@@ -2,10 +2,7 @@
 
 #include "UefiTypes.h"
 
-#define EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID \
-	{ \
-		0x9042a9de, 0x23dc, 0x4a38, {0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a } \
-	}
+#define EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID { 0x9042a9de, 0x23dc, 0x4a38, { 0x96, 0xfb, 0x7a, 0xde, 0xd0, 0x80, 0x51, 0x6a } }
 
 typedef struct _EFI_GRAPHICS_OUTPUT_PROTOCOL EFI_GRAPHICS_OUTPUT_PROTOCOL;
 
@@ -83,7 +80,7 @@ typedef struct {
 
 	@param  This                  The EFI_GRAPHICS_OUTPUT_PROTOCOL instance.
 	@param  ModeNumber            The mode number to return information on.
-  	@param  SizeOfInfo            A pointer to the size, in bytes, of the Info buffer.
+	@param  SizeOfInfo            A pointer to the size, in bytes, of the Info buffer.
 	@param  Info                  A pointer to callee allocated buffer that returns information about ModeNumber.
 
 	@retval EFI_SUCCESS           Valid mode information was returned.
@@ -91,14 +88,8 @@ typedef struct {
 	@retval EFI_INVALID_PARAMETER ModeNumber is not valid.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_GRAPHICS_OUTPUT_PROTOCOL_QUERY_MODE)(
-	IN  EFI_GRAPHICS_OUTPUT_PROTOCOL         *This,
-	IN  UINT32                               ModeNumber,
-	OUT UINTN                                *SizeOfInfo,
-	OUT EFI_GRAPHICS_OUTPUT_MODE_INFORMATION **Info
-);
+typedef EFI_STATUS(EFIAPI* EFI_GRAPHICS_OUTPUT_PROTOCOL_QUERY_MODE)(
+	IN EFI_GRAPHICS_OUTPUT_PROTOCOL* This, IN UINT32 ModeNumber, OUT UINTN* SizeOfInfo, OUT EFI_GRAPHICS_OUTPUT_MODE_INFORMATION** Info);
 
 /**
 	Set the video device into the specified mode and clears the visible portions of
@@ -112,12 +103,7 @@ EFI_STATUS
 	@retval EFI_UNSUPPORTED   ModeNumber is not supported by this device.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_GRAPHICS_OUTPUT_PROTOCOL_SET_MODE)(
-	IN EFI_GRAPHICS_OUTPUT_PROTOCOL *This,
-	IN UINT32                       ModeNumber
-);
+typedef EFI_STATUS(EFIAPI* EFI_GRAPHICS_OUTPUT_PROTOCOL_SET_MODE)(IN EFI_GRAPHICS_OUTPUT_PROTOCOL* This, IN UINT32 ModeNumber);
 
 typedef struct {
 	///
@@ -131,7 +117,7 @@ typedef struct {
 	///
 	/// Pointer to read-only EFI_GRAPHICS_OUTPUT_MODE_INFORMATION data.
 	///
-	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info;
+	EFI_GRAPHICS_OUTPUT_MODE_INFORMATION* Info;
 	///
 	/// Size of Info structure in bytes.
 	///
@@ -155,13 +141,12 @@ typedef struct {
 ///
 struct _EFI_GRAPHICS_OUTPUT_PROTOCOL {
 	EFI_GRAPHICS_OUTPUT_PROTOCOL_QUERY_MODE QueryMode;
-	EFI_GRAPHICS_OUTPUT_PROTOCOL_SET_MODE   SetMode;
+	EFI_GRAPHICS_OUTPUT_PROTOCOL_SET_MODE SetMode;
 	VOID* Blt;
 	///
 	/// Pointer to EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE data.
 	///
-	EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE *Mode;
+	EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE* Mode;
 };
 
 extern EFI_GUID gEfiGraphicsOutputProtocolGuid;
-

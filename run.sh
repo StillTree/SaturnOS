@@ -22,6 +22,7 @@ fi
 
 qemu-system-x86_64 \
 	$ENABLE_KVM \
+	-machine pc-q35-8.2 \
 	-serial stdio \
 	-drive if=pflash,format=raw,readonly=on,file=$OVMF_CODE_LOCATION \
 	-drive if=pflash,format=raw,readonly=on,file=$OVMF_VARS_LOCATION \

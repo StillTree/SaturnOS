@@ -1,12 +1,13 @@
 #pragma once
 
-#include "UefiTypes.h"
+#include "UefiACPI.h"
 #include "UefiBootServices.h"
-#include "UefiRuntimeServices.h"
-#include "UefiProtocols/SimpleTextOutput.h"
 #include "UefiProtocols/GraphicsOutput.h"
-#include "UefiProtocols/SimpleFileSystem.h"
 #include "UefiProtocols/LoadedImage.h"
+#include "UefiProtocols/SimpleFileSystem.h"
+#include "UefiProtocols/SimpleTextOutput.h"
+#include "UefiRuntimeServices.h"
+#include "UefiTypes.h"
 
 ///
 /// EFI System Table
@@ -75,6 +76,5 @@ typedef struct {
 	/// A pointer to the system configuration tables.
 	/// The number of entries in the table is NumberOfTableEntries.
 	///
-	VOID* ConfigurationTable;
+	EFI_CONFIGURATION_TABLE* ConfigurationTable;
 } EFI_SYSTEM_TABLE;
-

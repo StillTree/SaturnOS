@@ -122,63 +122,50 @@ typedef enum {
 	Returns the current memory map.
 
 	@param[in, out]  MemoryMapSize         A pointer to the size, in bytes, of the MemoryMap buffer.
-	                                       On input, this is the size of the buffer allocated by the caller.
-	                                       On output, it is the size of the buffer returned by the firmware if
-	                                       the buffer was large enough, or the size of the buffer needed to contain
-	                                       the map if the buffer was too small.
+										   On input, this is the size of the buffer allocated by the caller.
+										   On output, it is the size of the buffer returned by the firmware if
+										   the buffer was large enough, or the size of the buffer needed to contain
+										   the map if the buffer was too small.
 	@param[out]      MemoryMap             A pointer to the buffer in which firmware places the current memory
-	                                       map.
+										   map.
 	@param[out]      MapKey                A pointer to the location in which firmware returns the key for the
-	                                       current memory map.
+										   current memory map.
 	@param[out]      DescriptorSize        A pointer to the location in which firmware returns the size, in bytes, of
-	                                       an individual EFI_MEMORY_DESCRIPTOR.
+										   an individual EFI_MEMORY_DESCRIPTOR.
 	@param[out]      DescriptorVersion     A pointer to the location in which firmware returns the version number
-	                                       associated with the EFI_MEMORY_DESCRIPTOR.
+										   associated with the EFI_MEMORY_DESCRIPTOR.
 
 	@retval EFI_SUCCESS           The memory map was returned in the MemoryMap buffer.
 	@retval EFI_BUFFER_TOO_SMALL  The MemoryMap buffer was too small. The current buffer size
-	                              needed to hold the memory map is returned in MemoryMapSize.
+								  needed to hold the memory map is returned in MemoryMapSize.
 	@retval EFI_INVALID_PARAMETER 1) MemoryMapSize is NULL.
-	                              2) The MemoryMap buffer is not too small and MemoryMap is
-	                                 NULL.
+								  2) The MemoryMap buffer is not too small and MemoryMap is
+									 NULL.
 
  **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_GET_MEMORY_MAP)(
-	IN OUT UINTN                 *MemoryMapSize,
-	OUT    EFI_MEMORY_DESCRIPTOR *MemoryMap,
-	OUT    UINTN                 *MapKey,
-	OUT    UINTN                 *DescriptorSize,
-	OUT    UINT32                *DescriptorVersion
-);
+typedef EFI_STATUS(EFIAPI* EFI_GET_MEMORY_MAP)(IN OUT UINTN* MemoryMapSize, OUT EFI_MEMORY_DESCRIPTOR* MemoryMap, OUT UINTN* MapKey,
+	OUT UINTN* DescriptorSize, OUT UINT32* DescriptorVersion);
 
 /**
 	Allocates pool memory.
 
 	@param[in]   PoolType         The type of pool to allocate.
-	                              MemoryType values in the range 0x70000000..0x7FFFFFFF
-	                              are reserved for OEM use. MemoryType values in the range
-	                              0x80000000..0xFFFFFFFF are reserved for use by UEFI OS loaders
-	                              that are provided by operating system vendors.
+								  MemoryType values in the range 0x70000000..0x7FFFFFFF
+								  are reserved for OEM use. MemoryType values in the range
+								  0x80000000..0xFFFFFFFF are reserved for use by UEFI OS loaders
+								  that are provided by operating system vendors.
 	@param[in]   Size             The number of bytes to allocate from the pool.
 	@param[out]  Buffer           A pointer to a pointer to the allocated buffer if the call succeeds;
-	                              undefined otherwise.
+								  undefined otherwise.
 
 	@retval EFI_SUCCESS           The requested number of bytes was allocated.
 	@retval EFI_OUT_OF_RESOURCES  The pool requested could not be allocated.
 	@retval EFI_INVALID_PARAMETER Buffer is NULL.
-	                              PoolType is in the range EfiMaxMemoryType..0x6FFFFFFF.
-	                              PoolType is EfiPersistentMemory.
+								  PoolType is in the range EfiMaxMemoryType..0x6FFFFFFF.
+								  PoolType is EfiPersistentMemory.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_ALLOCATE_POOL)(
-	IN  EFI_MEMORY_TYPE PoolType,
-	IN  UINTN           Size,
-	OUT VOID            **Buffer
-);
+typedef EFI_STATUS(EFIAPI* EFI_ALLOCATE_POOL)(IN EFI_MEMORY_TYPE PoolType, IN UINTN Size, OUT VOID** Buffer);
 
 /**
 	Returns pool memory to the system.
@@ -189,11 +176,7 @@ EFI_STATUS
 	@retval EFI_INVALID_PARAMETER Buffer was invalid.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_FREE_POOL)(
-	IN VOID *Buffer
-);
+typedef EFI_STATUS(EFIAPI* EFI_FREE_POOL)(IN VOID* Buffer);
 
 /**
 	Terminates all boot services.
@@ -205,19 +188,14 @@ EFI_STATUS
 	@retval EFI_INVALID_PARAMETER MapKey is incorrect.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_EXIT_BOOT_SERVICES)(
-	IN EFI_HANDLE ImageHandle,
-	IN UINTN      MapKey
-);
+typedef EFI_STATUS(EFIAPI* EFI_EXIT_BOOT_SERVICES)(IN EFI_HANDLE ImageHandle, IN UINTN MapKey);
 
-#define EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL   0x00000001
-#define EFI_OPEN_PROTOCOL_GET_PROTOCOL         0x00000002
-#define EFI_OPEN_PROTOCOL_TEST_PROTOCOL        0x00000004
-#define EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER  0x00000008
-#define EFI_OPEN_PROTOCOL_BY_DRIVER            0x00000010
-#define EFI_OPEN_PROTOCOL_EXCLUSIVE            0x00000020
+#define EFI_OPEN_PROTOCOL_BY_HANDLE_PROTOCOL 0x00000001
+#define EFI_OPEN_PROTOCOL_GET_PROTOCOL 0x00000002
+#define EFI_OPEN_PROTOCOL_TEST_PROTOCOL 0x00000004
+#define EFI_OPEN_PROTOCOL_BY_CHILD_CONTROLLER 0x00000008
+#define EFI_OPEN_PROTOCOL_BY_DRIVER 0x00000010
+#define EFI_OPEN_PROTOCOL_EXCLUSIVE 0x00000020
 
 /**
 	Queries a handle to determine if it supports a specified protocol. If the protocol is supported by the
@@ -226,187 +204,166 @@ EFI_STATUS
 	@param[in]   Handle           The handle for the protocol interface that is being opened.
 	@param[in]   Protocol         The published unique identifier of the protocol.
 	@param[out]  Interface        Supplies the address where a pointer to the corresponding Protocol
-	                              Interface is returned.
+								  Interface is returned.
 	@param[in]   AgentHandle      The handle of the agent that is opening the protocol interface
-	                              specified by Protocol and Interface.
-  	param[in]   ControllerHandle  If the agent that is opening a protocol is a driver that follows the
-	                              UEFI Driver Model, then this parameter is the controller handle
-	                              that requires the protocol interface. If the agent does not follow
-	                              the UEFI Driver Model, then this parameter is optional and may
-	                              be NULL.
+								  specified by Protocol and Interface.
+	param[in]   ControllerHandle  If the agent that is opening a protocol is a driver that follows the
+								  UEFI Driver Model, then this parameter is the controller handle
+								  that requires the protocol interface. If the agent does not follow
+								  the UEFI Driver Model, then this parameter is optional and may
+								  be NULL.
 	@param[in]   Attributes       The open mode of the protocol interface specified by Handle
-	                              and Protocol.
+								  and Protocol.
 
 	@retval EFI_SUCCESS           An item was added to the open list for the protocol interface, and the
-	                              protocol interface was returned in Interface.
+								  protocol interface was returned in Interface.
 	@retval EFI_UNSUPPORTED       Handle does not support Protocol.
 	@retval EFI_INVALID_PARAMETER One or more parameters are invalid.
 	@retval EFI_ACCESS_DENIED     Required attributes can't be supported in current environment.
 	@retval EFI_ALREADY_STARTED   Item on the open list already has requierd attributes whose agent
-	                              handle is the same as AgentHandle.
+								  handle is the same as AgentHandle.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_OPEN_PROTOCOL)(
-	IN  EFI_HANDLE Handle,
-	IN  EFI_GUID   *Protocol,
-	OUT VOID       **Interface OPTIONAL,
-	IN  EFI_HANDLE AgentHandle,
-	IN  EFI_HANDLE ControllerHandle,
-	IN  UINT32     Attributes
-);
+typedef EFI_STATUS(EFIAPI* EFI_OPEN_PROTOCOL)(IN EFI_HANDLE Handle, IN EFI_GUID* Protocol, OUT VOID** Interface OPTIONAL,
+	IN EFI_HANDLE AgentHandle, IN EFI_HANDLE ControllerHandle, IN UINT32 Attributes);
 
 /**
 	Closes a protocol on a handle that was opened using OpenProtocol().
 
 	@param[in]  Handle            The handle for the protocol interface that was previously opened
-	                              with OpenProtocol(), and is now being closed.
+								  with OpenProtocol(), and is now being closed.
 	@param[in]  Protocol          The published unique identifier of the protocol.
 	@param[in]  AgentHandle       The handle of the agent that is closing the protocol interface.
 	@param[in]  ControllerHandle  If the agent that opened a protocol is a driver that follows the
-	                              UEFI Driver Model, then this parameter is the controller handle
-	                              that required the protocol interface.
+								  UEFI Driver Model, then this parameter is the controller handle
+								  that required the protocol interface.
 
 	@retval EFI_SUCCESS           The protocol instance was closed.
 	@retval EFI_INVALID_PARAMETER 1) Handle is NULL.
-	                              2) AgentHandle is NULL.
-	                              3) ControllerHandle is not NULL and ControllerHandle is not a valid EFI_HANDLE.
-	                              4) Protocol is NULL.
+								  2) AgentHandle is NULL.
+								  3) ControllerHandle is not NULL and ControllerHandle is not a valid EFI_HANDLE.
+								  4) Protocol is NULL.
 	@retval EFI_NOT_FOUND         1) Handle does not support the protocol specified by Protocol.
-	                              2) The protocol interface specified by Handle and Protocol is not
-	                                 currently open by AgentHandle and ControllerHandle.
+								  2) The protocol interface specified by Handle and Protocol is not
+									 currently open by AgentHandle and ControllerHandle.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_CLOSE_PROTOCOL)(
-	IN EFI_HANDLE Handle,
-	IN EFI_GUID   *Protocol,
-	IN EFI_HANDLE AgentHandle,
-	IN EFI_HANDLE ControllerHandle
-);
+typedef EFI_STATUS(EFIAPI* EFI_CLOSE_PROTOCOL)(
+	IN EFI_HANDLE Handle, IN EFI_GUID* Protocol, IN EFI_HANDLE AgentHandle, IN EFI_HANDLE ControllerHandle);
 
 /**
 	Returns the first protocol instance that matches the given protocol.
 
 	@param[in]  Protocol          Provides the protocol to search for.
 	@param[in]  Registration      Optional registration key returned from
-	                              RegisterProtocolNotify().
+								  RegisterProtocolNotify().
 	@param[out]  Interface        On return, a pointer to the first interface that matches Protocol and
-	                              Registration.
+								  Registration.
 
 	@retval EFI_SUCCESS           A protocol instance matching Protocol was found and returned in
-	                              Interface.
+								  Interface.
 	@retval EFI_NOT_FOUND         No protocol instances were found that match Protocol and
-	                              Registration.
+								  Registration.
 	@retval EFI_INVALID_PARAMETER Interface is NULL.
-	                              Protocol is NULL.
+								  Protocol is NULL.
 
 **/
-typedef
-EFI_STATUS
-(EFIAPI *EFI_LOCATE_PROTOCOL)(
-	IN  EFI_GUID *Protocol,
-	IN  VOID     *Registration OPTIONAL,
-	OUT VOID     **Interface
-);
+typedef EFI_STATUS(EFIAPI* EFI_LOCATE_PROTOCOL)(IN EFI_GUID* Protocol, IN VOID* Registration OPTIONAL, OUT VOID** Interface);
 
 ///
 /// EFI Boot Services Table.
 ///
 typedef struct {
-  ///
-  /// The table header for the EFI Boot Services Table.
-  ///
-  EFI_TABLE_HEADER Hdr;
+	///
+	/// The table header for the EFI Boot Services Table.
+	///
+	EFI_TABLE_HEADER Hdr;
 
-  //
-  // Task Priority Services
-  //
-  VOID* RaiseTPL;
-  VOID* RestoreTPL;
+	//
+	// Task Priority Services
+	//
+	VOID* RaiseTPL;
+	VOID* RestoreTPL;
 
-  //
-  // Memory Services
-  //
-  VOID*              AllocatePages;
-  VOID*              FreePages;
-  EFI_GET_MEMORY_MAP GetMemoryMap;
-  EFI_ALLOCATE_POOL  AllocatePool;
-  EFI_FREE_POOL      FreePool;
+	//
+	// Memory Services
+	//
+	VOID* AllocatePages;
+	VOID* FreePages;
+	EFI_GET_MEMORY_MAP GetMemoryMap;
+	EFI_ALLOCATE_POOL AllocatePool;
+	EFI_FREE_POOL FreePool;
 
-  //
-  // Event & Timer Services
-  //
-  VOID* CreateEvent;
-  VOID* SetTimer;
-  VOID* WaitForEvent;
-  VOID* SignalEvent;
-  VOID* CloseEvent;
-  VOID* CheckEvent;
+	//
+	// Event & Timer Services
+	//
+	VOID* CreateEvent;
+	VOID* SetTimer;
+	VOID* WaitForEvent;
+	VOID* SignalEvent;
+	VOID* CloseEvent;
+	VOID* CheckEvent;
 
-  //
-  // Protocol Handler Services
-  //
-  VOID* InstallProtocolInterface;
-  VOID* ReinstallProtocolInterface;
-  VOID* UninstallProtocolInterface;
-  VOID* HandleProtocol;
-  VOID* Reserved;
-  VOID* RegisterProtocolNotify;
-  VOID* LocateHandle;
-  VOID* LocateDevicePath;
-  VOID* InstallConfigurationTable;
+	//
+	// Protocol Handler Services
+	//
+	VOID* InstallProtocolInterface;
+	VOID* ReinstallProtocolInterface;
+	VOID* UninstallProtocolInterface;
+	VOID* HandleProtocol;
+	VOID* Reserved;
+	VOID* RegisterProtocolNotify;
+	VOID* LocateHandle;
+	VOID* LocateDevicePath;
+	VOID* InstallConfigurationTable;
 
-  //
-  // Image Services
-  //
-  VOID*                  LoadImage;
-  VOID*                  StartImage;
-  VOID*                  Exit;
-  VOID*                  UnloadImage;
-  EFI_EXIT_BOOT_SERVICES ExitBootServices;
+	//
+	// Image Services
+	//
+	VOID* LoadImage;
+	VOID* StartImage;
+	VOID* Exit;
+	VOID* UnloadImage;
+	EFI_EXIT_BOOT_SERVICES ExitBootServices;
 
-  //
-  // Miscellaneous Services
-  //
-  VOID* GetNextMonotonicCount;
-  VOID* Stall;
-  VOID* SetWatchdogTimer;
+	//
+	// Miscellaneous Services
+	//
+	VOID* GetNextMonotonicCount;
+	VOID* Stall;
+	VOID* SetWatchdogTimer;
 
-  //
-  // DriverSupport Services
-  //
-  VOID* ConnectController;
-  VOID* DisconnectController;
+	//
+	// DriverSupport Services
+	//
+	VOID* ConnectController;
+	VOID* DisconnectController;
 
-  //
-  // Open and Close Protocol Services
-  //
-  EFI_OPEN_PROTOCOL  OpenProtocol;
-  EFI_CLOSE_PROTOCOL CloseProtocol;
-  VOID*              OpenProtocolInformation;
+	//
+	// Open and Close Protocol Services
+	//
+	EFI_OPEN_PROTOCOL OpenProtocol;
+	EFI_CLOSE_PROTOCOL CloseProtocol;
+	VOID* OpenProtocolInformation;
 
-  //
-  // Library Services
-  //
-  VOID*               ProtocolsPerHandle;
-  VOID*               LocateHandleBuffer;
-  EFI_LOCATE_PROTOCOL LocateProtocol;
-  VOID*               InstallMultipleProtocolInterfaces;
-  VOID*               UninstallMultipleProtocolInterfaces;
+	//
+	// Library Services
+	//
+	VOID* ProtocolsPerHandle;
+	VOID* LocateHandleBuffer;
+	EFI_LOCATE_PROTOCOL LocateProtocol;
+	VOID* InstallMultipleProtocolInterfaces;
+	VOID* UninstallMultipleProtocolInterfaces;
 
-  //
-  // 32-bit CRC Services
-  //
-  VOID* CalculateCrc32;
+	//
+	// 32-bit CRC Services
+	//
+	VOID* CalculateCrc32;
 
-  //
-  // Miscellaneous Services
-  //
-  VOID* CopyMem;
-  VOID* SetMem;
-  VOID* CreateEventEx;
+	//
+	// Miscellaneous Services
+	//
+	VOID* CopyMem;
+	VOID* SetMem;
+	VOID* CreateEventEx;
 } EFI_BOOT_SERVICES;
-

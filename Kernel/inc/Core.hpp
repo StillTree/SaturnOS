@@ -30,6 +30,7 @@ struct KernelBootInfo {
 	void* MemoryMap;
 	U64 MemoryMapEntries;
 	U64 PhysicalMemoryOffset;
+	U64 XSDTAddress;
 };
 
 /// Globally accessible boot information.

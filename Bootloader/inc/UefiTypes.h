@@ -1,16 +1,17 @@
 #pragma once
 
 typedef unsigned long long UINT64;
-typedef long long          INT64;
-typedef unsigned int       UINT32;
-typedef int                INT32;
-typedef unsigned short     CHAR16;
-typedef unsigned short     UINT16;
-typedef short              INT16;
-typedef unsigned char      UINT8;
+typedef long long INT64;
+typedef unsigned int UINT32;
+typedef int INT32;
+typedef unsigned short CHAR16;
+typedef unsigned short UINT16;
+typedef short INT16;
+typedef unsigned char UINT8;
+typedef char INT8;
 
 typedef UINT64 UINTN;
-typedef INT64  INTN;
+typedef INT64 INTN;
 
 #define MAX_BIT 0x8000000000000000ULL
 
@@ -20,18 +21,18 @@ typedef unsigned char BOOLEAN;
 /// Boolean true value.  UEFI Specification defines this value to be 1,
 /// but this form is more portable.
 ///
-#define TRUE ((BOOLEAN) (1==1))
+#define TRUE ((BOOLEAN)(1 == 1))
 
 ///
 /// Boolean false value.  UEFI Specification defines this value to be 0,
 /// but this form is more portable.
 ///
-#define FALSE ((BOOLEAN) (0==1))
+#define FALSE ((BOOLEAN)(0 == 1))
 
 ///
 /// NULL pointer (VOID *)
 ///
-#define NULL ((VOID*) 0)
+#define NULL ((VOID*)0)
 
 #define EFIAPI __attribute__((ms_abi))
 
@@ -65,12 +66,12 @@ typedef UINTN EFI_STATUS;
 	Produces a RETURN_STATUS code with the highest bit set.
 
 	@param  StatusCode    The status code value to convert into a warning code.
-	                      StatusCode must be in the range 0x00000000..0x7FFFFFFF.
+						  StatusCode must be in the range 0x00000000..0x7FFFFFFF.
 
 	@return The value specified by StatusCode with the highest bit set.
 
 **/
-#define ENCODE_ERROR(StatusCode) ((EFI_STATUS) (MAX_BIT | (StatusCode)))
+#define ENCODE_ERROR(StatusCode) ((EFI_STATUS)(MAX_BIT | (StatusCode)))
 
 /**
 	Returns TRUE if a specified EFI_STATUS code is an error code.
@@ -83,12 +84,12 @@ typedef UINTN EFI_STATUS;
 	@retval FALSE         The high bit of StatusCode is clear.
 
 **/
-#define EFI_ERROR(StatusCode) (((INTN) (EFI_STATUS) (StatusCode)) < 0)
+#define EFI_ERROR(StatusCode) (((INTN)(EFI_STATUS)(StatusCode)) < 0)
 
 ///
 /// The operation completed successfully.
 ///
-#define EFI_SUCCESS (EFI_STATUS) (0)
+#define EFI_SUCCESS (EFI_STATUS)(0)
 
 ///
 /// The parameter was incorrect.
@@ -146,7 +147,7 @@ typedef struct {
 	UINT32 Data1;
 	UINT16 Data2;
 	UINT16 Data3;
-	UINT8  Data4[8];
+	UINT8 Data4[8];
 } EFI_GUID;
 
 ///
@@ -161,17 +162,17 @@ typedef struct {
 ///  TimeZone:   -1440 to 1440 or 2047
 ///
 typedef struct {
-	UINT16    Year;
-	UINT8     Month;
-	UINT8     Day;
-	UINT8     Hour;
-	UINT8     Minute;
-	UINT8     Second;
-	UINT8     Pad1;
-	UINT32    Nanosecond;
-	INT16     TimeZone;
-	UINT8     Daylight;
-	UINT8     Pad2;
+	UINT16 Year;
+	UINT8 Month;
+	UINT8 Day;
+	UINT8 Hour;
+	UINT8 Minute;
+	UINT8 Second;
+	UINT8 Pad1;
+	UINT32 Nanosecond;
+	INT16 TimeZone;
+	UINT8 Daylight;
+	UINT8 Pad2;
 } EFI_TIME;
 
 ///
@@ -205,4 +206,3 @@ typedef struct {
 	///
 	UINT32 Reserved;
 } EFI_TABLE_HEADER;
-

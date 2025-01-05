@@ -1,5 +1,6 @@
 #include "Core.hpp"
 
+#include "ACPI.hpp"
 #include "CPUID.hpp"
 #include "GDT.hpp"
 #include "IDT.hpp"
@@ -65,6 +66,12 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	result = g_heapMemoryAllocator.Init(102400, VirtualAddress(0x6969'6969'0000));
 	if (result.IsError()) {
 		SK_LOG_ERROR("Could not initialize the kernel's heap memory pool");
+	}
+
+	SK_LOG_INFO("Parsing the ACPI structures");
+	result = InitXSDT();
+	if (result.IsError()) {
+		SK_LOG_ERROR("An unexpected error occured while trying to parse ACPI structures");
 	}
 
 	// __asm__ volatile("int3");

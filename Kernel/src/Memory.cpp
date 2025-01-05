@@ -20,20 +20,17 @@ auto MemoryCopy(void* ptr1, void* ptr2, USIZE size) -> void
 	}
 }
 
-auto MemoryCompare(const void* ptr1, const void* ptr2, USIZE size) -> I32
+auto MemoryCompare(const void* ptr1, const void* ptr2, USIZE size) -> bool
 {
 	const U8* a = static_cast<const U8*>(ptr1);
 	const U8* b = static_cast<const U8*>(ptr2);
 
 	for (USIZE i = 0; i < size; i++) {
-		if (a[i] < b[i])
-			return -1;
-
-		if (a[i] > b[i])
-			return 1;
+		if (a[i] != b[i])
+			return false;
 	}
 
-	return 0;
+	return true;
 }
 
 }
