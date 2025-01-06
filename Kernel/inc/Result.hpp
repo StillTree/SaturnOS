@@ -11,10 +11,13 @@ enum class ErrorCode : U8 {
 	SerialOutputUnavailabe,
 	OutOfMemory,
 	FrameAlreadyDeallocated,
-	FrameAlreadyMapped,
+	PageAlreadyMapped,
+	PageAlreadyUnmapped,
 	HeapBlockTooSmall,
 	HeapBlockIncorrectAlignment,
 	HeapBlockIncorrectSplitSize,
+	InvalidSDTSignature,
+	XSDTCorrupted,
 };
 
 struct OkType { };

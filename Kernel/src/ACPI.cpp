@@ -1,4 +1,5 @@
 #include "ACPI.hpp"
+
 #include "Memory.hpp"
 
 namespace SaturnKernel {
@@ -28,7 +29,7 @@ XSDT const* g_xsdt = nullptr;
 		}
 	}
 
-	return Result<PhysicalAddress>::MakeErr(ErrorCode::SerialOutputUnavailabe);
+	return Result<PhysicalAddress>::MakeErr(ErrorCode::InvalidSDTSignature);
 }
 
 [[nodiscard]] auto MCFG::Entries() const -> USIZE { return (Header.Length - sizeof(SDTHeader) - 8) / sizeof(MCFG::Entry); }
@@ -40,7 +41,7 @@ auto InitXSDT() -> Result<void>
 	auto* xsdt = PhysicalAddress(g_bootInfo.XSDTAddress).AsPointer<XSDT>();
 
 	if (!xsdt->Header.IsChecksumValid()) {
-		return Result<void>::MakeErr(ErrorCode::SerialOutputUnavailabe);
+		return Result<void>::MakeErr(ErrorCode::XSDTCorrupted);
 	}
 
 	g_xsdt = xsdt;

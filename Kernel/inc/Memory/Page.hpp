@@ -3,7 +3,10 @@
 #include "Core.hpp"
 
 #include "Memory.hpp"
+#include "Memory/PageTable.hpp"
+#include "Memory/Frame.hpp"
 #include "Memory/VirtualAddress.hpp"
+#include "Result.hpp"
 
 namespace SaturnKernel {
 
@@ -20,6 +23,13 @@ template <> struct Page<Size4KiB> {
 	auto operator--(int) -> Page;
 	auto operator<=(const Page& other) const -> bool;
 	auto operator>=(const Page& other) const -> bool;
+
+	/// Maps this virtual memory page to the given physical memory frame, using the global frame allocator if needed.
+	/// Does not flush the TLB.
+	auto MapTo(const Frame<Size4KiB>& frame, PageTableEntryFlags flags) const -> Result<void>;
+	/// Clears the page table entry associated with this page.
+	/// Does not flush the TLB.
+	auto Unmap() const -> Result<void>;
 
 	/// The page's first address.
 	VirtualAddress Address;

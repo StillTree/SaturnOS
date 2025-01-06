@@ -37,6 +37,8 @@ struct PageTableEntry {
 	auto Flags(PageTableEntryFlags flags) -> void;
 	auto PhysicalFrameAddress(PhysicalAddress address) -> void;
 
+	auto Clear() -> void;
+
 	U64 Entry;
 
 	static constexpr U64 FRAME_ADDRESS_MASK = (1ULL << 40) - 1;

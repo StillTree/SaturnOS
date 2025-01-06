@@ -26,7 +26,7 @@ auto HeapMemoryAllocator::Init(USIZE heapSize, VirtualAddress heapBeginning) -> 
 			return Result<void>::MakeErr(frame.Error);
 		}
 
-		auto result = frame.Value.MapTo(heapPage, PageTableEntryFlags::Present | PageTableEntryFlags::Writeable);
+		auto result = heapPage.MapTo(frame.Value, PageTableEntryFlags::Present | PageTableEntryFlags::Writeable);
 		if(result.IsError()) {
 			SK_LOG_ERROR("An unexpected error occured while trying to map a memory frame for the kernel's heap");
 			return Result<void>::MakeErr(result.Error);

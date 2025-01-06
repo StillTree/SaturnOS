@@ -9,6 +9,7 @@
 #include "Memory/HeapMemoryAllocator.hpp"
 #include "PIC.hpp"
 #include "Result.hpp"
+#include "PCI.hpp"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -72,6 +73,12 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	result = InitXSDT();
 	if (result.IsError()) {
 		SK_LOG_ERROR("An unexpected error occured while trying to parse ACPI structures");
+	}
+
+	SK_LOG_INFO("Scanning for available PCI devices");
+	result = ScanPCIDevices();
+	if (result.IsError()) {
+		SK_LOG_ERROR("An unexpected error occured while trying to scan for available PCI devices");
 	}
 
 	// __asm__ volatile("int3");

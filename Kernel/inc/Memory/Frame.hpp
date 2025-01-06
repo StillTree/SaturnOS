@@ -1,12 +1,8 @@
 #pragma once
 
 #include "Core.hpp"
-
 #include "Memory.hpp"
-#include "Memory/Page.hpp"
-#include "Memory/PageTable.hpp"
 #include "Memory/PhysicalAddress.hpp"
-#include "Result.hpp"
 
 namespace SaturnKernel {
 
@@ -32,10 +28,6 @@ template <> struct Frame<Size4KiB> {
 
 	/// Returns a `void*` with a usable address, adjusted for the physical memory mapping performed by the bootloader.
 	[[nodiscard]] auto UsableAddress() const -> void*;
-
-	/// Maps this physical memory frame to the given virtual memory page, using the global frame allocator if needed.
-	/// Does not flush the TLB.
-	auto MapTo(const Page<Size4KiB>& page, PageTableEntryFlags flags) const -> Result<void>;
 
 	/// The frame's first address.
 	PhysicalAddress Address;

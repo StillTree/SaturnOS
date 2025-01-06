@@ -13,4 +13,6 @@ auto PageTableEntry::Flags(PageTableEntryFlags flags) -> void { Entry |= static_
 
 auto PageTableEntry::PhysicalFrameAddress(PhysicalAddress address) -> void { Entry |= address.Value; }
 
+auto PageTableEntry::Clear() -> void { Entry = 0; }
+
 }

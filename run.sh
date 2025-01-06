@@ -26,5 +26,7 @@ qemu-system-x86_64 \
 	-serial stdio \
 	-drive if=pflash,format=raw,readonly=on,file=$OVMF_CODE_LOCATION \
 	-drive if=pflash,format=raw,readonly=on,file=$OVMF_VARS_LOCATION \
-	-drive format=raw,file=fat:rw:esp
+	-drive format=raw,file=fat:rw:esp \
+	-drive format=raw,if=none,id=nvm,file=fat:rw:nvme \
+	-device nvme,serial=deadbeef,drive=nvm
 
