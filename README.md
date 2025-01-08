@@ -11,14 +11,15 @@ This is a repository (monorepo?) for storing all necessary components for runnni
 - Bootloader (Supernova)
 - README.md
 - LICENSE (GPLv3)
-- run.sh (A utility script for running in one command)
+- titan (a utility build tool based on make)
 - Makefile (calls all the other Makefiles)
 ...
 ```
 
-Currently there are 2 main components:
+Currently there are 3 main components:
 -   The kernel itself - `SaturnKernel`
 -   The bootloader - `Supernova`
+-   The build script - `Titan`
 
 ## Why?
 
