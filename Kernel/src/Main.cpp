@@ -82,7 +82,7 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	}
 
 	// __asm__ volatile("int3");
-
+	
 	while (true)
 		__asm__("hlt");
 }

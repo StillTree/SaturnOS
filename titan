@@ -8,6 +8,8 @@ ENABLE_KVM=""
 ACTION=""
 OVMF_CODE_LOCATION="/opt/OVMF/OVMF_CODE.fd"
 OVMF_VARS_LOCATION="/opt/OVMF/OVMF_VARS.fd"
+MODE_BOOTLOADER="-O0 -g -DSN_DEBUG"
+MODE_KERNEL="-O0 -g -DSK_DEBUG"
 
 function PrintUsage()
 {
@@ -50,7 +52,8 @@ while [[ $# -gt 0 ]]; do
 			shift
 			;;
 		-r|--release)
-			RELEASE=true
+			MODE_BOOTLOADER="-O2 -DSN_RELEASE"
+			MODE_KERNEL="-O2 -DSK_RELEASE"
 			shift
 			;;
 		--only-kernel)
@@ -98,12 +101,6 @@ if [[ -n "$ENABLE_KVM" ]]; then
 	fi
 fi
 
-if [[ "$RELEASE" == true ]]; then
-	MODE="-O2"
-else
-	MODE="-O0 -g"
-fi
-
 function PrepareDiskFolders()
 {
 	echo "Preparing folders to be mapped as disks..."
@@ -120,7 +117,7 @@ function Compile()
 {
 	if [[ "$BUILD_BOOTLOADER" == "true" ]]; then
 		echo "Compiling the bootloader..."
-		make -C Bootloader MODE="$MODE"
+		make -C Bootloader MODE="$MODE_BOOTLOADER"
 		if [ $? -ne 0 ]; then
 			exit 1
 		fi
@@ -128,7 +125,7 @@ function Compile()
 
 	if [[ "$BUILD_KERNEL" == "true" ]]; then
 		echo "Compiling the kernel..."
-		make -C Kernel MODE="$MODE"
+		make -C Kernel MODE="$MODE_KERNEL"
 		if [ $? -ne 0 ]; then
 			exit 1
 		fi

@@ -25,7 +25,11 @@ VOID Log(SupernovaLoggerData* logger, SupernovaLogLevel level, CHAR16* message);
 /// and then initialized with the InitLogger function.
 extern SupernovaLoggerData g_mainLogger;
 
+#ifdef SN_DEBUG
 #define SN_LOG_DEBUG(message) Log(&g_mainLogger, LogDebug, message)
+#else
+#define SN_LOG_DEBUG(message)
+#endif
 #define SN_LOG_INFO(message) Log(&g_mainLogger, LogInfo, message)
 #define SN_LOG_WARN(message) Log(&g_mainLogger, LogWarn, message)
 #define SN_LOG_ERROR(message) Log(&g_mainLogger, LogError, message)

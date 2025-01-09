@@ -23,7 +23,11 @@ extern Logger g_mainLogger;
 
 }
 
+#ifdef SK_DEBUG
 #define SK_LOG_DEBUG(...) SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Debug, __VA_ARGS__)
+#else
+#define SK_LOG_DEBUG(...)
+#endif
 #define SK_LOG_INFO(...) SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Info, __VA_ARGS__)
 #define SK_LOG_WARN(...) SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Warn, __VA_ARGS__)
 #define SK_LOG_ERROR(...) SaturnKernel::g_mainLogger.Log(SaturnKernel::LogLevel::Error, __VA_ARGS__)
