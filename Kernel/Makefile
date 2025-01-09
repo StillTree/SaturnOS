@@ -7,8 +7,9 @@ CXX = x86_64-elf-g++
 AS  = x86_64-elf-as
 LD  = x86_64-elf-ld
 
-CXXFLAGS = \
-	-g \
+MODE ?= -O0 -g
+
+CXXFLAGS += \
 	-I $(INC_DIR) \
 	-std=c++23 \
 	-mno-red-zone \
@@ -26,7 +27,7 @@ CXXFLAGS = \
 INTERRUPT_CXXFLAGS = \
 	-mgeneral-regs-only
 
-LDFLAGS = \
+LDFLAGS += \
 	-T linker.ld \
 	-static \
 	-z max-page-size=0x1000 \
@@ -51,7 +52,7 @@ $(TARGET_DIR):
 # Checks if the compiled file contains interrupt routines and if so adds a special flag
 $(TARGET_DIR)/%.o: $(SRC_DIR)/%.cpp | $(TARGET_DIR)
 	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) $(if $(filter $(INTERRUPT_CPP_FILES),$^),$(INTERRUPT_CXXFLAGS),) -c $< -o $@
+	$(CXX) $(MODE) $(CXXFLAGS) $(if $(filter $(INTERRUPT_CPP_FILES),$^),$(INTERRUPT_CXXFLAGS),) -c $< -o $@
 
 $(TARGET_DIR)/%.o: $(SRC_DIR)/%.s | $(TARGET_DIR)
 	@mkdir -p $(dir $@)

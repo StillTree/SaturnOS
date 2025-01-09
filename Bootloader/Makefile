@@ -7,6 +7,8 @@ TARGET     = $(TARGET_DIR)/bootx64.efi
 CC = x86_64-w64-mingw32-gcc
 LD = x86_64-w64-mingw32-ld
 
+MODE ?= -O0 -g
+
 CFLAGS = \
 	-I $(INC_DIR) \
 	-std=c17 \
@@ -17,7 +19,7 @@ CFLAGS = \
 	-Wextra \
 	-Wpedantic
 
-LDFLAGS = \
+LDFLAGS += \
 	--subsystem 10 \
 	-e $(ENTRY_FN) \
 	-nostdlib
@@ -35,7 +37,7 @@ $(TARGET_DIR):
 
 $(TARGET_DIR)/%.o: $(SRC_DIR)/%.c | $(TARGET_DIR)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(MODE) $(CFLAGS) -c $< -o $@
 
 $(TARGET): $(OBJ_FILES)
 	$(LD) $(LDFLAGS) $^ -o $@
