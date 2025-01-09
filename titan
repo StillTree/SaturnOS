@@ -37,7 +37,6 @@ fi
 
 while [[ $# -gt 0 ]]; do
 	case $1 in
-		# So I don't actually check for the build option, because it is the only other option
 		build|b)
 			ACTION="build"
 			shift

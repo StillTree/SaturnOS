@@ -19,7 +19,7 @@ This is a repository (monorepo?) for storing all necessary components for runnni
 Currently there are 3 main components:
 -   The kernel itself - `SaturnKernel`
 -   The bootloader - `Supernova`
--   The build script - `Titan`
+-   The utility build script - `Titan`
 
 ## Why?
 
