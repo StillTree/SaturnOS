@@ -19,7 +19,7 @@ CFLAGS = \
 	-Wextra \
 	-Wpedantic
 
-LDFLAGS += \
+LDFLAGS = \
 	--subsystem 10 \
 	-e $(ENTRY_FN) \
 	-nostdlib

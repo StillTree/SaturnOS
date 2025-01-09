@@ -9,7 +9,7 @@ LD  = x86_64-elf-ld
 
 MODE ?= -O0 -g
 
-CXXFLAGS += \
+CXXFLAGS = \
 	-I $(INC_DIR) \
 	-std=c++23 \
 	-mno-red-zone \
@@ -27,7 +27,7 @@ CXXFLAGS += \
 INTERRUPT_CXXFLAGS = \
 	-mgeneral-regs-only
 
-LDFLAGS += \
+LDFLAGS = \
 	-T linker.ld \
 	-static \
 	-z max-page-size=0x1000 \
