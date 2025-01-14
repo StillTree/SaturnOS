@@ -7,7 +7,7 @@ TARGET     = $(TARGET_DIR)/bootx64.efi
 CC = x86_64-w64-mingw32-gcc
 LD = x86_64-w64-mingw32-ld
 
-MODE ?= -O0 -g
+MODE ?= -O0 -g -DSN_DEBUG
 
 CFLAGS = \
 	-I $(INC_DIR) \

@@ -7,7 +7,7 @@ CXX = x86_64-elf-g++
 AS  = x86_64-elf-as
 LD  = x86_64-elf-ld
 
-MODE ?= -O0 -g
+MODE ?= -O0 -g -DSK_DEBUG
 
 CXXFLAGS = \
 	-I $(INC_DIR) \

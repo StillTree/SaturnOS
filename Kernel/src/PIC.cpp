@@ -12,10 +12,12 @@ auto EOISignal(U8 interruptVector) -> void
 	OutputU8(PIC_MASTER_COMMAND, PIC_EOI_SIGNAL);
 }
 
-auto static SetIRQMask(IRQMask mask) -> void
-{
-	OutputU8(PIC_MASTER_DATA, ~static_cast<U16>(mask));
-	OutputU8(PIC_SLAVE_DATA, ~(static_cast<U16>(mask) >> 8));
+namespace {
+	auto SetIRQMask(IRQMask mask) -> void
+	{
+		OutputU8(PIC_MASTER_DATA, ~static_cast<U16>(mask));
+		OutputU8(PIC_SLAVE_DATA, ~(static_cast<U16>(mask) >> 8));
+	}
 }
 
 auto ReinitializePIC() -> void

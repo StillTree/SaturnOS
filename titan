@@ -30,6 +30,7 @@ function PrintUsage()
 	echo "	--with-ovmf-code <path>     Uses the given OVMF code binary instead of the default /opt/OVMF/OVMF_CODE.fd"
 	echo "	--with-ovmf-vars <path>     Uses the given OVMF vars binary instead of the default /opt/OVMF/OVMF_VARS.fd"
 	echo "	--enable-kvm                Enables KVM in QEMU"
+	echo "	-h, --help                  Prints help information"
 }
 
 if [[ $# -le 0 ]]; then
@@ -79,6 +80,10 @@ while [[ $# -gt 0 ]]; do
 		--with-ovmf-vars)
 			OVMF_VARS_LOCATION=$2
 			shift 2
+			;;
+		-h|--help)
+			PrintUsage
+			exit
 			;;
 		*)
 			echo "Unknown option: $1"

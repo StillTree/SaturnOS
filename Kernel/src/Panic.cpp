@@ -14,88 +14,90 @@ auto Hang() -> void
 		__asm__ volatile("cli; hlt");
 }
 
-static auto PanicFramebufferWriteChar(U8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
-{
-	USIZE charIndex = character > 126 ? 95 : character - 32;
+namespace {
+	auto PanicFramebufferWriteChar(U8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
+	{
+		USIZE charIndex = character > 126 ? 95 : character - 32;
 
-	if (character == L'\n') {
-		if (positionY + 40 >= g_bootInfo.FramebufferHeight) {
-			MemoryFill(g_bootInfo.MemoryMap, 0, g_bootInfo.FramebufferSize);
+		if (character == L'\n') {
+			if (positionY + 40 >= g_bootInfo.FramebufferHeight) {
+				MemoryFill(g_bootInfo.MemoryMap, 0, g_bootInfo.FramebufferSize);
+				return;
+			}
+
+			positionY += 20;
+			positionX = 0;
 			return;
 		}
 
-		positionY += 20;
-		positionX = 0;
-		return;
+		if (character == L'\r') {
+			positionX = 0;
+			return;
+		}
+
+		if (positionX + 9 >= g_bootInfo.FramebufferWidth) {
+			PanicFramebufferWriteChar('\n', framebuffer, positionX, positionY);
+		}
+
+		for (USIZE y = 0; y < 20; y++) {
+			for (USIZE x = 0; x < 10; x++) {
+				U8 pixelIntensity = FONT_BITMAPS[charIndex][y][x];
+				USIZE framebufferIndex = ((positionY + y) * g_bootInfo.FramebufferWidth) + (positionX + x);
+				framebuffer[framebufferIndex] = (pixelIntensity << 16) | (pixelIntensity << 8) | pixelIntensity;
+			}
+		}
+
+		positionX += 9;
 	}
 
-	if (character == L'\r') {
-		positionX = 0;
-		return;
+	auto PanicReinitializeSerialConsole() -> void
+	{
+		OutputU8(0x3f8 + 1, 0x00);
+		OutputU8(0x3f8 + 3, 0x80);
+		OutputU8(0x3f8, 0x03);
+		OutputU8(0x3f8 + 1, 0x00);
+		OutputU8(0x3f8 + 3, 0x03);
+		OutputU8(0x3f8 + 2, 0xc7);
+		OutputU8(0x3f8 + 4, 0x0b);
+		// Set in loopback mode
+		OutputU8(0x3f8 + 4, 0x1e);
+
+		OutputU8(0x3f8, 0xae);
+
+		// If we didn't get back the exact same byte that we sent in loopback mode,
+		// the device is not functioning corretly and should not be used
+		if (InputU8(0x3f8 + 0) != 0xae) {
+			return;
+		}
+
+		// If it is functioning correctly we set it in normal operation mode
+		OutputU8(0x3f8 + 4, 0x0f);
 	}
 
-	if (positionX + 9 >= g_bootInfo.FramebufferWidth) {
-		PanicFramebufferWriteChar('\n', framebuffer, positionX, positionY);
+	auto PanicSerialWriteChar(U8 character) -> void
+	{
+		if (character > 126) {
+			character = '?';
+		}
+
+		OutputU8(0x3f8, character);
 	}
 
-	for (USIZE y = 0; y < 20; y++) {
-		for (USIZE x = 0; x < 10; x++) {
-			U8 pixelIntensity = FONT_BITMAPS[charIndex][y][x];
-			USIZE framebufferIndex = ((positionY + y) * g_bootInfo.FramebufferWidth) + (positionX + x);
-			framebuffer[framebufferIndex] = (pixelIntensity << 16) | (pixelIntensity << 8) | pixelIntensity;
+	auto PanicWriteString(const I8* string, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
+	{
+		USIZE i = 0;
+		while (string[i]) {
+			PanicFramebufferWriteChar(string[i], framebuffer, positionX, positionY);
+			PanicSerialWriteChar(string[i]);
+			i++;
 		}
 	}
 
-	positionX += 9;
-}
-
-static auto PanicReinitializeSerialConsole() -> void
-{
-	OutputU8(0x3f8 + 1, 0x00);
-	OutputU8(0x3f8 + 3, 0x80);
-	OutputU8(0x3f8, 0x03);
-	OutputU8(0x3f8 + 1, 0x00);
-	OutputU8(0x3f8 + 3, 0x03);
-	OutputU8(0x3f8 + 2, 0xc7);
-	OutputU8(0x3f8 + 4, 0x0b);
-	// Set in loopback mode
-	OutputU8(0x3f8 + 4, 0x1e);
-
-	OutputU8(0x3f8, 0xae);
-
-	// If we didn't get back the exact same byte that we sent in loopback mode,
-	// the device is not functioning corretly and should not be used
-	if (InputU8(0x3f8 + 0) != 0xae) {
-		return;
+	auto PanicWriteChar(I8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
+	{
+		PanicSerialWriteChar(character);
+		PanicFramebufferWriteChar(character, framebuffer, positionX, positionY);
 	}
-
-	// If it is functioning correctly we set it in normal operation mode
-	OutputU8(0x3f8 + 4, 0x0f);
-}
-
-static auto PanicSerialWriteChar(U8 character) -> void
-{
-	if (character > 126) {
-		character = '?';
-	}
-
-	OutputU8(0x3f8, character);
-}
-
-static auto PanicWriteString(const I8* string, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
-{
-	USIZE i = 0;
-	while (string[i]) {
-		PanicFramebufferWriteChar(string[i], framebuffer, positionX, positionY);
-		PanicSerialWriteChar(string[i]);
-		i++;
-	}
-}
-
-static auto PanicWriteChar(I8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
-{
-	PanicSerialWriteChar(character);
-	PanicFramebufferWriteChar(character, framebuffer, positionX, positionY);
 }
 
 auto Panic(const I8* message, const I8* fileName, USIZE lineNumber) -> void

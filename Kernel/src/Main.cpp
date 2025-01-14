@@ -7,9 +7,10 @@
 #include "Logger.hpp"
 #include "Memory/BitmapFrameAllocator.hpp"
 #include "Memory/HeapMemoryAllocator.hpp"
-#include "PIC.hpp"
-#include "Result.hpp"
 #include "PCI.hpp"
+//#include "PIC.hpp"
+#include "APIC.hpp"
+#include "Result.hpp"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -45,12 +46,16 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	InitIDT();
 
 	SK_LOG_INFO("Initializing the Intel PIC 8259");
-	ReinitializePIC();
+	// ReinitializePIC();
+	auto result = InitAPIC();
+	if (result.IsError()) {
+		SK_LOG_ERROR("An unexpected error occured while trying to initialize the x2APIC");
+	}
 
 	EnableInterrupts();
 
 	SK_LOG_INFO("Saving the CPUID processor information");
-	auto result = g_cpuInformation.SaveInfo();
+	result = g_cpuInformation.SaveInfo();
 	if (result.IsError()) {
 		SK_LOG_ERROR("Could not read the CPUID information");
 	}
@@ -82,7 +87,7 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	}
 
 	// __asm__ volatile("int3");
-	
+
 	while (true)
 		__asm__("hlt");
 }
