@@ -45,7 +45,32 @@ struct __attribute__((packed)) MCFG {
 
 	[[nodiscard]] auto Entries() const -> USIZE;
 
-	auto GetPCISegmentGroup(USIZE index) -> Entry;
+	auto GetPCISegmentGroup(USIZE index) -> Entry*;
+};
+
+struct __attribute__((packed)) MADT {
+	struct __attribute__((packed)) EntryHeader {
+		U8 Type;
+		U8 Length;
+	};
+
+	struct __attribute__((packed)) EntryIO {
+		EntryHeader Header;
+
+		U8 IOAPICID;
+		U8 Reserved;
+		U32 IOAPICAddress;
+		U32 GSIBase;
+	};
+
+	SDTHeader Header;
+
+	U32 LocalAPICAddress;
+	U32 Flags;
+	
+	EntryHeader FirstEntry;
+
+	auto GetAPICEntry(EntryHeader*& pointer) -> bool;
 };
 
 auto InitXSDT() -> Result<void>;

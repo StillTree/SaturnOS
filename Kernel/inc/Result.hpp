@@ -18,6 +18,8 @@ enum class ErrorCode : U8 {
 	HeapBlockIncorrectSplitSize,
 	InvalidSDTSignature,
 	XSDTCorrupted,
+	X2APICUnsupported,
+	IOAPICNotPresent,
 };
 
 struct OkType { };

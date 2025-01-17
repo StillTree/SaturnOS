@@ -4,7 +4,7 @@
 #include "Keyboard.hpp"
 #include "Logger.hpp"
 #include "Memory/PageTable.hpp"
-#include "PIC.hpp"
+#include "APIC.hpp"
 #include "Panic.hpp"
 
 namespace SaturnKernel {
@@ -113,7 +113,7 @@ __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /*unuse
 		g_mainLogger.SerialConsole.WriteChar(character);
 	}
 
-	EOISignal(33);
+	EOISignal();
 }
 
 }

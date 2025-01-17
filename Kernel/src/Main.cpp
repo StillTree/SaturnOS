@@ -8,7 +8,6 @@
 #include "Memory/BitmapFrameAllocator.hpp"
 #include "Memory/HeapMemoryAllocator.hpp"
 #include "PCI.hpp"
-//#include "PIC.hpp"
 #include "APIC.hpp"
 #include "Result.hpp"
 
@@ -16,7 +15,7 @@
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
 #endif
 
-// Initially empty.
+/// Initially empty.
 SaturnKernel::KernelBootInfo SaturnKernel::g_bootInfo = {};
 
 /// C linking so the linker and the bootloader don't absolutely shit themselves.
@@ -24,11 +23,11 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 {
 	using namespace SaturnKernel;
 
-	// Copy the structure provided by the bootloader right at the beginning, so every part of the code can safely access it.
+	// Copy the structure provided by the bootloader right at the beginning, so every part of the code can safely access it
 	g_bootInfo = *bootInfo;
 
 	// There is a guarantee that the bootloader will set up the framebuffer,
-	// so this function doesn't throw but just warns when the serial output device is not available.
+	// so this function doesn't throw but just warns when the serial output device is not available
 	g_mainLogger.Init(true, true, g_bootInfo, 0x3f8);
 
 	SK_LOG_INFO("Initializing the SaturnOS Kernel\n");
@@ -38,27 +37,23 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	SK_LOG_INFO("This is free software, and you are welcome to redistribute it");
 	SK_LOG_INFO("under certain conditions; type `` for details.\n");
 
+	SK_LOG_INFO("Saving the CPUID processor information");
+	auto result = g_cpuInformation.SaveInfo();
+	if (result.IsError()) {
+		SK_LOG_ERROR("Could not read the CPUID information");
+	}
+
 	DisableInterrupts();
+
+	// Doing that here, to not run into issues with unmasked interrupts or other bullshit later
+	DisablePIC();
 
 	SK_LOG_INFO("Initializing the GDT");
 	InitGDT();
 	SK_LOG_INFO("Initializing the IDT");
 	InitIDT();
 
-	SK_LOG_INFO("Initializing the Intel PIC 8259");
-	// ReinitializePIC();
-	auto result = InitAPIC();
-	if (result.IsError()) {
-		SK_LOG_ERROR("An unexpected error occured while trying to initialize the x2APIC");
-	}
-
 	EnableInterrupts();
-
-	SK_LOG_INFO("Saving the CPUID processor information");
-	result = g_cpuInformation.SaveInfo();
-	if (result.IsError()) {
-		SK_LOG_ERROR("Could not read the CPUID information");
-	}
 
 	SK_LOG_INFO("Initializing the sequential frame allocator");
 	result = g_frameAllocator.Init(static_cast<MemoryMapEntry*>(g_bootInfo.MemoryMap), g_bootInfo.MemoryMapEntries);
@@ -78,6 +73,12 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	result = InitXSDT();
 	if (result.IsError()) {
 		SK_LOG_ERROR("An unexpected error occured while trying to parse ACPI structures");
+	}
+
+	SK_LOG_INFO("Initializing the x2APIC");
+	result = InitAPIC();
+	if (result.IsError()) {
+		SK_LOG_ERROR("An unexpected error occured while trying to initialize the x2APIC");
 	}
 
 	SK_LOG_INFO("Scanning for available PCI devices");

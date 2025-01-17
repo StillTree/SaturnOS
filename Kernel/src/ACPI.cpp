@@ -34,7 +34,21 @@ XSDT const* g_xsdt = nullptr;
 
 [[nodiscard]] auto MCFG::Entries() const -> USIZE { return (Header.Length - sizeof(SDTHeader) - 8) / sizeof(MCFG::Entry); }
 
-auto MCFG::GetPCISegmentGroup(USIZE index) -> MCFG::Entry { return (&FirstEntry)[index]; }
+auto MCFG::GetPCISegmentGroup(USIZE index) -> MCFG::Entry* { return &(&FirstEntry)[index]; }
+
+auto MADT::GetAPICEntry(EntryHeader*& pointer) -> bool
+{
+	U8* offset = reinterpret_cast<U8*>(pointer);
+
+	if(offset + pointer->Length >= reinterpret_cast<U8*>(this) + Header.Length) {
+		return false;
+	}
+
+	offset += pointer->Length;
+	pointer = reinterpret_cast<EntryHeader*>(offset);
+
+	return true;
+}
 
 auto InitXSDT() -> Result<void>
 {
