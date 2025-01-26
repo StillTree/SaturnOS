@@ -4,11 +4,11 @@
 
 namespace SaturnKernel {
 
-extern const U8 FONT_BITMAPS[96][20][10];
+extern const u8 FONT_BITMAPS[96][20][10];
 
-auto FramebufferLogger::WriteChar(U8 character) -> void
+auto FramebufferLogger::WriteChar(u8 character) -> void
 {
-	USIZE charIndex = character > 126 ? 95 : character - 32;
+	usize charIndex = character > 126 ? 95 : character - 32;
 
 	if (character == L'\n') {
 		if (CursorPositionY + 40 >= Height) {
@@ -40,10 +40,10 @@ auto FramebufferLogger::WriteChar(U8 character) -> void
 		WriteChar('\n');
 	}
 
-	for (USIZE y = 0; y < 20; y++) {
-		for (USIZE x = 0; x < 10; x++) {
-			U8 pixelIntensity = FONT_BITMAPS[charIndex][y][x];
-			USIZE framebufferIndex = ((CursorPositionY + y) * Width) + (CursorPositionX + x);
+	for (usize y = 0; y < 20; y++) {
+		for (usize x = 0; x < 10; x++) {
+			u8 pixelIntensity = FONT_BITMAPS[charIndex][y][x];
+			usize framebufferIndex = ((CursorPositionY + y) * Width) + (CursorPositionX + x);
 			Framebuffer[framebufferIndex] = (pixelIntensity << 16) | (pixelIntensity << 8) | pixelIntensity;
 		}
 	}
@@ -51,9 +51,9 @@ auto FramebufferLogger::WriteChar(U8 character) -> void
 	CursorPositionX += 9;
 }
 
-auto FramebufferLogger::WriteString(const I8* string) -> void
+auto FramebufferLogger::WriteString(const i8* string) -> void
 {
-	USIZE i = 0;
+	usize i = 0;
 	while (string[i]) {
 		WriteChar(string[i++]);
 	}

@@ -2,11 +2,11 @@
 
 namespace SaturnKernel {
 
-void OutputU8(U16 port, U8 value) { __asm__ volatile("outb %b0, %w1" : : "a"(value), "Nd"(port) : "memory"); }
+void OutputU8(u16 port, u8 value) { __asm__ volatile("outb %b0, %w1" : : "a"(value), "Nd"(port) : "memory"); }
 
-auto InputU8(U16 port) -> U8
+auto InputU8(u16 port) -> u8
 {
-	U8 result = -1;
+	u8 result = -1;
 	__asm__ volatile("inb %w1, %b0" : "=a"(result) : "Nd"(port) : "memory");
 
 	return result;

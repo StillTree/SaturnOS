@@ -5,21 +5,21 @@
 namespace SaturnKernel {
 
 struct __attribute__((packed)) IDTEntry {
-	U16 AddressLow;
-	U16 KernelCS;
-	U8 IST;
-	U8 Flags;
-	U16 AddressMid;
-	U32 AddressHigh;
-	U32 Reserved;
+	u16 AddressLow;
+	u16 KernelCS;
+	u8 IST;
+	u8 Flags;
+	u16 AddressMid;
+	u32 AddressHigh;
+	u32 Reserved;
 };
 
 struct __attribute__((packed)) IDTRegister {
-	U16 Size;
-	U64 Address;
+	u16 Size;
+	u64 Address;
 };
 
-auto SetIDTEntry(U8 vector, U64 handler) -> void;
+auto SetIDTEntry(u8 vector, u64 handler) -> void;
 auto InitIDT() -> void;
 
 /// Executes the `sti` instruction.

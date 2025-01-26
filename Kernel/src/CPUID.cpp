@@ -6,7 +6,7 @@ namespace SaturnKernel {
 
 CPUInfo g_cpuInformation = {};
 
-[[nodiscard]] auto CPUInfo::CPUID(U32 leaf, U32 subleaf) const -> Result<CPUIDResult>
+[[nodiscard]] auto CPUInfo::CPUID(u32 leaf, u32 subleaf) const -> Result<CPUIDResult>
 {
 	CPUIDResult result {};
 

@@ -6,7 +6,7 @@ namespace SaturnKernel {
 
 IDTEntry g_idt[256];
 
-auto SetIDTEntry(U8 vector, U64 handlerFn, U8 flags, U8 istNumber) -> void
+auto SetIDTEntry(u8 vector, u64 handlerFn, u8 flags, u8 istNumber) -> void
 {
 	IDTEntry& entry = g_idt[vector];
 	entry.AddressLow = handlerFn;
@@ -21,15 +21,16 @@ auto SetIDTEntry(U8 vector, U64 handlerFn, U8 flags, U8 istNumber) -> void
 auto InitIDT() -> void
 {
 	// TODO: The rest of exception handlers
-	SetIDTEntry(3, reinterpret_cast<U64>(BreakpointInterruptHandler), 0x8e, 0);
-	SetIDTEntry(8, reinterpret_cast<U64>(DoubleFaultInterruptHandler), 0x8f, 1);
-	SetIDTEntry(14, reinterpret_cast<U64>(PageFaultInterruptHandler), 0x8f, 2);
+	SetIDTEntry(3, reinterpret_cast<u64>(BreakpointInterruptHandler), 0x8e, 0);
+	SetIDTEntry(8, reinterpret_cast<u64>(DoubleFaultInterruptHandler), 0x8f, 1);
+	SetIDTEntry(14, reinterpret_cast<u64>(PageFaultInterruptHandler), 0x8f, 2);
 
-	SetIDTEntry(33, reinterpret_cast<U64>(KeyboardInterruptHandler), 0x8e, 0);
+	SetIDTEntry(33, reinterpret_cast<u64>(KeyboardInterruptHandler), 0x8e, 0);
+	SetIDTEntry(34, reinterpret_cast<u64>(TestInterruptHandler), 0x8e, 0);
 
 	IDTRegister idtRegister = {};
 	idtRegister.Size = 0xfff;
-	idtRegister.Address = reinterpret_cast<U64>(&g_idt);
+	idtRegister.Address = reinterpret_cast<u64>(&g_idt);
 
 	__asm__ volatile("lidt %0\n\t" : : "m"(idtRegister));
 }

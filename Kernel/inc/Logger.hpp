@@ -6,7 +6,7 @@
 
 namespace SaturnKernel {
 
-enum class LogLevel : U8 { Debug, Info, Warn, Error };
+enum class LogLevel : u8 { Debug, Info, Warn, Error };
 
 struct Logger {
 	FramebufferLogger Framebuffer;
@@ -15,8 +15,8 @@ struct Logger {
 	bool FramebufferEnabled;
 	bool SerialConsoleEnabled;
 
-	auto Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort) -> void;
-	auto Log(LogLevel logLevel, const I8* format, ...) -> void;
+	auto Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, u16 serialConsolePort) -> void;
+	auto Log(LogLevel logLevel, const i8* format, ...) -> void;
 };
 
 extern Logger g_mainLogger;

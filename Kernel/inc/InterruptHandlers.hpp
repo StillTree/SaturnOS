@@ -5,19 +5,21 @@
 namespace SaturnKernel {
 
 struct __attribute__((packed)) InterruptFrame {
-	U64 InstructionPointer;
-	U64 CodeSegment;
-	U64 Flags;
-	U64 StackPointer;
-	U64 SegmentSelector;
+	u64 InstructionPointer;
+	u64 CodeSegment;
+	u64 Flags;
+	u64 StackPointer;
+	u64 SegmentSelector;
 };
 
 __attribute__((interrupt)) auto BreakpointInterruptHandler(InterruptFrame* frame) -> void;
 [[noreturn]]
-__attribute__((interrupt)) auto DoubleFaultInterruptHandler(InterruptFrame* frame, U64) -> void;
+__attribute__((interrupt)) auto DoubleFaultInterruptHandler(InterruptFrame* frame, u64) -> void;
 [[noreturn]]
-__attribute__((interrupt)) auto PageFaultInterruptHandler(InterruptFrame* frame, U64 errorCode) -> void;
+__attribute__((interrupt)) auto PageFaultInterruptHandler(InterruptFrame* frame, u64 errorCode) -> void;
 
 __attribute__((interrupt)) auto KeyboardInterruptHandler(InterruptFrame*) -> void;
+
+__attribute__((interrupt)) void TestInterruptHandler(InterruptFrame*);
 
 }

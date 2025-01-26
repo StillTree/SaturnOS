@@ -8,6 +8,7 @@ Checks: |
   -cppcoreguidelines-pro-bounds-pointer-arithmetic,
   -cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-pro-type-vararg,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
   misc-*,
   -misc-non-private-member-variables-in-classes,
   modernize-*,

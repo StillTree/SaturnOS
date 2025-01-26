@@ -7,7 +7,7 @@
 
 namespace SaturnKernel {
 
-Page<Size4KiB>::Page(U64 address)
+Page<Size4KiB>::Page(u64 address)
 	: Address(address & ~0xfff)
 {
 }
@@ -35,9 +35,13 @@ auto Page<Size4KiB>::operator<=(const Page& other) const -> bool { return Addres
 
 auto Page<Size4KiB>::operator>=(const Page& other) const -> bool { return Address >= other.Address; }
 
+auto Page<Size4KiB>::operator<(const Page& other) const -> bool { return Address < other.Address; }
+
+auto Page<Size4KiB>::operator>(const Page& other) const -> bool { return Address > other.Address; }
+
 auto Page<Size4KiB>::MapTo(const Frame<Size4KiB>& frame, PageTableEntryFlags flags) const -> Result<void>
 {
-	U16 p4Index = Address.Page4Index();
+	u16 p4Index = Address.Page4Index();
 	auto* p4Table = PageTable4Address().AsPointer<PageTableEntry>();
 
 	// If there is no Level 3 table at the expected level 4's index, we need to create it.
@@ -55,7 +59,7 @@ auto Page<Size4KiB>::MapTo(const Frame<Size4KiB>& frame, PageTableEntryFlags fla
 		p4Table[p4Index].PhysicalFrameAddress(newP3.Value.Address);
 	}
 
-	U16 p3Index = Address.Page3Index();
+	u16 p3Index = Address.Page3Index();
 	auto* p3Table = p4Table[p4Index].PhysicalFrameAddress().AsPointer<PageTableEntry>();
 
 	// If there is no Level 2 table at the expected level 3's index, we need to create it.
@@ -73,7 +77,7 @@ auto Page<Size4KiB>::MapTo(const Frame<Size4KiB>& frame, PageTableEntryFlags fla
 		p3Table[p3Index].PhysicalFrameAddress(newP2.Value.Address);
 	}
 
-	U16 p2Index = Address.Page2Index();
+	u16 p2Index = Address.Page2Index();
 	auto* p2Table = p3Table[p3Index].PhysicalFrameAddress().AsPointer<PageTableEntry>();
 
 	// If there is no Level 1 table at the expected level 2's index, we need to create it.
@@ -91,7 +95,7 @@ auto Page<Size4KiB>::MapTo(const Frame<Size4KiB>& frame, PageTableEntryFlags fla
 		p2Table[p2Index].PhysicalFrameAddress(newP1.Value.Address);
 	}
 
-	U16 p1Index = Address.Page1Index();
+	u16 p1Index = Address.Page1Index();
 	auto* p1Table = p2Table[p2Index].PhysicalFrameAddress().AsPointer<PageTableEntry>();
 
 	// If we are trying to map an existing page, something went really wrong...
@@ -108,7 +112,7 @@ auto Page<Size4KiB>::MapTo(const Frame<Size4KiB>& frame, PageTableEntryFlags fla
 
 auto Page<Size4KiB>::Unmap() const -> Result<void>
 {
-	U16 p4Index = Address.Page4Index();
+	u16 p4Index = Address.Page4Index();
 	auto* p4Table = PageTable4Address().AsPointer<PageTableEntry>();
 
 	// If there is no Level 3 table at the expected level 4's index, this virtual address is not mapped.
@@ -117,7 +121,7 @@ auto Page<Size4KiB>::Unmap() const -> Result<void>
 		return Result<void>::MakeErr(ErrorCode::PageAlreadyUnmapped);
 	}
 
-	U16 p3Index = Address.Page3Index();
+	u16 p3Index = Address.Page3Index();
 	auto* p3Table = p4Table[p4Index].PhysicalFrameAddress().AsPointer<PageTableEntry>();
 
 	// If there is no Level 2 table at the expected level 3's index, this virtual address is not mapped.
@@ -126,7 +130,7 @@ auto Page<Size4KiB>::Unmap() const -> Result<void>
 		return Result<void>::MakeErr(ErrorCode::PageAlreadyUnmapped);
 	}
 
-	U16 p2Index = Address.Page2Index();
+	u16 p2Index = Address.Page2Index();
 	auto* p2Table = p3Table[p3Index].PhysicalFrameAddress().AsPointer<PageTableEntry>();
 
 	// If there is no Level 1 table at the expected level 2's index, this virtual address is not mapped.
@@ -135,7 +139,7 @@ auto Page<Size4KiB>::Unmap() const -> Result<void>
 		return Result<void>::MakeErr(ErrorCode::PageAlreadyUnmapped);
 	}
 
-	U16 p1Index = Address.Page1Index();
+	u16 p1Index = Address.Page1Index();
 	auto* p1Table = p2Table[p2Index].PhysicalFrameAddress().AsPointer<PageTableEntry>();
 
 	// If there is no entry at the expected level 1's index, this virtual address is not mapped.

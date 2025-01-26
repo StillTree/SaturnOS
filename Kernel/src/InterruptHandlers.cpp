@@ -1,10 +1,10 @@
 #include "InterruptHandlers.hpp"
 
+#include "APIC.hpp"
 #include "InOut.hpp"
 #include "Keyboard.hpp"
 #include "Logger.hpp"
 #include "Memory/PageTable.hpp"
-#include "APIC.hpp"
 #include "Panic.hpp"
 
 namespace SaturnKernel {
@@ -21,7 +21,7 @@ __attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame
 	SK_LOG_ERROR("}");
 }
 
-__attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, U64 /*unused*/)
+__attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, u64 /*unused*/)
 {
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: DOUBLE FAULT, InterruptFrame");
 	SK_LOG_ERROR("{");
@@ -35,7 +35,7 @@ __attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* fram
 	Hang();
 }
 
-enum class PageFaultErrorCode : U16 {
+enum class PageFaultErrorCode : u16 {
 	Present = 1,
 	Write = 1 << 1,
 	User = 1 << 2,
@@ -46,14 +46,14 @@ enum class PageFaultErrorCode : U16 {
 	SoftwareGuardExtensions = 1 << 15,
 };
 
-auto operator&(U16 a, PageFaultErrorCode b) -> U16 { return a & static_cast<U16>(b); }
+auto operator&(u16 a, PageFaultErrorCode b) -> u16 { return a & static_cast<u16>(b); }
 
-__attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, U64 errorCode)
+__attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, u64 errorCode)
 {
-	U64 faultVirtualAddress = -1;
+	u64 faultVirtualAddress = -1;
 	__asm__ volatile("mov %%cr2, %0" : "=r"(faultVirtualAddress));
 
-	U64 pml4Address = PageTable4Address().Value;
+	u64 pml4Address = PageTable4Address().Value;
 
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT");
 	SK_LOG_ERROR("Faulty virtual address = {}", faultVirtualAddress);
@@ -106,8 +106,8 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 
 __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /*unused*/)
 {
-	U8 scanCode = InputU8(0x60);
-	I8 character = TranslateScanCode(scanCode);
+	u8 scanCode = InputU8(0x60);
+	i8 character = TranslateScanCode(scanCode);
 	if (character != '?') {
 		g_mainLogger.Framebuffer.WriteChar(character);
 		g_mainLogger.SerialConsole.WriteChar(character);
@@ -115,5 +115,7 @@ __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /*unuse
 
 	EOISignal();
 }
+
+__attribute__((interrupt)) void TestInterruptHandler(InterruptFrame* /*unused*/) { SK_LOG_INFO("!!! NICE !!!"); }
 
 }

@@ -5,28 +5,28 @@
 namespace SaturnKernel {
 
 struct __attribute__((packed)) GDTDescriptor {
-	U16 Size;
-	U64 Address;
+	u16 Size;
+	u64 Address;
 };
 
 struct __attribute__((packed)) GDTEntry32 {
-	U16 Limit;
-	U16 AddressLow;
-	U8 AddressMiddle;
-	U8 Access;
-	U8 FlagsAndLimit;
-	U8 AddressHigh;
+	u16 Limit;
+	u16 AddressLow;
+	u8 AddressMiddle;
+	u8 Access;
+	u8 FlagsAndLimit;
+	u8 AddressHigh;
 };
 
 struct __attribute__((packed)) GDTEntry64 {
-	U16 Limit;
-	U16 AddressLow;
-	U8 AddressMiddle;
-	U8 Access;
-	U8 FlagsAndLimit;
-	U8 AddressHigh;
-	U32 AddressHigher;
-	U32 Reserved;
+	u16 Limit;
+	u16 AddressLow;
+	u8 AddressMiddle;
+	u8 Access;
+	u8 FlagsAndLimit;
+	u8 AddressHigh;
+	u32 AddressHigher;
+	u32 Reserved;
 };
 
 struct __attribute__((packed)) GDT {
@@ -39,13 +39,13 @@ struct __attribute__((packed)) GDT {
 };
 
 struct __attribute__((packed)) TSS {
-	U32 Reserved1;
-	U64 RSP[3];
-	U64 Reserved2;
-	U64 IST[7];
-	U64 Reserved3;
-	U16 Reserved4;
-	U16 IOPermissionBitMap;
+	u32 Reserved1;
+	u64 RSP[3];
+	u64 Reserved2;
+	u64 IST[7];
+	u64 Reserved3;
+	u16 Reserved4;
+	u16 IOPermissionBitMap;
 };
 
 auto InitGDT() -> void;

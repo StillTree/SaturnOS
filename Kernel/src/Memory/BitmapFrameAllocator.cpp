@@ -18,9 +18,9 @@ BitmapFrameAllocator::BitmapFrameAllocator()
 
 auto BitmapFrameAllocator::SetFrameStatus(Frame<Size4KiB> frame, bool used) -> void
 {
-	const USIZE frameIndex = frame.Address / Frame<Size4KiB>::SIZE_BYTES;
-	const USIZE mapIndex = (frameIndex) / 8;
-	const USIZE bitIndex = frameIndex % 8;
+	const usize frameIndex = frame.Address / Frame<Size4KiB>::SIZE_BYTES;
+	const usize mapIndex = (frameIndex) / 8;
+	const usize bitIndex = frameIndex % 8;
 
 	if (used) {
 		m_frameBitmap[mapIndex] |= (1 << bitIndex);
@@ -31,28 +31,28 @@ auto BitmapFrameAllocator::SetFrameStatus(Frame<Size4KiB> frame, bool used) -> v
 
 auto BitmapFrameAllocator::GetFrameStatus(Frame<Size4KiB> frame) -> bool
 {
-	const USIZE frameIndex = frame.Address / Frame<Size4KiB>::SIZE_BYTES;
-	const USIZE mapIndex = (frameIndex) / 8;
-	const USIZE bitIndex = frameIndex % 8;
+	const usize frameIndex = frame.Address / Frame<Size4KiB>::SIZE_BYTES;
+	const usize mapIndex = (frameIndex) / 8;
+	const usize bitIndex = frameIndex % 8;
 
 	return (m_frameBitmap[mapIndex] & (1 << bitIndex)) >> bitIndex == 1;
 }
 
-auto BitmapFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>
+auto BitmapFrameAllocator::Init(MemoryMapEntry* memoryMap, usize memoryMapEntries) -> Result<void>
 {
 	// I assume the last entry is a "NULL-descriptor" so I just skip it
 	const Frame<Size4KiB> lastFrame(memoryMap[memoryMapEntries - 2].PhysicalEnd + 1);
 
 	// The number of needed frames to allocate the frame bitmap is calculated with the followinf formula:
 	// number of the last frame / 8 rounded up / frame size (4096) rounded up
-	const USIZE neededFrames = ((((lastFrame.Address / 4096) + 7) / 8) + Frame<Size4KiB>::SIZE_BYTES - 1) / Frame<Size4KiB>::SIZE_BYTES;
+	const usize neededFrames = ((((lastFrame.Address / 4096) + 7) / 8) + Frame<Size4KiB>::SIZE_BYTES - 1) / Frame<Size4KiB>::SIZE_BYTES;
 
 	if (neededFrames >= ((memoryMap[0].PhysicalEnd + 1 - memoryMap[0].PhysicalStart) / Frame<Size4KiB>::SIZE_BYTES)) {
 		SK_LOG_ERROR("There is not enough contiguous physical frames to allocate the frame bitmap");
 		return Result<void>::MakeErr(ErrorCode::NotEnoughMemoryFrames);
 	}
 
-	m_frameBitmap = memoryMap[0].PhysicalStart.AsPointer<U8>();
+	m_frameBitmap = memoryMap[0].PhysicalStart.AsPointer<u8>();
 	m_memoryMap = memoryMap;
 	m_memoryMapEntries = memoryMapEntries;
 
@@ -64,7 +64,7 @@ auto BitmapFrameAllocator::Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntrie
 	MemoryFill(m_frameBitmap, 255, neededFrames * Frame<Size4KiB>::SIZE_BYTES);
 
 	// Then we mark frames in the memory map as unused since the map only contains available memory regions
-	for (USIZE i = 0; i < memoryMapEntries - 2; i++) {
+	for (usize i = 0; i < memoryMapEntries - 2; i++) {
 		const Frame<Size4KiB> lastFrame(m_memoryMap[i].PhysicalEnd);
 		Frame<Size4KiB> frame(m_memoryMap[i].PhysicalStart);
 

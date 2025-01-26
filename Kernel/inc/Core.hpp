@@ -1,36 +1,34 @@
 #pragma once
 
-#include "STD.hpp"
-
 // Yes, yes, I am aware I could have used the stdint.h header,
 // but the kernel only runs on x86, 64-bit, so it doesn't matter if I use these or the variable sized builtins
-using I8 = char;
-using I16 = short;
-using I32 = int;
-using I64 = long long;
+using i8 = char;
+using i16 = short;
+using i32 = int;
+using i64 = long long;
 
-using U8 = unsigned char;
-using U16 = unsigned short;
-using U32 = unsigned int;
-using U64 = unsigned long long;
+using u8 = unsigned char;
+using u16 = unsigned short;
+using u32 = unsigned int;
+using u64 = unsigned long long;
 
-using F32 = float;
-using F64 = double;
+using f32 = float;
+using f64 = double;
 
-using USIZE = U64;
+using usize = u64;
 
 namespace SaturnKernel {
 
 /// Boot information passed to the kernel by the bootloader.
 struct KernelBootInfo {
-	U32* Framebuffer;
-	U64 FramebufferSize;
-	U64 FramebufferWidth;
-	U64 FramebufferHeight;
+	u32* Framebuffer;
+	u64 FramebufferSize;
+	u64 FramebufferWidth;
+	u64 FramebufferHeight;
 	void* MemoryMap;
-	U64 MemoryMapEntries;
-	U64 PhysicalMemoryOffset;
-	U64 XSDTAddress;
+	u64 MemoryMapEntries;
+	u64 PhysicalMemoryOffset;
+	u64 XSDTAddress;
 };
 
 /// Globally accessible boot information.

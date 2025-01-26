@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core.hpp"
-
 #include "Memory.hpp"
 #include "Memory/PageTable.hpp"
 #include "Memory/Frame.hpp"
@@ -15,7 +14,7 @@ template <typename T> struct Page;
 /// Represents a 4 KiB virtual memory page.
 template <> struct Page<Size4KiB> {
 	/// Aligns down the given address to the lower `SIZE_BYTES` byte if it already isn't.
-	explicit Page(U64 address);
+	explicit Page(u64 address);
 	/// Aligns down the given address to the lower `SIZE_BYTES` byte if it already isn't.
 	explicit Page(VirtualAddress address);
 
@@ -23,6 +22,8 @@ template <> struct Page<Size4KiB> {
 	auto operator--(int) -> Page;
 	auto operator<=(const Page& other) const -> bool;
 	auto operator>=(const Page& other) const -> bool;
+	auto operator<(const Page& other) const -> bool;
+	auto operator>(const Page& other) const -> bool;
 
 	/// Maps this virtual memory page to the given physical memory frame, using the global frame allocator if needed.
 	/// Does not flush the TLB.
@@ -35,7 +36,7 @@ template <> struct Page<Size4KiB> {
 	VirtualAddress Address;
 
 	/// The page's size in bytes.
-	static constexpr U64 SIZE_BYTES = 4096;
+	static constexpr u64 SIZE_BYTES = 4096;
 };
 
 }

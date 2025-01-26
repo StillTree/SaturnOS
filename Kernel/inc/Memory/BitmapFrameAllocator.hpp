@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Core.hpp"
-
 #include "Memory/Frame.hpp"
 #include "Result.hpp"
 
@@ -11,7 +10,7 @@ namespace SaturnKernel {
 struct BitmapFrameAllocator {
 	BitmapFrameAllocator();
 
-	auto Init(MemoryMapEntry* memoryMap, USIZE memoryMapEntries) -> Result<void>;
+	auto Init(MemoryMapEntry* memoryMap, usize memoryMapEntries) -> Result<void>;
 
 	/// Allocates a single 4 KiB memory frame.
 	[[nodiscard]] auto AllocateFrame() -> Result<Frame<Size4KiB>>;
@@ -24,8 +23,8 @@ private:
 	auto GetFrameStatus(Frame<Size4KiB> frame) -> bool;
 
 	MemoryMapEntry* m_memoryMap;
-	USIZE m_memoryMapEntries;
-	U8* m_frameBitmap;
+	usize m_memoryMapEntries;
+	u8* m_frameBitmap;
 	Frame<Size4KiB> m_lastFrame;
 };
 

@@ -6,7 +6,7 @@
 
 namespace SaturnKernel {
 
-extern const U8 FONT_BITMAPS[96][20][10];
+extern const u8 FONT_BITMAPS[96][20][10];
 
 auto Hang() -> void
 {
@@ -15,9 +15,9 @@ auto Hang() -> void
 }
 
 namespace {
-	auto PanicFramebufferWriteChar(U8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
+	auto PanicFramebufferWriteChar(u8 character, u32* framebuffer, usize& positionX, usize& positionY) -> void
 	{
-		USIZE charIndex = character > 126 ? 95 : character - 32;
+		usize charIndex = character > 126 ? 95 : character - 32;
 
 		if (character == L'\n') {
 			if (positionY + 40 >= g_bootInfo.FramebufferHeight) {
@@ -39,10 +39,10 @@ namespace {
 			PanicFramebufferWriteChar('\n', framebuffer, positionX, positionY);
 		}
 
-		for (USIZE y = 0; y < 20; y++) {
-			for (USIZE x = 0; x < 10; x++) {
-				U8 pixelIntensity = FONT_BITMAPS[charIndex][y][x];
-				USIZE framebufferIndex = ((positionY + y) * g_bootInfo.FramebufferWidth) + (positionX + x);
+		for (usize y = 0; y < 20; y++) {
+			for (usize x = 0; x < 10; x++) {
+				u8 pixelIntensity = FONT_BITMAPS[charIndex][y][x];
+				usize framebufferIndex = ((positionY + y) * g_bootInfo.FramebufferWidth) + (positionX + x);
 				framebuffer[framebufferIndex] = (pixelIntensity << 16) | (pixelIntensity << 8) | pixelIntensity;
 			}
 		}
@@ -74,7 +74,7 @@ namespace {
 		OutputU8(0x3f8 + 4, 0x0f);
 	}
 
-	auto PanicSerialWriteChar(U8 character) -> void
+	auto PanicSerialWriteChar(u8 character) -> void
 	{
 		if (character > 126) {
 			character = '?';
@@ -83,9 +83,9 @@ namespace {
 		OutputU8(0x3f8, character);
 	}
 
-	auto PanicWriteString(const I8* string, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
+	auto PanicWriteString(const i8* string, u32* framebuffer, usize& positionX, usize& positionY) -> void
 	{
-		USIZE i = 0;
+		usize i = 0;
 		while (string[i]) {
 			PanicFramebufferWriteChar(string[i], framebuffer, positionX, positionY);
 			PanicSerialWriteChar(string[i]);
@@ -93,20 +93,20 @@ namespace {
 		}
 	}
 
-	auto PanicWriteChar(I8 character, U32* framebuffer, USIZE& positionX, USIZE& positionY) -> void
+	auto PanicWriteChar(i8 character, u32* framebuffer, usize& positionX, usize& positionY) -> void
 	{
 		PanicSerialWriteChar(character);
 		PanicFramebufferWriteChar(character, framebuffer, positionX, positionY);
 	}
 }
 
-auto Panic(const I8* message, const I8* fileName, USIZE lineNumber) -> void
+auto Panic(const i8* message, const i8* fileName, usize lineNumber) -> void
 {
-	USIZE cursorPositionX = 0;
-	USIZE cursorPositionY = 0;
+	usize cursorPositionX = 0;
+	usize cursorPositionY = 0;
 	// The bootloader will refuse to boot the system if there is no viable framebuffer to use, so a framebuffer is guaranteed to be
 	// present.
-	U32* framebuffer = g_bootInfo.Framebuffer;
+	u32* framebuffer = g_bootInfo.Framebuffer;
 
 	MemoryFill(framebuffer, 0, g_bootInfo.FramebufferSize);
 	// We don't know if the COM1 serial output device has been initialized in any way, so we initialize it here ourselves
@@ -118,7 +118,7 @@ auto Panic(const I8* message, const I8* fileName, USIZE lineNumber) -> void
 	PanicWriteString("Occured at: ", framebuffer, cursorPositionX, cursorPositionY);
 	PanicWriteString(fileName, framebuffer, cursorPositionX, cursorPositionY);
 	PanicWriteChar(':', framebuffer, cursorPositionX, cursorPositionY);
-	I8 lineNumberString[MAX_DECIMAL_LENGTH];
+	i8 lineNumberString[MAX_DECIMAL_LENGTH];
 	NumberToDecimalString(lineNumber, lineNumberString);
 	PanicWriteString(lineNumberString, framebuffer, cursorPositionX, cursorPositionY);
 	PanicWriteChar('\n', framebuffer, cursorPositionX, cursorPositionY);

@@ -2,11 +2,11 @@
 
 namespace SaturnKernel {
 
-constexpr I8 HEX_DIGITS[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+constexpr i8 HEX_DIGITS[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
 
-auto NumberToHexStringLength(U64 number) -> USIZE
+auto NumberToHexStringLength(u64 number) -> usize
 {
-	USIZE length = 3;
+	usize length = 3;
 
 	do {
 		length++;
@@ -16,7 +16,7 @@ auto NumberToHexStringLength(U64 number) -> USIZE
 	return length;
 }
 
-auto NumberToHexString(U64 number, I8* buffer) -> void
+auto NumberToHexString(u64 number, i8* buffer) -> void
 {
 	buffer[0] = '0';
 	buffer[1] = 'x';
@@ -27,7 +27,7 @@ auto NumberToHexString(U64 number, I8* buffer) -> void
 		return;
 	}
 
-	USIZE i = NumberToHexStringLength(number) - 1;
+	usize i = NumberToHexStringLength(number) - 1;
 	buffer[i] = '\0';
 
 	while (number > 0 && i > 1) {
@@ -36,9 +36,9 @@ auto NumberToHexString(U64 number, I8* buffer) -> void
 	}
 }
 
-auto NumberToDecimalStringLength(U64 number) -> USIZE
+auto NumberToDecimalStringLength(u64 number) -> usize
 {
-	USIZE length = 1;
+	usize length = 1;
 
 	do {
 		length++;
@@ -48,7 +48,7 @@ auto NumberToDecimalStringLength(U64 number) -> USIZE
 	return length;
 }
 
-auto NumberToDecimalString(U64 number, I8* buffer) -> void
+auto NumberToDecimalString(u64 number, i8* buffer) -> void
 {
 	if (number == 0) {
 		buffer[0] = '0';
@@ -56,7 +56,7 @@ auto NumberToDecimalString(U64 number, I8* buffer) -> void
 		return;
 	}
 
-	USIZE i = NumberToDecimalStringLength(number) - 1;
+	usize i = NumberToDecimalStringLength(number) - 1;
 	buffer[i] = '\0';
 
 	while (number > 0 && i > 0) {

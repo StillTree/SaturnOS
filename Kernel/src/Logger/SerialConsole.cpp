@@ -4,7 +4,7 @@
 
 namespace SaturnKernel {
 
-auto SerialConsoleLogger::Init(U16 port) -> Result<void>
+auto SerialConsoleLogger::Init(u16 port) -> Result<void>
 {
 	this->Port = port;
 
@@ -32,7 +32,7 @@ auto SerialConsoleLogger::Init(U16 port) -> Result<void>
 	return Result<void>::MakeOk();
 }
 
-auto SerialConsoleLogger::WriteChar(U8 character) const -> void
+auto SerialConsoleLogger::WriteChar(u8 character) const -> void
 {
 	if (character > 126) {
 		character = '?';
@@ -41,9 +41,9 @@ auto SerialConsoleLogger::WriteChar(U8 character) const -> void
 	OutputU8(this->Port, character);
 }
 
-auto SerialConsoleLogger::WriteString(const I8* string) const -> void
+auto SerialConsoleLogger::WriteString(const i8* string) const -> void
 {
-	USIZE i = 0;
+	usize i = 0;
 	while (string[i]) {
 		WriteChar(string[i++]);
 	}

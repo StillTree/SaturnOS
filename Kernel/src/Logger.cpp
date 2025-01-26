@@ -7,7 +7,7 @@ namespace SaturnKernel {
 
 Logger g_mainLogger;
 
-auto Logger::Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, U16 serialConsolePort) -> void
+auto Logger::Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo& bootInfo, u16 serialConsolePort) -> void
 {
 	this->FramebufferEnabled = framebufferEnabled;
 	this->SerialConsoleEnabled = serialConsoleEnabled;
@@ -32,7 +32,7 @@ auto Logger::Init(bool framebufferEnabled, bool serialConsoleEnabled, KernelBoot
 	}
 }
 
-auto Logger::Log(LogLevel logLevel, const I8* format, ...) -> void
+auto Logger::Log(LogLevel logLevel, const i8* format, ...) -> void
 {
 	if (FramebufferEnabled) {
 		switch (logLevel) {
@@ -73,11 +73,11 @@ auto Logger::Log(LogLevel logLevel, const I8* format, ...) -> void
 	va_list args;
 	va_start(args, format);
 
-	USIZE i = 0;
+	usize i = 0;
 	while (format[i] != '\0') {
 		if (format[i] == '{' && format[i + 1] == '}') {
-			I8 hexOutput[MAX_HEX_LENGTH];
-			U64 number = va_arg(args, U64);
+			i8 hexOutput[MAX_HEX_LENGTH];
+			u64 number = va_arg(args, u64);
 			NumberToHexString(number, hexOutput);
 
 			if (FramebufferEnabled)

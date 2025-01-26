@@ -1,10 +1,11 @@
 #pragma once
 
 #include "Core.hpp"
+#include "STD.hpp"
 
 namespace SaturnKernel {
 
-enum class ErrorCode : U8 {
+enum class ErrorCode : u8 {
 	Success = 0,
 	NotEnoughMemoryPages,
 	NotEnoughMemoryFrames,
@@ -20,6 +21,9 @@ enum class ErrorCode : U8 {
 	XSDTCorrupted,
 	X2APICUnsupported,
 	IOAPICNotPresent,
+	InvalidBARIndex,
+	InvalidMSIXVector,
+	PCICapabilitiesNotSupported,
 };
 
 struct OkType { };

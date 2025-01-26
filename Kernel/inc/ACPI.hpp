@@ -5,72 +5,64 @@
 namespace SaturnKernel {
 
 struct __attribute__((packed)) SDTHeader {
-	I8 Signature[4];
-	U32 Length;
-	U8 Revision;
-	U8 Checksum;
-	I8 OEMID[6];
-	I8 OEMTableID[8];
-	U32 OEMRevision;
-	U32 CreatorID;
-	U32 CreatorRevision;
+	i8 Signature[4];
+	u32 Length;
+	u8 Revision;
+	u8 Checksum;
+	i8 OEMID[6];
+	i8 OEMTableID[8];
+	u32 OEMRevision;
+	u32 CreatorID;
+	u32 CreatorRevision;
 
 	[[nodiscard]] auto IsChecksumValid() const -> bool;
 };
 
-struct __attribute__((packed)) XSDT {
-	SDTHeader Header;
+struct __attribute__((packed)) XSDT : public SDTHeader {
+	u64 FirstEntry;
 
-	U64 FirstEntry;
+	[[nodiscard]] auto Entries() const -> usize;
 
-	[[nodiscard]] auto Entries() const -> USIZE;
-
-	[[nodiscard]] auto GetACPITableAddress(const I8* signature) const -> Result<PhysicalAddress>;
+	[[nodiscard]] auto GetACPITableAddress(const i8* signature) const -> Result<PhysicalAddress>;
 };
 
-struct __attribute__((packed)) MCFG {
+struct __attribute__((packed)) MCFG : public SDTHeader {
 	struct __attribute__((packed)) Entry {
-		U64 BaseAddress;
-		U16 SegmentGroupNumber;
-		U8 StartBusNumber;
-		U8 EndBusNumber;
-		U32 Reserved;
+		u64 BaseAddress;
+		u16 SegmentGroupNumber;
+		u8 StartBusNumber;
+		u8 EndBusNumber;
+		u32 Reserved;
 	};
 
-	SDTHeader Header;
-
-	U64 Reserved;
+	u64 Reserved;
 
 	Entry FirstEntry;
 
-	[[nodiscard]] auto Entries() const -> USIZE;
+	[[nodiscard]] auto Entries() const -> usize;
 
-	auto GetPCISegmentGroup(USIZE index) -> Entry*;
+	auto GetPCISegmentGroup(usize index) -> Entry*;
 };
 
-struct __attribute__((packed)) MADT {
-	struct __attribute__((packed)) EntryHeader {
-		U8 Type;
-		U8 Length;
+struct __attribute__((packed)) MADT : public SDTHeader {
+	struct __attribute__((packed)) BaseEntry {
+		u8 Type;
+		u8 Length;
 	};
 
-	struct __attribute__((packed)) EntryIO {
-		EntryHeader Header;
-
-		U8 IOAPICID;
-		U8 Reserved;
-		U32 IOAPICAddress;
-		U32 GSIBase;
+	struct __attribute__((packed)) EntryIO : public BaseEntry {
+		u8 IOAPICID;
+		u8 Reserved;
+		u32 IOAPICAddress;
+		u32 GSIBase;
 	};
 
-	SDTHeader Header;
-
-	U32 LocalAPICAddress;
-	U32 Flags;
+	u32 LocalAPICAddress;
+	u32 Flags;
 	
-	EntryHeader FirstEntry;
+	BaseEntry FirstEntry;
 
-	auto GetAPICEntry(EntryHeader*& pointer) -> bool;
+	auto GetAPICEntry(BaseEntry*& pointer) -> bool;
 };
 
 auto InitXSDT() -> Result<void>;

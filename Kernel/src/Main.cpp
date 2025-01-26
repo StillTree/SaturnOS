@@ -1,14 +1,15 @@
 #include "Core.hpp"
-
 #include "ACPI.hpp"
+#include "APIC.hpp"
 #include "CPUID.hpp"
 #include "GDT.hpp"
 #include "IDT.hpp"
 #include "Logger.hpp"
+#include "MSR.hpp"
 #include "Memory/BitmapFrameAllocator.hpp"
 #include "Memory/HeapMemoryAllocator.hpp"
 #include "PCI.hpp"
-#include "APIC.hpp"
+#include "Storage/Drivers/NVMe.hpp"
 #include "Result.hpp"
 
 #ifndef __x86_64__
@@ -86,6 +87,21 @@ extern "C" auto KernelMain(SaturnKernel::KernelBootInfo* bootInfo) -> void
 	if (result.IsError()) {
 		SK_LOG_ERROR("An unexpected error occured while trying to scan for available PCI devices");
 	}
+
+	SK_LOG_INFO("Initializing the NVMe storage driver");
+	result = g_nvmeDriver.Init();
+	if (result.IsError()) {
+		SK_LOG_ERROR("An unexpected error occured while initializing the NVMe storage driver");
+	}
+
+	u64 identifyBuffer = g_frameAllocator.AllocateFrame().Value.Address.Value;
+	NVMeSubmissionEntry e {};
+	e.CDW0 = 0x6;
+	e.PRP1 = identifyBuffer;
+	e.CDW10 = 1;
+	e.NSID = 0;
+
+	g_nvmeDriver.SendAdminCommand(e);
 
 	// __asm__ volatile("int3");
 

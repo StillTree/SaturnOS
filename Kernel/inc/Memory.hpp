@@ -16,16 +16,16 @@ struct Size2MiB { };
 struct Size1GiB { };
 
 /// C's memset but without a shitty name.
-auto MemoryFill(void* ptr, U8 value, USIZE size) -> void;
+auto MemoryFill(void* ptr, u8 value, usize size) -> void;
 /// C's memcpy but without a shitty name.
-auto MemoryCopy(void* ptr1, void* ptr2, USIZE size) -> void;
+auto MemoryCopy(void* ptr1, void* ptr2, usize size) -> void;
 /// C's memcmp but without a shitty name.
-auto MemoryCompare(const void* ptr1, const void* ptr2, USIZE size) -> bool;
+auto MemoryCompare(const void* ptr1, const void* ptr2, usize size) -> bool;
 
 /// Invalidates the whole TLB cache by reloading the CR3 register.
 inline auto FlushTLB() -> void
 {
-	U64 pml4Address = 0;
+	u64 pml4Address = 0;
 	__asm__ volatile("mov %%cr3, %0" : "=r"(pml4Address));
 	__asm__ volatile("mov %0, %%cr3" : : "r"(pml4Address) : "memory");
 }

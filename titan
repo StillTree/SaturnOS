@@ -148,7 +148,8 @@ function Run()
 		-drive if=pflash,format=raw,readonly=on,file=$OVMF_VARS_LOCATION \
 		-drive format=raw,file=fat:rw:esp \
 		-drive format=raw,if=none,id=nvm,file=fat:rw:nvme \
-		-device nvme,serial=deadbeef,drive=nvm
+		-device nvme,serial=deadbeef,drive=nvm \
+		-d int,guest_errors
 }
 
 function Clean()

@@ -13,7 +13,7 @@ HeapMemoryAllocator::HeapMemoryAllocator()
 {
 }
 
-auto HeapMemoryAllocator::Init(USIZE heapSize, VirtualAddress heapBeginning) -> Result<void>
+auto HeapMemoryAllocator::Init(usize heapSize, VirtualAddress heapBeginning) -> Result<void>
 {
 	const Page<Size4KiB> maxPage(heapBeginning + heapSize);
 
@@ -42,7 +42,7 @@ auto HeapMemoryAllocator::Init(USIZE heapSize, VirtualAddress heapBeginning) -> 
 	return Result<void>::MakeOk();
 }
 
-auto HeapMemoryAllocator::AddFreeRegion(VirtualAddress address, USIZE size) -> Result<void>
+auto HeapMemoryAllocator::AddFreeRegion(VirtualAddress address, usize size) -> Result<void>
 {
 	if (size < sizeof(HeapBlockHeader))
 		return Result<void>::MakeErr(ErrorCode::HeapBlockTooSmall);
@@ -60,7 +60,7 @@ auto HeapMemoryAllocator::AddFreeRegion(VirtualAddress address, USIZE size) -> R
 	return Result<void>::MakeOk();
 }
 
-auto HeapMemoryAllocator::Allocate(USIZE size, USIZE alignment) -> Result<void*>
+auto HeapMemoryAllocator::Allocate(usize size, usize alignment) -> Result<void*>
 {
 	// I ensure that the allocated size can be actually freed later
 	// and that the later freed region's header is correctly aligned.
@@ -70,11 +70,11 @@ auto HeapMemoryAllocator::Allocate(USIZE size, USIZE alignment) -> Result<void*>
 	HeapBlockHeader* currentHeader = &m_head;
 
 	while (currentHeader->Next != nullptr) {
-		U64 blockAddress = reinterpret_cast<U64>(currentHeader->Next);
+		u64 blockAddress = reinterpret_cast<u64>(currentHeader->Next);
 
-		U64 alignedAddress = (blockAddress + alignment - 1) & ~(alignment - 1);
-		USIZE alignmentOffset = alignedAddress - blockAddress;
-		USIZE neededSize = size + alignmentOffset;
+		u64 alignedAddress = (blockAddress + alignment - 1) & ~(alignment - 1);
+		usize alignmentOffset = alignedAddress - blockAddress;
+		usize neededSize = size + alignmentOffset;
 
 		if (currentHeader->Next->Size >= neededSize) {
 			// If an allocation is gonna leave enough space for another block, create it
@@ -102,7 +102,7 @@ auto HeapMemoryAllocator::Allocate(USIZE size, USIZE alignment) -> Result<void*>
 	return Result<void*>::MakeErr(ErrorCode::OutOfMemory);
 }
 
-auto HeapMemoryAllocator::SplitBlock(HeapBlockHeader* block, USIZE newSize) -> Result<void>
+auto HeapMemoryAllocator::SplitBlock(HeapBlockHeader* block, usize newSize) -> Result<void>
 {
 	// I ensure that the new size is also correctly aligned so that this doesn't case any issues with neighbouring blocks
 	newSize = (newSize + alignof(HeapBlockHeader) - 1) & ~(alignof(HeapBlockHeader) - 1);
@@ -110,11 +110,11 @@ auto HeapMemoryAllocator::SplitBlock(HeapBlockHeader* block, USIZE newSize) -> R
 	if (newSize + sizeof(HeapBlockHeader) > block->Size || newSize < sizeof(HeapBlockHeader))
 		return Result<void>::MakeErr(ErrorCode::HeapBlockIncorrectSplitSize);
 
-	USIZE sizeDifference = block->Size - newSize;
+	usize sizeDifference = block->Size - newSize;
 
 	block->Size = newSize;
 
-	auto* newBlock = reinterpret_cast<HeapBlockHeader*>(reinterpret_cast<U64>(block) + block->Size);
+	auto* newBlock = reinterpret_cast<HeapBlockHeader*>(reinterpret_cast<u64>(block) + block->Size);
 	newBlock->Size = sizeDifference;
 	newBlock->Next = block->Next;
 	block->Next = newBlock;
@@ -127,13 +127,13 @@ auto HeapMemoryAllocator::PrintHeaders() -> void
 	auto* currentHeader = &m_head;
 
 	while (currentHeader != nullptr) {
-		SK_LOG_INFO("Size: {} Next: {}", currentHeader->Size, reinterpret_cast<U64>(currentHeader->Next));
+		SK_LOG_INFO("Size: {} Next: {}", currentHeader->Size, reinterpret_cast<u64>(currentHeader->Next));
 
 		currentHeader = currentHeader->Next;
 	}
 }
 
-auto HeapMemoryAllocator::Deallocate(VirtualAddress blockAddress, USIZE size) -> Result<void>
+auto HeapMemoryAllocator::Deallocate(VirtualAddress blockAddress, usize size) -> Result<void>
 {
 	size = size < sizeof(HeapBlockHeader) ? sizeof(HeapBlockHeader) : size;
 

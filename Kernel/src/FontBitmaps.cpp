@@ -6,7 +6,7 @@
 // Rust crate that I modified a little.
 namespace SaturnKernel
 {
-	extern const U8 FONT_BITMAPS[96][20][10] = {
+	extern const u8 FONT_BITMAPS[96][20][10] = {
 		{
 			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },

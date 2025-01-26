@@ -6,11 +6,11 @@
 namespace SaturnKernel {
 
 struct SerialConsoleLogger {
-	auto Init(U16 port) -> Result<void>;
-	auto WriteChar(U8 character) const -> void;
-	auto WriteString(const I8* string) const -> void;
+	auto Init(u16 port) -> Result<void>;
+	auto WriteChar(u8 character) const -> void;
+	auto WriteString(const i8* string) const -> void;
 
-	U16 Port;
+	u16 Port;
 };
 
 }

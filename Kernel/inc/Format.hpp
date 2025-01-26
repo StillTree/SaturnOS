@@ -4,13 +4,13 @@
 
 namespace SaturnKernel {
 
-auto NumberToHexStringLength(U64 number) -> USIZE;
-void NumberToHexString(U64 number, I8* buffer);
+auto NumberToHexStringLength(u64 number) -> usize;
+void NumberToHexString(u64 number, i8* buffer);
 
-auto NumberToDecimalStringLength(U64 number) -> USIZE;
-void NumberToDecimalString(U64 number, I8* buffer);
+auto NumberToDecimalStringLength(u64 number) -> usize;
+void NumberToDecimalString(u64 number, i8* buffer);
 
-constexpr USIZE MAX_HEX_LENGTH = 16;
-constexpr USIZE MAX_DECIMAL_LENGTH = 20;
+constexpr usize MAX_HEX_LENGTH = 16;
+constexpr usize MAX_DECIMAL_LENGTH = 20;
 
 }
