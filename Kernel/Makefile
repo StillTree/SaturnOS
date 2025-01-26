@@ -3,28 +3,27 @@ SRC_DIR    = src
 INC_DIR    = inc
 TARGET     = $(TARGET_DIR)/Kernel.elf
 
-CXX = x86_64-elf-g++
+CC = x86_64-elf-gcc
 AS  = x86_64-elf-as
 LD  = x86_64-elf-ld
 
 MODE ?= -O0 -g -DSK_DEBUG
 
-CXXFLAGS = \
+CCFLAGS = \
 	-I $(INC_DIR) \
-	-std=c++23 \
+	-std=c23 \
 	-mno-red-zone \
 	-mno-mmx \
 	-mcmodel=kernel \
 	-mno-sse \
 	-mno-sse2 \
-	-fno-exceptions \
 	-ffreestanding \
 	-nostdlib \
 	-Wall \
 	-Wextra \
 	-Wpedantic
 
-INTERRUPT_CXXFLAGS = \
+INTERRUPT_CCFLAGS = \
 	-mgeneral-regs-only
 
 LDFLAGS = \
@@ -33,14 +32,14 @@ LDFLAGS = \
 	-z max-page-size=0x1000 \
 	-nostdlib
 
-CPP_FILES           = $(shell find $(SRC_DIR) -name '*.cpp')
-INTERRUPT_CPP_FILES = $(SRC_DIR)/InterruptHandlers.cpp
-ASM_FILES           = $(shell find $(SRC_DIR) -name '*.s')
+C_FILES           = $(shell find $(SRC_DIR) -name '*.c')
+INTERRUPT_C_FILES = $(SRC_DIR)/InterruptHandlers.c
+ASM_FILES         = $(shell find $(SRC_DIR) -name '*.s')
 
-OBJ_CPP_FILES = $(patsubst $(SRC_DIR)/%.cpp,$(TARGET_DIR)/%.o,$(CPP_FILES))
+OBJ_C_FILES   = $(patsubst $(SRC_DIR)/%.c,$(TARGET_DIR)/%.o,$(C_FILES))
 OBJ_ASM_FILES = $(patsubst $(SRC_DIR)/%.s,$(TARGET_DIR)/%.o,$(ASM_FILES))
 
-OBJ_FILES = $(OBJ_CPP_FILES) $(OBJ_ASM_FILES)
+OBJ_FILES = $(OBJ_C_FILES) $(OBJ_ASM_FILES)
 
 .PHONY: all clean
 
@@ -50,9 +49,9 @@ $(TARGET_DIR):
 	mkdir -p $(TARGET_DIR)
 
 # Checks if the compiled file contains interrupt routines and if so adds a special flag
-$(TARGET_DIR)/%.o: $(SRC_DIR)/%.cpp | $(TARGET_DIR)
+$(TARGET_DIR)/%.o: $(SRC_DIR)/%.c | $(TARGET_DIR)
 	@mkdir -p $(dir $@)
-	$(CXX) $(MODE) $(CXXFLAGS) $(if $(filter $(INTERRUPT_CPP_FILES),$^),$(INTERRUPT_CXXFLAGS),) -c $< -o $@
+	$(CC) $(MODE) $(CCFLAGS) $(if $(filter $(INTERRUPT_C_FILES),$^),$(INTERRUPT_CCFLAGS),) -c $< -o $@
 
 $(TARGET_DIR)/%.o: $(SRC_DIR)/%.s | $(TARGET_DIR)
 	@mkdir -p $(dir $@)

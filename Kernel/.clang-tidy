@@ -3,22 +3,13 @@ Checks: |
   bugprone-*,
   -bugprone-easily-swappable-parameters,
   clang-analyzer-*,
-  cppcoreguidelines-*,
-  -cppcoreguidelines-avoid-magic-numbers,
-  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
-  -cppcoreguidelines-avoid-do-while,
-  -cppcoreguidelines-pro-type-vararg,
-  -cppcoreguidelines-pro-bounds-constant-array-index,
   misc-*,
-  -misc-non-private-member-variables-in-classes,
   modernize-*,
-  -modernize-avoid-c-arrays,
-  -modernize-deprecated-headers,
   performance-*,
   readability-*,
-  -readability-braces-around-statements,
   -readability-identifier-length,
   -readability-magic-numbers,
+  -readability-braces-around-statements,
 CheckOptions:
   - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE
@@ -57,6 +48,6 @@ CheckOptions:
   - key: readability-identifier-naming.FileCase
     value: CamelCase
   - key: readability-identifier-naming.HeaderFileExtension
-    value: hpp
+    value: h
   - key: readability-identifier-naming.ImplementationFileExtension
-    value: cpp
+    value: c
