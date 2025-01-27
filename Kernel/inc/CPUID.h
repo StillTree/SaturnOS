@@ -3,16 +3,14 @@
 #include "Core.h"
 #include "Result.h"
 
-namespace SaturnKernel {
-
-struct CPUIDResult {
+typedef struct CPUIDResult {
 	u32 EAX;
 	u32 EBX;
 	u32 ECX;
 	u32 EDX;
-};
+} CPUIDResult;
 
-struct CPUInfo {
+typedef struct CPUInfo {
 	u32 MaximumLeaf = 0;
 	u32 MaximumExtendedLeaf = 0x80000000;
 
@@ -26,14 +24,12 @@ struct CPUInfo {
 
 	u8 PhysicalAddressBits = 0;
 	u8 VirtualAddressBits = 0;
+} CPUInfo;
 
-	/// A wrapper around the CPUID macros from GCC with some error checks.
-	[[nodiscard]] auto CPUID(u32 leaf, u32 subleaf = 0) const -> Result<CPUIDResult>;
+/// A wrapper around the CPUID macros from GCC with some error checks.
+Result CPUID(u32 leaf, u32 subleaf, CPUIDResult* result);
 
-	/// Fills in the whole structure with actual data.
-	auto SaveInfo() -> Result<void>;
-};
+/// Fills in the whole structure with actual data.
+Result CPUIDSaveInfo(CPUInfo* cpuInfo);
 
 extern CPUInfo g_cpuInformation;
-
-}

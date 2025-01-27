@@ -4,30 +4,24 @@
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
 
-namespace SaturnKernel {
-
 HeapMemoryAllocator g_heapMemoryAllocator = {};
 
-HeapMemoryAllocator::HeapMemoryAllocator()
-	: m_head { .Size = 0, .Next = nullptr }
+Result HeapInit(HeapMemoryAllocator* heap, usize heapSize, VirtualAddress heapBeginning)
 {
-}
-
-auto HeapMemoryAllocator::Init(usize heapSize, VirtualAddress heapBeginning) -> Result<void>
-{
-	const Page<Size4KiB> maxPage(heapBeginning + heapSize);
+	const Page4KiB maxPage = heapBeginning + heapSize;
 
 	heapSize &= ~0xfff;
 
-	for (Page<Size4KiB> heapPage(heapBeginning); heapPage <= maxPage; heapPage++) {
-		auto frame = g_frameAllocator.AllocateFrame();
-		if (frame.IsError()) {
+	for (Page4KiB heapPage = heapBeginning; heapPage <= maxPage; heapPage += PAGE_4KIB_SIZE_BYTES) {
+		PhysicalAddress frame;
+		Result result = AllocateFrame(&g_frameAllocator, &frame);
+		if (result) {
 			SK_LOG_ERROR("An unexpected error occured while trying to allocate a memory frame for the kernel's heap");
-			return Result<void>::MakeErr(frame.Error);
+			return result;
 		}
 
 		auto result = heapPage.MapTo(frame.Value, PageTableEntryFlags::Present | PageTableEntryFlags::Writeable);
-		if(result.IsError()) {
+		if (result.IsError()) {
 			SK_LOG_ERROR("An unexpected error occured while trying to map a memory frame for the kernel's heap");
 			return Result<void>::MakeErr(result.Error);
 		}
@@ -42,7 +36,7 @@ auto HeapMemoryAllocator::Init(usize heapSize, VirtualAddress heapBeginning) -> 
 	return Result<void>::MakeOk();
 }
 
-auto HeapMemoryAllocator::AddFreeRegion(VirtualAddress address, usize size) -> Result<void>
+static Result HeapAddFreeRegion(HeapMemoryAllocator* heap, VirtualAddress address, usize size)
 {
 	if (size < sizeof(HeapBlockHeader))
 		return Result<void>::MakeErr(ErrorCode::HeapBlockTooSmall);
@@ -60,7 +54,7 @@ auto HeapMemoryAllocator::AddFreeRegion(VirtualAddress address, usize size) -> R
 	return Result<void>::MakeOk();
 }
 
-auto HeapMemoryAllocator::Allocate(usize size, usize alignment) -> Result<void*>
+Result HeapAllocate(HeapMemoryAllocator* heap, usize size, usize alignment, void** pointer)
 {
 	// I ensure that the allocated size can be actually freed later
 	// and that the later freed region's header is correctly aligned.
@@ -87,7 +81,7 @@ auto HeapMemoryAllocator::Allocate(usize size, usize alignment) -> Result<void*>
 			currentHeader->Next = currentHeader->Next->Next;
 
 			// Not doing that, would leave a gap of forever unusable memory in the heap
-			if(alignmentOffset >= sizeof(HeapBlockHeader)) {
+			if (alignmentOffset >= sizeof(HeapBlockHeader)) {
 				auto result = AddFreeRegion(VirtualAddress(blockAddress), alignmentOffset);
 				if (result.IsError())
 					return Result<void*>::MakeErr(result.Error);
@@ -102,7 +96,7 @@ auto HeapMemoryAllocator::Allocate(usize size, usize alignment) -> Result<void*>
 	return Result<void*>::MakeErr(ErrorCode::OutOfMemory);
 }
 
-auto HeapMemoryAllocator::SplitBlock(HeapBlockHeader* block, usize newSize) -> Result<void>
+static Result SplitBlock(HeapBlockHeader* block, usize newSize)
 {
 	// I ensure that the new size is also correctly aligned so that this doesn't case any issues with neighbouring blocks
 	newSize = (newSize + alignof(HeapBlockHeader) - 1) & ~(alignof(HeapBlockHeader) - 1);
@@ -122,7 +116,7 @@ auto HeapMemoryAllocator::SplitBlock(HeapBlockHeader* block, usize newSize) -> R
 	return Result<void>::MakeOk();
 }
 
-auto HeapMemoryAllocator::PrintHeaders() -> void
+void HeapPrintHeaders(HeapMemoryAllocator* heap)
 {
 	auto* currentHeader = &m_head;
 
@@ -133,11 +127,10 @@ auto HeapMemoryAllocator::PrintHeaders() -> void
 	}
 }
 
-auto HeapMemoryAllocator::Deallocate(VirtualAddress blockAddress, usize size) -> Result<void>
+Result HeapDeallocate(HeapMemoryAllocator* heap, VirtualAddress blockAddress, usize size)
 {
 	size = size < sizeof(HeapBlockHeader) ? sizeof(HeapBlockHeader) : size;
 
 	return AddFreeRegion(blockAddress, size);
 }
-
 }
