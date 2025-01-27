@@ -2,8 +2,6 @@
 #include "Memory/PhysicalAddress.h"
 #include "Result.h"
 
-namespace SaturnKernel {
-
 struct __attribute__((packed)) SDTHeader {
 	i8 Signature[4];
 	u32 Length;

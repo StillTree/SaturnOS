@@ -19,7 +19,7 @@ __attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame
 	SK_LOG_ERROR("}");
 }
 
-__attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, u64 unused)
+__attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, u64 /* unused */)
 {
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: DOUBLE FAULT, InterruptFrame");
 	SK_LOG_ERROR("{");
@@ -100,7 +100,7 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 	Hang();
 }
 
-__attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* unused)
+__attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /* unused */)
 {
 	u8 scanCode = InputU8(0x60);
 	i8 character = TranslateScanCode(scanCode);
@@ -112,4 +112,4 @@ __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* unused)
 	EOISignal();
 }
 
-__attribute__((interrupt)) void TestInterruptHandler(InterruptFrame* unused) { SK_LOG_INFO("!!! NICE !!!"); }
+__attribute__((interrupt)) void TestInterruptHandler(InterruptFrame* /* unused */) { SK_LOG_INFO("!!! NICE !!!"); }

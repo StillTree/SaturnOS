@@ -4,9 +4,9 @@
 
 typedef struct HeapBlockHeader {
 	/// Including the header's size, so in essence the usable size + 2 in bytes.
-	usize Size;
+	usz Size;
 	/// A pointer to the next heap block, `nullptr` if it's the last one.
-	HeapBlockHeader* Next;
+	struct HeapBlockHeader* Next;
 } HeapBlockHeader;
 
 /// A linked list memory allocator for the kernel's needs.
