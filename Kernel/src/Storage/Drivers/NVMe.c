@@ -5,88 +5,87 @@
 #include "Memory/BitmapFrameAllocator.h"
 #include "PCI.h"
 
-namespace SaturnKernel {
-
 NVMeDriver g_nvmeDriver;
 
-auto NVMeDriver::Init() -> Result<void>
+Result NVMeInit(NVMeDriver* driver)
 {
 	// For now, just using the first device and ignoring the rest ones
-	g_pciStorageDevices[0].ConfigurationSpace->Command |= CommandRegister::EnableBusMaster | CommandRegister::EnableMemory;
+	g_pciStorageDevices[0].ConfigurationSpace->Command |= CommandRegisterEnableBusMaster | CommandRegisterEnableMemory;
 
-	auto result = g_pciStorageDevices[0].SetMSIXVector(0, 34);
-	if (result.IsError()) {
-		return Result<void>::MakeErr(result.Error);
+	Result result = PCIDeviceSetMSIXVector(&g_pciStorageDevices[0], 0, 34);
+	if (result) {
+		return result;
 	}
-	g_pciStorageDevices[0].EnableMSIX();
+	PCIDeviceEnableMSIX(&g_pciStorageDevices[0]);
 
-	auto barAddress = g_pciStorageDevices[0].BarAddress(0);
-	if (barAddress.IsError()) {
-		return Result<void>::MakeErr(barAddress.Error);
+	PhysicalAddress barAddress;
+	result = PCIDeviceBarAddress(&g_pciStorageDevices[0], 0, &barAddress);
+	if (result) {
+		return result;
 	}
-	Registers = barAddress.Value.AsRawPointer<NVMeRegisters>();
+	driver->Registers = (NVMeRegisters*)barAddress;
 
-	Registers->CC = 0;
-	while ((Registers->CSTS & 0x1) != 0)
+	driver->Registers->CC = 0;
+	while ((driver->Registers->CSTS & 0x1) != 0)
 		;
 
-	if ((Registers->CAP & (1UL << 37)) != 0 && (Registers->CAP & (1UL << 43)) == 0) {
+	if ((driver->Registers->CAP & (1UL << 37)) != 0 && (driver->Registers->CAP & (1UL << 43)) == 0) {
 		// NCSS
-		Registers->CC &= ~(0b111 << 4);
-	} else if ((Registers->CAP & (1UL << 43)) != 0) {
+		driver->Registers->CC &= ~(0b111 << 4);
+	} else if ((driver->Registers->CAP & (1UL << 43)) != 0) {
 		// IOCSS
-		Registers->CC |= 0b110 << 4;
-	} else if ((Registers->CAP & (1UL << 44)) != 0) {
+		driver->Registers->CC |= 0b110 << 4;
+	} else if ((driver->Registers->CAP & (1UL << 44)) != 0) {
 		// NOIOCSS
-		Registers->CC |= 0b111 << 4;
+		driver->Registers->CC |= 0b111 << 4;
 	}
 
 	// Set the Round Robin arbitration mechanism
-	Registers->CC &= ~(0b1111 << 11);
+	driver->Registers->CC &= ~(0b1111 << 11);
 	// Set the memory page size to 4 KiB
-	Registers->CC &= ~(0b1111 << 7);
+	driver->Registers->CC &= ~(0b1111 << 7);
 
-	auto asqFrame = g_frameAllocator.AllocateFrame();
-	if (asqFrame.IsError()) {
-		return Result<void>::MakeErr(asqFrame.Error);
+	Frame4KiB asqFrame;
+	result = AllocateFrame(&g_frameAllocator, &asqFrame);
+	if (result) {
+		return result;
 	}
-	auto acqFrame = g_frameAllocator.AllocateFrame();
-	if (acqFrame.IsError()) {
-		return Result<void>::MakeErr(acqFrame.Error);
+	Frame4KiB acqFrame;
+	result = AllocateFrame(&g_frameAllocator, &acqFrame);
+	if (result) {
+		return result;
 	}
 
 	// Just to be sure, zero out all of them
 	// After this, the phase tag should be 1 on the first command completion
-	MemoryFill(asqFrame.Value.UsableAddress(), 0, Frame<Size4KiB>::SIZE_BYTES);
-	MemoryFill(acqFrame.Value.UsableAddress(), 0, Frame<Size4KiB>::SIZE_BYTES);
+	MemoryFill(PhysicalAddressAsPointer(asqFrame), 0, FRAME_4KIB_SIZE_BYTES);
+	MemoryFill(PhysicalAddressAsPointer(acqFrame), 0, FRAME_4KIB_SIZE_BYTES);
 
-	Registers->ASQ = asqFrame.Value.Address.Value;
-	AdminSubmissionQueue = asqFrame.Value.Address.AsPointer<NVMeSubmissionEntry>();
-	Registers->ACQ = acqFrame.Value.Address.Value;
-	AdminCompletionQueue = acqFrame.Value.Address.AsPointer<NVMeCompletionEntry>();
+	driver->Registers->ASQ = asqFrame;
+	driver->AdminSubmissionQueue = PhysicalAddressAsPointer(asqFrame);
+	driver->Registers->ACQ = acqFrame;
+	driver->AdminCompletionQueue = PhysicalAddressAsPointer(acqFrame);
 
-	Registers->AQA = (QUEUE_SIZE - 1) | ((QUEUE_SIZE - 1) << 16);
+	driver->Registers->AQA = (NVME_QUEUE_SIZE - 1) | ((NVME_QUEUE_SIZE - 1) << 16);
 
-	DoorbellStride = 4 << ((Registers->CAP >> 32) & 0xf);
+	driver->DoorbellStride = 4 << ((driver->Registers->CAP >> 32) & 0xf);
 
-	Registers->CC |= 0x1;
-	while ((Registers->CSTS & 0x1) == 0)
+	driver->Registers->CC |= 0x1;
+	while ((driver->Registers->CSTS & 0x1) == 0)
 		;
 	SK_LOG_DEBUG("Successfully enabled the NVMe controller");
 
-	return Result<void>::MakeOk();
+	return ResultOk;
 }
 
-auto NVMeDriver::SendAdminCommand(NVMeSubmissionEntry command) -> Result<void>
+Result NVMeSendAdminCommand(NVMeDriver* driver, NVMeSubmissionEntry command)
 {
-	MemoryCopy(&command, &AdminSubmissionQueue[AdminSubmissionTail], sizeof(NVMeSubmissionEntry));
-	AdminSubmissionTail = (AdminSubmissionTail + 1) % QUEUE_SIZE;
+	MemoryCopy(&command, &driver->AdminSubmissionQueue[driver->AdminSubmissionTail], sizeof(NVMeSubmissionEntry));
+	driver->AdminSubmissionTail = (driver->AdminSubmissionTail + 1) % NVME_QUEUE_SIZE;
 
-	u8* doorbell = reinterpret_cast<u8*>(Registers);
-	doorbell += 0x1000 + ((2 * 0) * (DoorbellStride));
-	*doorbell = AdminSubmissionTail;
+	u8* doorbell = (u8*)(driver->Registers);
+	doorbell += 0x1000 + ((2 * 0) * (driver->DoorbellStride));
+	*doorbell = driver->AdminSubmissionTail;
 
-	return Result<void>::MakeOk();
-}
-
+	return ResultOk;
 }

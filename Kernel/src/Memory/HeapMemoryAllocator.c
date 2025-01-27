@@ -8,11 +8,11 @@ HeapMemoryAllocator g_heapMemoryAllocator = {};
 
 Result HeapInit(HeapMemoryAllocator* heap, usz heapSize, VirtualAddress heapBeginning)
 {
-	const Page4KiB maxPage = heapBeginning + heapSize;
+	const Page4KiB maxPage = Page4KiBContainingAddress(heapBeginning + heapSize);
 
 	heapSize &= ~0xfff;
 
-	for (Page4KiB heapPage = heapBeginning; heapPage <= maxPage; heapPage += PAGE_4KIB_SIZE_BYTES) {
+	for (Page4KiB heapPage = Page4KiBContainingAddress(heapBeginning); heapPage <= maxPage; heapPage += PAGE_4KIB_SIZE_BYTES) {
 		PhysicalAddress frame;
 		Result result = AllocateFrame(&g_frameAllocator, &frame);
 		if (result) {
@@ -107,7 +107,7 @@ Result HeapAllocate(HeapMemoryAllocator* heap, usz size, usz alignment, void** p
 					return result;
 			}
 
-			*pointer = (void*) alignedAddress;
+			*pointer = (void*)alignedAddress;
 			return ResultOk;
 		}
 

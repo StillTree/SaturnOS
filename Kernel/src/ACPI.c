@@ -2,61 +2,63 @@
 
 #include "Memory.h"
 
-XSDT const* g_xsdt = nullptr;
+XSDT* g_xsdt = nullptr;
 
-[[nodiscard]] auto SDTHeader::IsChecksumValid() const -> bool
+bool SDTIsChecksumValid(const SDTHeader* acpiTable)
 {
-	usize sum = 0;
+	usz sum = 0;
+	u8* bytes = (u8*)acpiTable;
 
-	for (usize i = 0; i < Length; i++) {
-		sum += reinterpret_cast<const i8*>(this)[i];
+	for (usz i = 0; i < acpiTable->Length; i++) {
+		sum += bytes[i];
 	}
 
 	return (sum & 0xff) == 0;
 }
 
-[[nodiscard]] auto XSDT::Entries() const -> usize { return (Length - sizeof(SDTHeader)) / 8; }
+static usz XSDTEntries(const XSDT* acpiTable) { return (acpiTable->Header.Length - sizeof(SDTHeader)) / 8; }
 
-[[nodiscard]] auto XSDT::GetACPITableAddress(const i8* signature) const -> Result<PhysicalAddress>
+Result GetACPITableAddress(const i8* signature, PhysicalAddress* address)
 {
-	for (usize i = 0; i < Entries(); i++) {
-		auto* table = PhysicalAddress((&FirstEntry)[i]).AsPointer<SDTHeader>();
+	for (usz i = 0; i < XSDTEntries(g_xsdt); i++) {
+		SDTHeader* table = PhysicalAddressAsPointer(g_xsdt->Entries[i]);
 
-		if (table->IsChecksumValid() && MemoryCompare(signature, static_cast<i8*>(table->Signature), 4)) {
-			return Result<PhysicalAddress>::MakeOk(PhysicalAddress((&FirstEntry)[i]));
+		if (SDTIsChecksumValid(table) && MemoryCompare(signature, (i8*)table->Signature, 4)) {
+			*address = g_xsdt->Entries[i];
+			return ResultOk;
 		}
 	}
 
-	return Result<PhysicalAddress>::MakeErr(ErrorCode::InvalidSDTSignature);
+	return ResultInvalidSDTSignature;
 }
 
-[[nodiscard]] auto MCFG::Entries() const -> usize { return (Length - sizeof(SDTHeader) - 8) / sizeof(MCFG::Entry); }
+usz MCFGEntries(const MCFG* mcfg) { return (mcfg->Header.Length - sizeof(SDTHeader) - 8) / sizeof(MCFGEntry); }
 
-auto MCFG::GetPCISegmentGroup(usize index) -> MCFG::Entry* { return &(&FirstEntry)[index]; }
+MCFGEntry* MCFGGetPCISegmentGroup(MCFG* mcfg, usz index) { return &mcfg->Entries[index]; }
 
-auto MADT::GetAPICEntry(BaseEntry*& pointer) -> bool
+u8 MADTGetAPICEntry(const MADT* madt, MADTBaseEntry** pointer)
 {
-	u8* offset = reinterpret_cast<u8*>(pointer);
+	u8* offset = (u8*)*pointer;
 
-	if(offset + pointer->Length >= reinterpret_cast<u8*>(this) + Length) {
-		return false;
+	if (offset + (*pointer)->Length >= (u8*)(madt) + madt->Header.Length) {
+		return 0;
 	}
 
-	offset += pointer->Length;
-	pointer = reinterpret_cast<BaseEntry*>(offset);
+	offset += (*pointer)->Length;
+	*pointer = (MADTBaseEntry*)offset;
 
-	return true;
+	return 1;
 }
 
-auto InitXSDT() -> Result<void>
+Result InitXSDT()
 {
-	auto* xsdt = PhysicalAddress(g_bootInfo.XSDTAddress).AsPointer<XSDT>();
+	XSDT* xsdt = PhysicalAddressAsPointer(g_bootInfo.XSDTAddress);
 
-	if (!xsdt->IsChecksumValid()) {
-		return Result<void>::MakeErr(ErrorCode::XSDTCorrupted);
+	if (!SDTIsChecksumValid((SDTHeader*)xsdt)) {
+		return ResultXSDTCorrupted;
 	}
 
 	g_xsdt = xsdt;
 
-	return Result<void>::MakeOk();
+	return ResultOk;
 }

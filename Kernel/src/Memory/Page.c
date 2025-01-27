@@ -12,7 +12,7 @@ Result Page4KiBMapTo(Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags)
 	PageTableEntry* p4Table = PhysicalAddressAsPointer(PageTable4Address());
 
 	// If there is no Level 3 table at the expected level 4's index, we need to create it.
-	if (p4Table[p4Index] & Present) {
+	if (!(p4Table[p4Index] & Present)) {
 		Frame4KiB newP3;
 		Result result = AllocateFrame(&g_frameAllocator, &newP3);
 		if (result) {
@@ -23,15 +23,14 @@ Result Page4KiBMapTo(Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags)
 		// The newly created Level 3 table should be empty
 		MemoryFill(PhysicalAddressAsPointer(newP3), 0, FRAME_4KIB_SIZE_BYTES);
 
-		p4Table[p4Index] = newP3;
-		p4Table[p4Index] |= Present | Writeable;
+		p4Table[p4Index] = newP3 | Present | Writeable;
 	}
 
 	u16 p3Index = VirtualAddressPage3Index(page);
-	PageTableEntry* p3Table = PhysicalAddressAsPointer(p4Table[p4Index]);
+	PageTableEntry* p3Table = PhysicalAddressAsPointer(p4Table[p4Index] & ~(0xfff));
 
 	// If there is no Level 2 table at the expected level 3's index, we need to create it.
-	if (p3Table[p3Index] & Present) {
+	if (!(p3Table[p3Index] & Present)) {
 		Frame4KiB newP2;
 		Result result = AllocateFrame(&g_frameAllocator, &newP2);
 		if (result) {
@@ -42,15 +41,14 @@ Result Page4KiBMapTo(Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags)
 		// The newly created Level 2 table should be empty
 		MemoryFill(PhysicalAddressAsPointer(newP2), 0, FRAME_4KIB_SIZE_BYTES);
 
-		p3Table[p3Index] = newP2;
-		p3Table[p3Index] |= Present | Writeable;
+		p3Table[p3Index] = newP2 | Present | Writeable;
 	}
 
 	u16 p2Index = VirtualAddressPage2Index(page);
-	PageTableEntry* p2Table = PhysicalAddressAsPointer(p3Table[p3Index]);
+	PageTableEntry* p2Table = PhysicalAddressAsPointer(p3Table[p3Index] & ~(0xfff));
 
 	// If there is no Level 1 table at the expected level 2's index, we need to create it.
-	if (p2Table[p2Index] & Present) {
+	if (!(p2Table[p2Index] & Present)) {
 		Frame4KiB newP1;
 		Result result = AllocateFrame(&g_frameAllocator, &newP1);
 		if (result) {
@@ -61,12 +59,11 @@ Result Page4KiBMapTo(Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags)
 		// The newly created Level 1 table should be empty
 		MemoryFill(PhysicalAddressAsPointer(newP1), 0, FRAME_4KIB_SIZE_BYTES);
 
-		p2Table[p2Index] = newP1;
-		p2Table[p2Index] |= Present | Writeable;
+		p2Table[p2Index] = newP1 | Present | Writeable;
 	}
 
 	u16 p1Index = VirtualAddressPage1Index(page);
-	PageTableEntry* p1Table = PhysicalAddressAsPointer(p2Table[p2Index]);
+	PageTableEntry* p1Table = PhysicalAddressAsPointer(p2Table[p2Index] & ~(0xfff));
 
 	// If we are trying to map an existing page, something went really wrong...
 	if (p1Table[p1Index] & Present) {
@@ -74,8 +71,7 @@ Result Page4KiBMapTo(Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags)
 		return ResultPageAlreadyMapped;
 	}
 
-	p1Table[p1Index] = frame;
-	p1Table[p1Index] |= flags | Writeable;
+	p1Table[p1Index] = frame | flags | Present;
 
 	return ResultOk;
 }
@@ -86,34 +82,34 @@ Result Page4KiBUnmap(Page4KiB page)
 	PageTableEntry* p4Table = PhysicalAddressAsPointer(PageTable4Address());
 
 	// If there is no Level 3 table at the expected level 4's index, this virtual address is not mapped.
-	if (p4Table[p4Index] & Present) {
+	if (!(p4Table[p4Index] & Present)) {
 		SK_LOG_WARN("An attempt was made to unmap an already unmapped page");
 		return ResultPageAlreadyUnmapped;
 	}
 
 	u16 p3Index = VirtualAddressPage3Index(page);
-	PageTableEntry* p3Table = PhysicalAddressAsPointer(p4Table[p4Index]);
+	PageTableEntry* p3Table = PhysicalAddressAsPointer(p4Table[p4Index] & ~(0xfff));
 
 	// If there is no Level 2 table at the expected level 3's index, this virtual address is not mapped.
-	if (p3Table[p3Index] & Present) {
+	if (!(p3Table[p3Index] & Present)) {
 		SK_LOG_WARN("An attempt was made to unmap an already unmapped page");
 		return ResultPageAlreadyUnmapped;
 	}
 
 	u16 p2Index = VirtualAddressPage2Index(page);
-	PageTableEntry* p2Table = PhysicalAddressAsPointer(p3Table[p3Index]);
+	PageTableEntry* p2Table = PhysicalAddressAsPointer(p3Table[p3Index] & ~(0xfff));
 
 	// If there is no Level 1 table at the expected level 2's index, this virtual address is not mapped.
-	if (p2Table[p2Index] & Present) {
+	if (!(p2Table[p2Index] & Present)) {
 		SK_LOG_WARN("An attempt was made to unmap an already unmapped page");
 		return ResultPageAlreadyUnmapped;
 	}
 
 	u16 p1Index = VirtualAddressPage1Index(page);
-	PageTableEntry* p1Table = PhysicalAddressAsPointer(p2Table[p2Index]);
+	PageTableEntry* p1Table = PhysicalAddressAsPointer(p2Table[p2Index] & ~(0xfff));
 
 	// If there is no entry at the expected level 1's index, this virtual address is not mapped.
-	if (p1Table[p1Index] & Present) {
+	if (!(p1Table[p1Index] & Present)) {
 		SK_LOG_WARN("An attempt was made to unmap an already unmapped page");
 		return ResultPageAlreadyUnmapped;
 	}

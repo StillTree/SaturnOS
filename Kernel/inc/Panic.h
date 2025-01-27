@@ -15,6 +15,6 @@ void Panic(const i8* message, const i8* fileName, usz lineNumber);
 #define SK_PANIC_ASSERT(condition, message)                                                                                                \
 	do {                                                                                                                                   \
 		if (!(condition)) {                                                                                                                \
-			SaturnKernel::Panic("Assertion failure: " #condition "\n" message, __FILE__, __LINE__);                                        \
+			Panic("Assertion failure: " #condition "\n" message, __FILE__, __LINE__);                                        \
 		}                                                                                                                                  \
 	} while (false)

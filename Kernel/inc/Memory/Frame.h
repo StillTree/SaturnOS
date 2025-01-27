@@ -8,4 +8,4 @@ typedef u64 Frame4KiB;
 
 #define FRAME_4KIB_SIZE_BYTES 4096
 
-inline Frame4KiB Frame4KiBContainingAddress(PhysicalAddress address) { return address & ~0xfff; }
+static inline Frame4KiB Frame4KiBContainingAddress(PhysicalAddress address) { return address & ~0xfff; }

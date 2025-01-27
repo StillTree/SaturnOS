@@ -2,57 +2,33 @@
 #include "Memory/PhysicalAddress.h"
 #include "Result.h"
 
-namespace SaturnKernel {
+typedef enum CommandRegister : u16 {
+	CommandRegisterEnableIO = 1,
+	CommandRegisterEnableMemory = 1 << 1,
+	CommandRegisterEnableBusMaster = 1 << 2,
+	CommandRegisterSpecialCycles = 1 << 3,
+	CommandRegisterMemoryWriteInvalidate = 1 << 4,
+	CommandRegisterVGAPaletteSnoop = 1 << 5,
+	CommandRegisterParityErrorResponse = 1 << 6,
+	CommandRegisterEnableSERR = 1 << 8,
+	CommandRegisterEnableFastB2B = 1 << 9,
+	CommandRegisterDisableInterrupts = 1 << 10,
+} CommandRegister;
 
-enum class CommandRegister : u16 {
-	EnableIO = 1,
-	EnableMemory = 1 << 1,
-	EnableBusMaster = 1 << 2,
-	SpecialCycles = 1 << 3,
-	MemoryWriteInvalidate = 1 << 4,
-	VGAPaletteSnoop = 1 << 5,
-	ParityErrorResponse = 1 << 6,
-	EnableSERR = 1 << 8,
-	EnableFastB2B = 1 << 9,
-	DisableInterrupts = 1 << 10,
-};
+typedef enum StatusRegister : u16 {
+	StatusRegisterInterruptStatus = 1 << 3,
+	StatusRegisterCapabilitiesList = 1 << 4,
+	StatusRegisterCapable66MHz = 1 << 5,
+	StatusRegisterFastB2BCaoable = 1 << 7,
+	StatusRegisterMasterDataParityError = 1 << 8,
+	StatusRegisterSignaledTargetAbort = 1 << 11,
+	StatusRegisterReceivedTargetAbort = 1 << 12,
+	StatusRegisterReceivedMasterAbort = 1 << 13,
+	StatusRegisterSignaledSystemError = 1 << 14,
+	StatusRegisterDetectedParityError = 1 << 15,
+} StatusRegister;
 
-inline auto operator|(CommandRegister a, CommandRegister b) -> CommandRegister
-{
-	return static_cast<CommandRegister>(static_cast<u16>(a) | static_cast<u16>(b));
-}
-
-inline auto operator&(CommandRegister a, CommandRegister b) -> CommandRegister
-{
-	return static_cast<CommandRegister>(static_cast<u16>(a) & static_cast<u16>(b));
-}
-
-inline auto operator|=(CommandRegister& a, CommandRegister b) -> CommandRegister& { return a = a | b; }
-
-enum class StatusRegister : u16 {
-	InterruptStatus = 1 << 3,
-	CapabilitiesList = 1 << 4,
-	Capable66MHz = 1 << 5,
-	FastB2BCaoable = 1 << 7,
-	MasterDataParityError = 1 << 8,
-	SignaledTargetAbort = 1 << 11,
-	ReceivedTargetAbort = 1 << 12,
-	ReceivedMasterAbort = 1 << 13,
-	SignaledSystemError = 1 << 14,
-	DetectedParityError = 1 << 15,
-};
-
-inline auto operator|(StatusRegister a, StatusRegister b) -> StatusRegister
-{
-	return static_cast<StatusRegister>(static_cast<u16>(a) | static_cast<u16>(b));
-}
-
-inline auto operator&(StatusRegister a, StatusRegister b) -> StatusRegister
-{
-	return static_cast<StatusRegister>(static_cast<u16>(a) & static_cast<u16>(b));
-}
-
-struct PCIDeviceHeader0 {
+typedef struct PCIDeviceHeader0 {
 	u16 VendorID;
 	u16 DeviceID;
 	CommandRegister Command;
@@ -76,37 +52,31 @@ struct PCIDeviceHeader0 {
 	u8 InterruptPin;
 	u8 MinGrant;
 	u8 MaxLatency;
-};
+} PCIDeviceHeader0;
 
-struct DeviceCapability {
+typedef struct DeviceCapability {
 	u8 ID;
 	u8 Next;
-};
+} DeviceCapability;
 
-struct MSIXCapability : public DeviceCapability {
+typedef struct MSIXCapability {
+	DeviceCapability BaseCapability;
+
 	u16 MessageControl;
 	u32 TableOffset;
 	u32 PendingBitOffset;
+} MSIXCapability;
 
-	static constexpr u8 ID = 0x11;
-};
+constexpr u8 CAPABILITY_ID_MSIX = 0x11;
 
-struct MSIXTableEntry {
+typedef struct MSIXTableEntry {
 	u32 AddressLow;
 	u32 AddressHigh;
 	u32 Data;
 	u32 VectorControl;
-};
+} MSIXTableEntry;
 
-struct PCIDevice {
-	auto Init() -> Result<void>;
-
-	auto MapBars() const -> Result<void>;
-	[[nodiscard]] auto BarAddress(u8 index) const -> Result<PhysicalAddress>;
-
-	auto EnableMSIX() const -> void;
-	auto SetMSIXVector(usize msiVector, u8 systemVector) const -> Result<void>;
-
+typedef struct PCIDevice {
 	PCIDeviceHeader0* ConfigurationSpace;
 
 	u16 PCISegmentGroupNumber;
@@ -116,11 +86,17 @@ struct PCIDevice {
 
 	MSIXCapability* MSIX;
 	MSIXTableEntry* MSIXTable;
-};
+} PCIDevice;
 
-auto ScanPCIDevices() -> Result<void>;
+Result PCIDeviceInit(PCIDevice* device);
+
+Result PCIDeviceMapBars(const PCIDevice* device);
+Result PCIDeviceBarAddress(const PCIDevice* device, u8 index, PhysicalAddress* address);
+
+void PCIDeviceEnableMSIX(const PCIDevice* device);
+Result PCIDeviceSetMSIXVector(const PCIDevice* device, usz msiVector, u8 systemVector);
+
+Result ScanPCIDevices();
 
 // For now, this is it. In the future when I will actually start using more devices, I will make a proper device list and so on...
 extern PCIDevice g_pciStorageDevices[1];
-
-}

@@ -23,7 +23,7 @@ typedef u64 PageTableEntry;
 #define PAGE_TABLE_ENTRIES 512
 
 /// Returns the PML4 table's physical memory address, read from the CR3 register.
-inline PhysicalAddress PageTable4Address()
+static inline PhysicalAddress PageTable4Address()
 {
 	PhysicalAddress pml4Address = -1;
 	__asm__ volatile("mov %%cr3, %0" : "=r"(pml4Address));

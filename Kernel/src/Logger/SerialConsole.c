@@ -39,7 +39,7 @@ void SerialConsoleWriteChar(SerialConsoleLogger* logger, u8 character)
 	OutputU8(logger->Port, character);
 }
 
-void SerialconsoleWriteString(SerialConsoleLogger* logger, const i8* string)
+void SerialConsoleWriteString(SerialConsoleLogger* logger, const i8* string)
 {
 	usz i = 0;
 	while (string[i]) {

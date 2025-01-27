@@ -1,16 +1,17 @@
-#include "Core.h"
 #include "ACPI.h"
 #include "APIC.h"
 #include "CPUID.h"
+#include "Core.h"
 #include "GDT.h"
 #include "IDT.h"
 #include "Logger.h"
 #include "MSR.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/HeapMemoryAllocator.h"
+#include "Memory/Page.h"
 #include "PCI.h"
-#include "Storage/Drivers/NVMe.h"
 #include "Result.h"
+#include "Storage/Drivers/NVMe.h"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -27,7 +28,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 
 	// There is a guarantee that the bootloader will set up the framebuffer,
 	// so this function doesn't throw but just warns when the serial output device is not available
-	g_mainLogger.Init(true, true, g_bootInfo, 0x3f8);
+	LoggerInit(&g_mainLogger, true, true, &g_bootInfo, 0x3f8);
 
 	SK_LOG_INFO("Initializing the SaturnOS Kernel\n");
 
@@ -37,8 +38,8 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_LOG_INFO("under certain conditions; type `` for details.\n");
 
 	SK_LOG_INFO("Saving the CPUID processor information");
-	auto result = g_cpuInformation.SaveInfo();
-	if (result.IsError()) {
+	Result result = CPUIDSaveInfo(&g_cpuInformation);
+	if (result) {
 		SK_LOG_ERROR("Could not read the CPUID information");
 	}
 
@@ -54,52 +55,53 @@ void KernelMain(KernelBootInfo* bootInfo)
 
 	EnableInterrupts();
 
-	SK_LOG_INFO("Initializing the sequential frame allocator");
-	result = g_frameAllocator.Init(static_cast<MemoryMapEntry*>(g_bootInfo.MemoryMap), g_bootInfo.MemoryMapEntries);
-	if (result.IsError()) {
+	SK_LOG_INFO("Initializing the bitmap frame allocator");
+	result = BitmapFrameAllocatorInit(&g_frameAllocator, (MemoryMapEntry*)g_bootInfo.MemoryMap, g_bootInfo.MemoryMapEntries);
+	if (result) {
 		SK_LOG_ERROR("Could not initialize the frame allocator");
 	}
 
 	SK_LOG_DEBUG("Mapped Physical memory offset: {}", g_bootInfo.PhysicalMemoryOffset);
 
 	SK_LOG_INFO("Initializing the kernel's memory heap");
-	result = g_heapMemoryAllocator.Init(102400, VirtualAddress(0x6969'6969'0000));
-	if (result.IsError()) {
+	result = HeapInit(&g_heapMemoryAllocator, 102400, 0x6969'6969'0000);
+	if (result) {
 		SK_LOG_ERROR("Could not initialize the kernel's heap memory pool");
 	}
 
 	SK_LOG_INFO("Parsing the ACPI structures");
 	result = InitXSDT();
-	if (result.IsError()) {
+	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while trying to parse ACPI structures");
 	}
 
 	SK_LOG_INFO("Initializing the x2APIC");
 	result = InitAPIC();
-	if (result.IsError()) {
+	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while trying to initialize the x2APIC");
 	}
 
 	SK_LOG_INFO("Scanning for available PCI devices");
 	result = ScanPCIDevices();
-	if (result.IsError()) {
+	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while trying to scan for available PCI devices");
 	}
 
 	SK_LOG_INFO("Initializing the NVMe storage driver");
-	result = g_nvmeDriver.Init();
-	if (result.IsError()) {
+	result = NVMeInit(&g_nvmeDriver);
+	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while initializing the NVMe storage driver");
 	}
 
-	u64 identifyBuffer = g_frameAllocator.AllocateFrame().Value.Address.Value;
-	NVMeSubmissionEntry e {};
+	PhysicalAddress identifyBuffer;
+	AllocateFrame(&g_frameAllocator, &identifyBuffer);
+	NVMeSubmissionEntry e = {};
 	e.CDW0 = 0x6;
 	e.PRP1 = identifyBuffer;
 	e.CDW10 = 1;
 	e.NSID = 0;
 
-	g_nvmeDriver.SendAdminCommand(e);
+	NVMeSendAdminCommand(&g_nvmeDriver, e);
 
 	// __asm__ volatile("int3");
 

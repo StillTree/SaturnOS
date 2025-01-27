@@ -25,4 +25,4 @@ inline void FlushTLB()
 }
 
 /// Invalidates a memory page which contains the provided virtual address by using the `invlpg` instruction.
-inline void FlushPage(VirtualAddress address) { __asm__ volatile("invlpg (%0)" : : "r"(address) : "memory"); }
+static inline void FlushPage(VirtualAddress address) { __asm__ volatile("invlpg (%0)" : : "r"(address) : "memory"); }

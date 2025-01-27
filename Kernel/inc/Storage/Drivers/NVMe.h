@@ -1,9 +1,7 @@
 #include "Core.h"
 #include "Result.h"
 
-namespace SaturnKernel {
-
-struct NVMeRegisters {
+typedef struct NVMeRegisters {
 	u64 CAP;
 	u32 VS;
 	u32 INTMS;
@@ -15,9 +13,9 @@ struct NVMeRegisters {
 	u32 AQA;
 	u64 ASQ;
 	u64 ACQ;
-};
+} NVMeRegisters;
 
-struct NVMeSubmissionEntry {
+typedef struct NVMeSubmissionEntry {
 	u32 CDW0;
 	u32 NSID;
 	u32 CDW2;
@@ -31,35 +29,34 @@ struct NVMeSubmissionEntry {
 	u32 CDW13;
 	u32 CDW14;
 	u32 CDW15;
-};
+} NVMeSubmissionEntry;
 
-struct NVMeCompletionEntry {
+typedef struct NVMeCompletionEntry {
 	u32 DW0;
 	u32 DW1;
 	u16 SQHD;
 	u16 SQID;
 	u16 CID;
 	u16 STATUS;
-};
+} NVMeCompletionEntry;
 
-struct NVMeDriver {
-	auto Init() -> Result<void>;
-	auto SendAdminCommand(NVMeSubmissionEntry command) -> Result<void>;
+typedef struct NVMeDriver {
+	NVMeRegisters* Registers;
 
-	NVMeRegisters* Registers = nullptr;
+	NVMeSubmissionEntry* AdminSubmissionQueue;
+	NVMeCompletionEntry* AdminCompletionQueue;
 
-	NVMeSubmissionEntry* AdminSubmissionQueue = nullptr;
-	NVMeCompletionEntry* AdminCompletionQueue = nullptr;
+	u32 DoorbellStride;
+	u16 AdminSubmissionHead;
+	u16 AdminSubmissionTail;
+	u16 AdminCompletionHead;
+	bool AdminPhase;
 
-	u32 DoorbellStride = 4;
-	u16 AdminSubmissionHead = 0;
-	u16 AdminSubmissionTail = 0;
-	u16 AdminCompletionHead = 0;
-	bool AdminPhase = true;
+} NVMeDriver;
 
-	static constexpr u16 QUEUE_SIZE = 64;
-};
+Result NVMeInit(NVMeDriver* driver);
+Result NVMeSendAdminCommand(NVMeDriver* driver, NVMeSubmissionEntry command);
+
+constexpr u16 NVME_QUEUE_SIZE = 64;
 
 extern NVMeDriver g_nvmeDriver;
-
-}

@@ -17,13 +17,13 @@ typedef struct __attribute__((packed)) IDTRegister {
 	u64 Address;
 } IDTRegister;
 
-void SetIDTEntry(u8 vector, u64 handler);
+void SetIDTEntry(u8 vector, u64 handlerFn, u8 flags, u8 istNumber);
 void InitIDT();
 
 /// Executes the `sti` instruction.
-inline void EnableInterrupts() { __asm__ volatile("sti"); }
+static inline void EnableInterrupts() { __asm__ volatile("sti"); }
 
 /// Executes the `cli` instruction.
-inline void DisableInterrupts() { __asm__ volatile("cli"); }
+static inline void DisableInterrupts() { __asm__ volatile("cli"); }
 
 extern IDTEntry g_idt[256];

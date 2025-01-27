@@ -2,7 +2,7 @@
 #include "Memory/PhysicalAddress.h"
 #include "Result.h"
 
-struct __attribute__((packed)) SDTHeader {
+typedef struct __attribute__((packed)) SDTHeader {
 	i8 Signature[4];
 	u32 Length;
 	u8 Revision;
@@ -12,59 +12,62 @@ struct __attribute__((packed)) SDTHeader {
 	u32 OEMRevision;
 	u32 CreatorID;
 	u32 CreatorRevision;
+} SDTHeader;
 
-	[[nodiscard]] auto IsChecksumValid() const -> bool;
-};
+bool SDTIsChecksumValid(const SDTHeader* acpiTable);
 
-struct __attribute__((packed)) XSDT : public SDTHeader {
-	u64 FirstEntry;
+typedef struct __attribute__((packed)) XSDT {
+	SDTHeader Header;
 
-	[[nodiscard]] auto Entries() const -> usize;
+	u64 Entries[];
+} XSDT;
 
-	[[nodiscard]] auto GetACPITableAddress(const i8* signature) const -> Result<PhysicalAddress>;
-};
+Result GetACPITableAddress(const i8* signature, PhysicalAddress* address);
 
-struct __attribute__((packed)) MCFG : public SDTHeader {
-	struct __attribute__((packed)) Entry {
-		u64 BaseAddress;
-		u16 SegmentGroupNumber;
-		u8 StartBusNumber;
-		u8 EndBusNumber;
-		u32 Reserved;
-	};
+typedef struct __attribute__((packed)) MCFGEntry {
+	u64 BaseAddress;
+	u16 SegmentGroupNumber;
+	u8 StartBusNumber;
+	u8 EndBusNumber;
+	u32 Reserved;
+} MCFGEntry;
+
+typedef struct __attribute__((packed)) MCFG {
+	SDTHeader Header;
 
 	u64 Reserved;
 
-	Entry FirstEntry;
+	MCFGEntry Entries[];
+} MCFG;
 
-	[[nodiscard]] auto Entries() const -> usize;
+usz MCFGEntries(const MCFG* mcfg);
 
-	auto GetPCISegmentGroup(usize index) -> Entry*;
-};
+MCFGEntry* MCFGGetPCISegmentGroup(MCFG* mcfg, usz index);
 
-struct __attribute__((packed)) MADT : public SDTHeader {
-	struct __attribute__((packed)) BaseEntry {
-		u8 Type;
-		u8 Length;
-	};
+typedef struct __attribute__((packed)) MADTBaseEntry {
+	u8 Type;
+	u8 Length;
+} MADTBaseEntry;
 
-	struct __attribute__((packed)) EntryIO : public BaseEntry {
-		u8 IOAPICID;
-		u8 Reserved;
-		u32 IOAPICAddress;
-		u32 GSIBase;
-	};
+typedef struct __attribute__((packed)) MADTEntryIO {
+	MADTBaseEntry Base;
+	u8 IOAPICID;
+	u8 Reserved;
+	u32 IOAPICAddress;
+	u32 GSIBase;
+} MADTEntryIO;
+
+typedef struct __attribute__((packed)) MADT {
+	SDTHeader Header;
 
 	u32 LocalAPICAddress;
 	u32 Flags;
-	
-	BaseEntry FirstEntry;
 
-	auto GetAPICEntry(BaseEntry*& pointer) -> bool;
-};
+	MADTBaseEntry Entries[];
+} MADT;
 
-auto InitXSDT() -> Result<void>;
+u8 MADTGetAPICEntry(const MADT* madt, MADTBaseEntry** pointer);
 
-extern XSDT const* g_xsdt;
+Result InitXSDT();
 
-}
+extern XSDT* g_xsdt;

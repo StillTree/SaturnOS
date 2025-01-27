@@ -11,23 +11,23 @@ typedef struct CPUIDResult {
 } CPUIDResult;
 
 typedef struct CPUInfo {
-	u32 MaximumLeaf = 0;
-	u32 MaximumExtendedLeaf = 0x80000000;
+	u32 MaximumLeaf;
+	u32 MaximumExtendedLeaf;
 
-	bool SupportsSSE = false;
-	bool SupportsSSE2 = false;
-	bool SupportsMMX = false;
-	bool SupportsAVX = false;
+	bool SupportsSSE;
+	bool SupportsSSE2;
+	bool SupportsMMX;
+	bool SupportsAVX;
 
-	bool SupportsXAPIC = false; // Or just APIC
-	bool SupportsX2APIC = false;
+	bool SupportsXAPIC; // Or just APIC
+	bool SupportsX2APIC;
 
-	u8 PhysicalAddressBits = 0;
-	u8 VirtualAddressBits = 0;
+	u8 PhysicalAddressBits;
+	u8 VirtualAddressBits;
 } CPUInfo;
 
 /// A wrapper around the CPUID macros from GCC with some error checks.
-Result CPUID(u32 leaf, u32 subleaf, CPUIDResult* result);
+Result CPUID(const CPUInfo* cpuInfo, u32 leaf, u32 subleaf, CPUIDResult* result);
 
 /// Fills in the whole structure with actual data.
 Result CPUIDSaveInfo(CPUInfo* cpuInfo);
