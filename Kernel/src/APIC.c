@@ -81,7 +81,7 @@ Result InitAPIC()
 	}
 
 	Page4KiB ioapicPage = ioapicAddress;
-	result = Page4KiBMapTo(ioapicPage, ioapicAddress, Present | Writeable | NoCache);
+	result = Page4KiBMapTo(ioapicPage, ioapicAddress, PagePresent | PageWriteable | PageNoCache);
 	if (result) {
 		return result;
 	}

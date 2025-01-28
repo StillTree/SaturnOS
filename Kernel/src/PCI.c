@@ -89,7 +89,7 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 
 		for (Page4KiB page = address; page < address + barSize; page += PAGE_4KIB_SIZE_BYTES) {
 			// TODO: If prefetchable enable cache
-			Result result = Page4KiBMapTo(page, page, Present | Writeable | NoCache);
+			Result result = Page4KiBMapTo(page, page, PagePresent | PageWriteable | PageNoCache);
 			if (result) {
 				// This is an extremally dangerous approach but since the kernel will panic later,
 				// I'll jsut leave it like this for now
@@ -154,7 +154,7 @@ static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus)
 
 	// An entire bus is 256 4K pages, so 1 MB
 	for (usz i = 0; i < 256; i++) {
-		auto result = Page4KiBMapTo(page, frame, Present | Writeable);
+		auto result = Page4KiBMapTo(page, frame, PagePresent | PageWriteable);
 		if (result) {
 			return result;
 		}
@@ -198,8 +198,8 @@ static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus)
 			if (configSpace->VendorID == 0xffff)
 				continue;
 
-			SK_LOG_DEBUG("Detected PCI Device: bus = {}, device = {}, function = {}, vendorID = {}, deviceID = {}, class = {}, "
-						 "subclass = {}",
+			SK_LOG_DEBUG("Detected PCI Device: bus = %u, device = %u, function = %u, vendorID = %x, deviceID = %x, class = %x, "
+						 "subclass = %x",
 				bus, device, function, configSpace->VendorID, configSpace->DeviceID, configSpace->ClassCode, configSpace->Subclass);
 
 			if (configSpace->ClassCode == 0x1 && configSpace->Subclass == 0x8 && configSpace->ProgIF == 0x2) {

@@ -8,7 +8,6 @@
 #include "MSR.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/HeapMemoryAllocator.h"
-#include "Memory/Page.h"
 #include "PCI.h"
 #include "Result.h"
 #include "Storage/Drivers/NVMe.h"
@@ -20,7 +19,6 @@
 /// Initially empty.
 KernelBootInfo g_bootInfo = {};
 
-/// C linking so the linker and the bootloader don't absolutely shit themselves.
 void KernelMain(KernelBootInfo* bootInfo)
 {
 	// Copy the structure provided by the bootloader right at the beginning, so every part of the code can safely access it
@@ -61,7 +59,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 		SK_LOG_ERROR("Could not initialize the frame allocator");
 	}
 
-	SK_LOG_DEBUG("Mapped Physical memory offset: {}", g_bootInfo.PhysicalMemoryOffset);
+	SK_LOG_DEBUG("Mapped Physical memory offset: %x", g_bootInfo.PhysicalMemoryOffset);
 
 	SK_LOG_INFO("Initializing the kernel's memory heap");
 	result = HeapInit(&g_heapMemoryAllocator, 102400, 0x6969'6969'0000);

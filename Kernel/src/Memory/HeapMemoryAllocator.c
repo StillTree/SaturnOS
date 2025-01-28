@@ -20,7 +20,7 @@ Result HeapInit(HeapMemoryAllocator* heap, usz heapSize, VirtualAddress heapBegi
 			return result;
 		}
 
-		result = Page4KiBMapTo(heapPage, frame, Present | Writeable);
+		result = Page4KiBMapTo(heapPage, frame, PagePresent | PageWriteable);
 		if (result) {
 			SK_LOG_ERROR("An unexpected error occured while trying to map a memory frame for the kernel's heap");
 			return result;
@@ -122,7 +122,7 @@ void HeapPrintHeaders(HeapMemoryAllocator* heap)
 	HeapBlockHeader* currentHeader = &heap->Head;
 
 	while (currentHeader != nullptr) {
-		SK_LOG_INFO("Size: {} Next: {}", currentHeader->Size, (u64)currentHeader->Next);
+		SK_LOG_INFO("Size: %u Next: %p", currentHeader->Size, currentHeader->Next);
 
 		currentHeader = currentHeader->Next;
 	}

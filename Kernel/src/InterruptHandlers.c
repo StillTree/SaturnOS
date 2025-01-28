@@ -11,11 +11,11 @@ __attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame
 {
 	SK_LOG_ERROR("EXCEPTION OCCURED: BREAKPOINT, InterruptFrame");
 	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = {}", frame->StackPointer);
-	SK_LOG_ERROR("\tFlags = {}", frame->Flags);
-	SK_LOG_ERROR("\tCodeSegment = {}", frame->CodeSegment);
-	SK_LOG_ERROR("\tSegmentSelector = {}", frame->SegmentSelector);
-	SK_LOG_ERROR("\tInstruction Pointer = {}", frame->InstructionPointer);
+	SK_LOG_ERROR("\tStackPointer = %u", frame->StackPointer);
+	SK_LOG_ERROR("\tFlags = %u", frame->Flags);
+	SK_LOG_ERROR("\tCodeSegment = %u", frame->CodeSegment);
+	SK_LOG_ERROR("\tSegmentSelector = %u", frame->SegmentSelector);
+	SK_LOG_ERROR("\tInstruction Pointer = %u", frame->InstructionPointer);
 	SK_LOG_ERROR("}");
 }
 
@@ -23,11 +23,11 @@ __attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* fram
 {
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: DOUBLE FAULT, InterruptFrame");
 	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = {}", frame->StackPointer);
-	SK_LOG_ERROR("\tFlags = {}", frame->Flags);
-	SK_LOG_ERROR("\tCodeSegment = {}", frame->CodeSegment);
-	SK_LOG_ERROR("\tSegmentSelector = {}", frame->SegmentSelector);
-	SK_LOG_ERROR("\tInstruction Pointer = {}", frame->InstructionPointer);
+	SK_LOG_ERROR("\tStackPointer = %u", frame->StackPointer);
+	SK_LOG_ERROR("\tFlags = %u", frame->Flags);
+	SK_LOG_ERROR("\tCodeSegment = %u", frame->CodeSegment);
+	SK_LOG_ERROR("\tSegmentSelector = %u", frame->SegmentSelector);
+	SK_LOG_ERROR("\tInstruction Pointer = %u", frame->InstructionPointer);
 	SK_LOG_ERROR("}");
 
 	Hang();
@@ -46,15 +46,15 @@ typedef enum PageFaultCause : u16 {
 
 __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, u64 errorCode)
 {
-	u64 faultVirtualAddress = -1;
+	u64 faultVirtualAddress = 0;
 	__asm__ volatile("mov %%cr2, %0" : "=r"(faultVirtualAddress));
 
 	u64 pml4Address = PageTable4Address();
 
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT");
-	SK_LOG_ERROR("Faulty virtual address = {}", faultVirtualAddress);
-	SK_LOG_ERROR("PML4 address = {}", pml4Address);
-	SK_LOG_ERROR("Error code = {}, caused by:", errorCode);
+	SK_LOG_ERROR("Faulty virtual address = %u", faultVirtualAddress);
+	SK_LOG_ERROR("PML4 address = %u", pml4Address);
+	SK_LOG_ERROR("Error code = %u, caused by:", errorCode);
 
 	if (errorCode & PageFaultCausePresent) {
 		SK_LOG_ERROR("\tPresent");
@@ -90,11 +90,11 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 
 	SK_LOG_ERROR("InterruptFrame");
 	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = {}", frame->StackPointer);
-	SK_LOG_ERROR("\tFlags = {}", frame->Flags);
-	SK_LOG_ERROR("\tCodeSegment = {}", frame->CodeSegment);
-	SK_LOG_ERROR("\tSegmentSelector = {}", frame->SegmentSelector);
-	SK_LOG_ERROR("\tInstruction Pointer = {}", frame->InstructionPointer);
+	SK_LOG_ERROR("\tStackPointer = %u", frame->StackPointer);
+	SK_LOG_ERROR("\tFlags = %u", frame->Flags);
+	SK_LOG_ERROR("\tCodeSegment = %u", frame->CodeSegment);
+	SK_LOG_ERROR("\tSegmentSelector = %u", frame->SegmentSelector);
+	SK_LOG_ERROR("\tInstruction Pointer = %u", frame->InstructionPointer);
 	SK_LOG_ERROR("}");
 
 	Hang();

@@ -31,6 +31,24 @@ void LoggerInit(Logger* logger, bool framebufferEnabled, bool serialConsoleEnabl
 	}
 }
 
+static void LogChar(Logger* logger, i8 character)
+{
+	if (logger->FramebufferEnabled)
+		FramebufferWriteChar(&logger->Framebuffer, character);
+
+	if (logger->SerialConsoleEnabled)
+		SerialConsoleWriteChar(&logger->SerialConsole, character);
+}
+
+static void LogString(Logger* logger, const i8* string)
+{
+	if (logger->FramebufferEnabled)
+		FramebufferWriteString(&logger->Framebuffer, string);
+
+	if (logger->SerialConsoleEnabled)
+		SerialConsoleWriteString(&logger->SerialConsole, string);
+}
+
 void Log(Logger* logger, LogLevel logLevel, const i8* format, ...)
 {
 	if (logger->FramebufferEnabled) {
@@ -70,29 +88,59 @@ void Log(Logger* logger, LogLevel logLevel, const i8* format, ...)
 	va_list args;
 	va_start(args, format);
 
-	usz i = 0;
-	while (format[i] != '\0') {
-		if (format[i] == '{' && format[i + 1] == '}') {
-			i8 hexOutput[MAX_HEX_LENGTH];
-			u64 number = va_arg(args, u64);
-			NumberToHexString(number, hexOutput);
+	while (*format != '\0') {
+		if (*format == '%') {
+			format++;
+			switch (*format) {
+			case 'c': {
+				char c = (char)va_arg(args, i32);
+				LogChar(logger, c);
+				break;
+			}
+			case 's': {
+				const i8* string = va_arg(args, i8*);
+				LogString(logger, string);
+				break;
+			}
+			// For now `%x` assumes an unsigned integer
+			// TODO: support signed
+			case 'x': {
+				i8 hexOutput[MAX_HEX_LENGTH];
+				u64 number = va_arg(args, u64);
+				NumberToHexString(number, hexOutput);
+				LogString(logger, hexOutput);
+				break;
+			}
+			case 'u': {
+				i8 decOutput[MAX_DECIMAL_LENGTH];
+				u64 number = va_arg(args, u64);
+				NumberToDecimalString(number, decOutput);
+				LogString(logger, decOutput);
+				break;
+			}
+			case 'p': {
+				i8 hexOutput[MAX_HEX_LENGTH];
+				u64 pointer = va_arg(args, u64);
+				NumberToHexString(pointer, hexOutput);
+				LogString(logger, hexOutput);
+				break;
+			}
+			case '%': {
+				LogChar(logger, '%');
+				break;
+			}
+			default: {
+				LogChar(logger, '%');
+				LogChar(logger, *format);
+				break;
+			}
+			}
 
-			if (logger->FramebufferEnabled)
-				FramebufferWriteString(&logger->Framebuffer, hexOutput);
-
-			if (logger->SerialConsoleEnabled)
-				SerialConsoleWriteString(&logger->SerialConsole, hexOutput);
-
-			i++;
 		} else {
-			if (logger->FramebufferEnabled)
-				FramebufferWriteChar(&logger->Framebuffer, format[i]);
-
-			if (logger->SerialConsoleEnabled)
-				SerialConsoleWriteChar(&logger->SerialConsole, format[i]);
+			LogChar(logger, *format);
 		}
 
-		i++;
+		format++;
 	}
 
 	va_end(args);
