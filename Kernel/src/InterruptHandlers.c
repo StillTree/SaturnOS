@@ -111,9 +111,3 @@ __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /* unus
 
 	EOISignal();
 }
-
-__attribute__((interrupt)) void TestInterruptHandler(InterruptFrame* /* unused */)
-{
-	SK_LOG_INFO("!!! NICE !!!");
-	EOISignal();
-}

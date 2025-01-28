@@ -12,14 +12,17 @@ Result NVMeInit(NVMeDriver* driver)
 	// For now, just using the first device and ignoring the rest ones
 	g_pciStorageDevices[0].ConfigurationSpace->Command |= CommandRegisterEnableBusMaster | CommandRegisterEnableMemory;
 
-	Result result = PCIDeviceSetMSIXVector(&g_pciStorageDevices[0], 0, 34);
-	if (result) {
-		return result;
-	}
-	PCIDeviceEnableMSIX(&g_pciStorageDevices[0]);
+	// For now I am not gonna implement MSI-X,
+	// When I have a working implementation (with multitasking perhaps) I will do so.
+	// TODO: Do that :D
+	// Result result = PCIDeviceSetMSIXVector(&g_pciStorageDevices[0], 0, 34);
+	// if (result) {
+	// 	return result;
+	// }
+	// PCIDeviceEnableMSIX(&g_pciStorageDevices[0]);
 
 	PhysicalAddress barAddress;
-	result = PCIDeviceBarAddress(&g_pciStorageDevices[0], 0, &barAddress);
+	Result result = PCIDeviceBarAddress(&g_pciStorageDevices[0], 0, &barAddress);
 	if (result) {
 		return result;
 	}
@@ -63,8 +66,12 @@ Result NVMeInit(NVMeDriver* driver)
 
 	driver->Registers->ASQ = asqFrame;
 	driver->AdminSubmissionQueue = PhysicalAddressAsPointer(asqFrame);
+	driver->AdminSubmissionTail = 0;
 	driver->Registers->ACQ = acqFrame;
 	driver->AdminCompletionQueue = PhysicalAddressAsPointer(acqFrame);
+	driver->AdminCompletionHead = 0;
+
+	driver->AdminPhase = 1;
 
 	driver->Registers->AQA = (NVME_QUEUE_SIZE - 1) | ((NVME_QUEUE_SIZE - 1) << 16);
 
@@ -78,14 +85,50 @@ Result NVMeInit(NVMeDriver* driver)
 	return ResultOk;
 }
 
-Result NVMeSendAdminCommand(NVMeDriver* driver, NVMeSubmissionEntry command)
+static void NVMeNotifySubmissionDoorbell(const NVMeDriver* driver, u64 queueID)
 {
-	MemoryCopy(&command, &driver->AdminSubmissionQueue[driver->AdminSubmissionTail], sizeof(NVMeSubmissionEntry));
-	driver->AdminSubmissionTail = (driver->AdminSubmissionTail + 1) % NVME_QUEUE_SIZE;
-
-	u8* doorbell = (u8*)(driver->Registers);
-	doorbell += 0x1000 + ((2 * 0) * (driver->DoorbellStride));
+	u8* doorbell = (u8*)driver->Registers;
+	doorbell += 0x1000 + ((2 * queueID) * driver->DoorbellStride);
 	*doorbell = driver->AdminSubmissionTail;
+}
+
+static void NVMeNotifyCompletionDoorbell(const NVMeDriver* driver, u64 queueID)
+{
+	u8* doorbell = (u8*)driver->Registers;
+	doorbell += 0x1000 + (((2 * queueID) + 1) * driver->DoorbellStride);
+	*doorbell = driver->AdminCompletionHead;
+}
+
+Result NVMeSendAdminCommand(NVMeDriver* driver, NVMeSubmissionEntry* command)
+{
+	MemoryCopy(command, &driver->AdminSubmissionQueue[driver->AdminSubmissionTail], sizeof(NVMeSubmissionEntry));
+	driver->AdminSubmissionTail = (driver->AdminSubmissionTail + 1) % NVME_QUEUE_SIZE;
+	NVMeNotifySubmissionDoorbell(driver, 0);
 
 	return ResultOk;
+}
+
+Result NVMePollNextAdminCompletion(NVMeDriver* driver, NVMeCompletionEntry* entry)
+{
+	NVMeCompletionEntry* completion = &driver->AdminCompletionQueue[driver->AdminCompletionHead];
+
+	// TODO: A timeout mechanism
+	while (true) {
+		if ((completion->STATUS & 0x1) != driver->AdminPhase)
+			continue;
+
+		// Copy the completion entry to the caller
+		*entry = *completion;
+
+		driver->AdminCompletionHead = (driver->AdminCompletionHead + 1) % NVME_QUEUE_SIZE;
+		if (driver->AdminCompletionHead == 0) {
+			driver->AdminPhase ^= 1;
+		}
+
+		NVMeNotifyCompletionDoorbell(driver, 0);
+
+		return ResultOk;
+	}
+
+	return ResultTimeout;
 }

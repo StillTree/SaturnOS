@@ -37,6 +37,7 @@ Result PCIDeviceInit(PCIDevice* device)
 		capPtr = capability->Next;
 	}
 
+	// If we didn't break from the loop earlier, this means that MSI-X is not supported
 	if (capPtr == 0) {
 		return ResultSerialOutputUnavailabe;
 	}

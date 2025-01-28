@@ -21,4 +21,5 @@ typedef enum Result : u8 {
 	ResultInvalidBARIndex,
 	ResultInvalidMSIXVector,
 	ResultPCICapabilitiesNotSupported,
+	ResultTimeout,
 } Result;

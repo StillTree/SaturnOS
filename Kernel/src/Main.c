@@ -99,7 +99,16 @@ void KernelMain(KernelBootInfo* bootInfo)
 	e.CDW10 = 1;
 	e.NSID = 0;
 
-	NVMeSendAdminCommand(&g_nvmeDriver, e);
+	NVMeSendAdminCommand(&g_nvmeDriver, &e);
+
+	NVMeCompletionEntry c = {};
+	result = NVMePollNextAdminCompletion(&g_nvmeDriver, &c);
+	if (!result) {
+		SK_LOG_INFO("!!! NICE !!!");
+
+		u16* a = (u16*)(identifyBuffer + g_bootInfo.PhysicalMemoryOffset);
+		SK_LOG_INFO("%x", *a);
+	}
 
 	// __asm__ volatile("int3");
 

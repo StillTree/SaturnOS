@@ -47,15 +47,15 @@ typedef struct NVMeDriver {
 	NVMeCompletionEntry* AdminCompletionQueue;
 
 	u32 DoorbellStride;
-	u16 AdminSubmissionHead;
 	u16 AdminSubmissionTail;
 	u16 AdminCompletionHead;
-	bool AdminPhase;
+	u16 AdminPhase;
 
 } NVMeDriver;
 
 Result NVMeInit(NVMeDriver* driver);
-Result NVMeSendAdminCommand(NVMeDriver* driver, NVMeSubmissionEntry command);
+Result NVMeSendAdminCommand(NVMeDriver* driver, NVMeSubmissionEntry* command);
+Result NVMePollNextAdminCompletion(NVMeDriver* driver, NVMeCompletionEntry* entry);
 
 constexpr u16 NVME_QUEUE_SIZE = 64;
 
