@@ -1,8 +1,9 @@
 #include "APIC.h"
 
 #include "ACPI.h"
-#include "CPUID.h"
+#include "CPUInfo.h"
 #include "InOut.h"
+#include "Logger.h"
 #include "MSR.h"
 #include "Memory/Page.h"
 
@@ -80,8 +81,7 @@ Result InitAPIC()
 		return result;
 	}
 
-	Page4KiB ioapicPage = ioapicAddress;
-	result = Page4KiBMapTo(ioapicPage, ioapicAddress, PagePresent | PageWriteable | PageNoCache);
+	result = Page4KiBMapTo(ioapicAddress, ioapicAddress, PagePresent | PageWriteable | PageNoCache);
 	if (result) {
 		return result;
 	}

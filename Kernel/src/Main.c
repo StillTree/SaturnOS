@@ -1,6 +1,6 @@
 #include "ACPI.h"
 #include "APIC.h"
-#include "CPUID.h"
+#include "CPUInfo.h"
 #include "Core.h"
 #include "GDT.h"
 #include "IDT.h"
@@ -89,25 +89,6 @@ void KernelMain(KernelBootInfo* bootInfo)
 	result = NVMeInit(&g_nvmeDriver);
 	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while initializing the NVMe storage driver");
-	}
-
-	PhysicalAddress identifyBuffer;
-	AllocateFrame(&g_frameAllocator, &identifyBuffer);
-	NVMeSubmissionEntry e = {};
-	e.CDW0 = 0x6;
-	e.PRP1 = identifyBuffer;
-	e.CDW10 = 1;
-	e.NSID = 0;
-
-	NVMeSendAdminCommand(&g_nvmeDriver, &e);
-
-	NVMeCompletionEntry c = {};
-	result = NVMePollNextAdminCompletion(&g_nvmeDriver, &c);
-	if (!result) {
-		SK_LOG_INFO("!!! NICE !!!");
-
-		u16* a = (u16*)(identifyBuffer + g_bootInfo.PhysicalMemoryOffset);
-		SK_LOG_INFO("%x", *a);
 	}
 
 	// __asm__ volatile("int3");

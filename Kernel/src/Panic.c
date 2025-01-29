@@ -114,7 +114,7 @@ void Panic(const i8* message, const i8* fileName, usz lineNumber)
 	PanicWriteString("Occured at: ", framebuffer, &cursorPositionX, &cursorPositionY);
 	PanicWriteString(fileName, framebuffer, &cursorPositionX, &cursorPositionY);
 	PanicWriteChar(':', framebuffer, &cursorPositionX, &cursorPositionY);
-	i8 lineNumberString[MAX_DECIMAL_LENGTH];
+	i8 lineNumberString[MAX_DEC_LENGTH];
 	NumberToDecimalString(lineNumber, lineNumberString);
 	PanicWriteString(lineNumberString, framebuffer, &cursorPositionX, &cursorPositionY);
 	PanicWriteChar('\n', framebuffer, &cursorPositionX, &cursorPositionY);

@@ -8,7 +8,7 @@
 /// Represents a 4 KiB virtual memory page.
 typedef u64 Page4KiB;
 
-#define PAGE_4KIB_SIZE_BYTES 4096
+constexpr u64 PAGE_4KIB_SIZE_BYTES = 4096;
 
 static inline Page4KiB Page4KiBContainingAddress(u64 address) { return address & ~0xfff; }
 

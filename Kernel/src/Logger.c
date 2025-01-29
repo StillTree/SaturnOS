@@ -112,7 +112,7 @@ void Log(Logger* logger, LogLevel logLevel, const i8* format, ...)
 				break;
 			}
 			case 'u': {
-				i8 decOutput[MAX_DECIMAL_LENGTH];
+				i8 decOutput[MAX_DEC_LENGTH];
 				u64 number = va_arg(args, u64);
 				NumberToDecimalString(number, decOutput);
 				LogString(logger, decOutput);

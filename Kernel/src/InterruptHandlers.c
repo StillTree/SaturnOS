@@ -11,23 +11,37 @@ __attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame
 {
 	SK_LOG_ERROR("EXCEPTION OCCURED: BREAKPOINT, InterruptFrame");
 	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = %u", frame->StackPointer);
-	SK_LOG_ERROR("\tFlags = %u", frame->Flags);
-	SK_LOG_ERROR("\tCodeSegment = %u", frame->CodeSegment);
-	SK_LOG_ERROR("\tSegmentSelector = %u", frame->SegmentSelector);
-	SK_LOG_ERROR("\tInstruction Pointer = %u", frame->InstructionPointer);
+	SK_LOG_ERROR("\tStackPointer = %x", frame->StackPointer);
+	SK_LOG_ERROR("\tFlags = %x", frame->Flags);
+	SK_LOG_ERROR("\tCodeSegment = %x", frame->CodeSegment);
+	SK_LOG_ERROR("\tSegmentSelector = %x", frame->SegmentSelector);
+	SK_LOG_ERROR("\tInstruction Pointer = %x", frame->InstructionPointer);
 	SK_LOG_ERROR("}");
+}
+
+__attribute__((interrupt)) void GeneralProtectionFaultInterruptHandler(InterruptFrame* frame, u64 /* unused */)
+{
+	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: GENERAL PROTECTION FAULT, InterruptFrame");
+	SK_LOG_ERROR("{");
+	SK_LOG_ERROR("\tStackPointer = %x", frame->StackPointer);
+	SK_LOG_ERROR("\tFlags = %x", frame->Flags);
+	SK_LOG_ERROR("\tCodeSegment = %x", frame->CodeSegment);
+	SK_LOG_ERROR("\tSegmentSelector = %x", frame->SegmentSelector);
+	SK_LOG_ERROR("\tInstruction Pointer = %x", frame->InstructionPointer);
+	SK_LOG_ERROR("}");
+
+	Hang();
 }
 
 __attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, u64 /* unused */)
 {
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: DOUBLE FAULT, InterruptFrame");
 	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = %u", frame->StackPointer);
-	SK_LOG_ERROR("\tFlags = %u", frame->Flags);
-	SK_LOG_ERROR("\tCodeSegment = %u", frame->CodeSegment);
-	SK_LOG_ERROR("\tSegmentSelector = %u", frame->SegmentSelector);
-	SK_LOG_ERROR("\tInstruction Pointer = %u", frame->InstructionPointer);
+	SK_LOG_ERROR("\tStackPointer = %x", frame->StackPointer);
+	SK_LOG_ERROR("\tFlags = %x", frame->Flags);
+	SK_LOG_ERROR("\tCodeSegment = %x", frame->CodeSegment);
+	SK_LOG_ERROR("\tSegmentSelector = %x", frame->SegmentSelector);
+	SK_LOG_ERROR("\tInstruction Pointer = %x", frame->InstructionPointer);
 	SK_LOG_ERROR("}");
 
 	Hang();
@@ -52,9 +66,9 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 	u64 pml4Address = PageTable4Address();
 
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT");
-	SK_LOG_ERROR("Faulty virtual address = %u", faultVirtualAddress);
-	SK_LOG_ERROR("PML4 address = %u", pml4Address);
-	SK_LOG_ERROR("Error code = %u, caused by:", errorCode);
+	SK_LOG_ERROR("Faulty virtual address = %x", faultVirtualAddress);
+	SK_LOG_ERROR("PML4 address = %x", pml4Address);
+	SK_LOG_ERROR("Error code = %x, caused by:", errorCode);
 
 	if (errorCode & PageFaultCausePresent) {
 		SK_LOG_ERROR("\tPresent");
@@ -90,11 +104,11 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 
 	SK_LOG_ERROR("InterruptFrame");
 	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = %u", frame->StackPointer);
-	SK_LOG_ERROR("\tFlags = %u", frame->Flags);
-	SK_LOG_ERROR("\tCodeSegment = %u", frame->CodeSegment);
-	SK_LOG_ERROR("\tSegmentSelector = %u", frame->SegmentSelector);
-	SK_LOG_ERROR("\tInstruction Pointer = %u", frame->InstructionPointer);
+	SK_LOG_ERROR("\tStackPointer = %x", frame->StackPointer);
+	SK_LOG_ERROR("\tFlags = %x", frame->Flags);
+	SK_LOG_ERROR("\tCodeSegment = %x", frame->CodeSegment);
+	SK_LOG_ERROR("\tSegmentSelector = %x", frame->SegmentSelector);
+	SK_LOG_ERROR("\tInstruction Pointer = %x", frame->InstructionPointer);
 	SK_LOG_ERROR("}");
 
 	Hang();

@@ -18,9 +18,9 @@ typedef enum PageTableEntryFlags : u64 {
 
 typedef u64 PageTableEntry;
 
-#define FRAME_ADDRESS_MASK (((1ULL << 40) - 1) << 12)
-#define FLAGS_MASK 0xfff
-#define PAGE_TABLE_ENTRIES 512
+constexpr u64 FRAME_ADDRESS_MASK = (((1ULL << 40) - 1) << 12);
+constexpr u64 FLAGS_MASK = 0xfff;
+constexpr usz PAGE_TABLE_ENTRIES = 512;
 
 /// Returns the PML4 table's physical memory address, read from the CR3 register.
 static inline PhysicalAddress PageTable4Address()

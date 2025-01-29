@@ -4,8 +4,8 @@
 
 typedef u64 VirtualAddress;
 
-#define INDEX_MASK ((1ULL << 9) - 1)
-#define PAGE_OFFSET_MASK 0xfff
+constexpr u64 INDEX_MASK = ((1ULL << 9) - 1);
+constexpr u64 PAGE_OFFSET_MASK = 0xfff;
 
 static inline u16 VirtualAddressPageOffset(VirtualAddress address) { return address & PAGE_OFFSET_MASK; }
 

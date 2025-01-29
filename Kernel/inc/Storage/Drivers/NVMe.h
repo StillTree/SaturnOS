@@ -40,22 +40,30 @@ typedef struct NVMeCompletionEntry {
 	u16 STATUS;
 } NVMeCompletionEntry;
 
+typedef struct NVMeQueue {
+	NVMeSubmissionEntry* SubmissionQueue;
+	NVMeCompletionEntry* CompletionQueue;
+
+	u16 PhaseTag;
+	u16 SubmissionTail;
+	u16 CompletionHead;
+} NVMeQueue;
+
 typedef struct NVMeDriver {
 	NVMeRegisters* Registers;
 
-	NVMeSubmissionEntry* AdminSubmissionQueue;
-	NVMeCompletionEntry* AdminCompletionQueue;
+	NVMeQueue Queues[2];
 
 	u32 DoorbellStride;
-	u16 AdminSubmissionTail;
-	u16 AdminCompletionHead;
-	u16 AdminPhase;
-
+	u64 MinimumPageSize;
+	usz MaximumTransferSize;
 } NVMeDriver;
 
 Result NVMeInit(NVMeDriver* driver);
 Result NVMeSendAdminCommand(NVMeDriver* driver, NVMeSubmissionEntry* command);
 Result NVMePollNextAdminCompletion(NVMeDriver* driver, NVMeCompletionEntry* entry);
+/// Returns the command completion status, where `0` is success and other values mean an error has occured.
+u16 NVMeCommandCompletionStatus(const NVMeCompletionEntry* entry);
 
 constexpr u16 NVME_QUEUE_SIZE = 64;
 
