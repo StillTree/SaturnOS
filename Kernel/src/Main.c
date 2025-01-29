@@ -38,7 +38,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Saving the CPUID processor information");
 	Result result = CPUIDSaveInfo(&g_cpuInformation);
 	if (result) {
-		SK_LOG_ERROR("Could not read the CPUID information");
+		SK_LOG_ERROR("Could not read the CPUID information: %r", result);
 	}
 
 	DisableInterrupts();
@@ -56,7 +56,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Initializing the bitmap frame allocator");
 	result = BitmapFrameAllocatorInit(&g_frameAllocator, (MemoryMapEntry*)g_bootInfo.MemoryMap, g_bootInfo.MemoryMapEntries);
 	if (result) {
-		SK_LOG_ERROR("Could not initialize the frame allocator");
+		SK_LOG_ERROR("Could not initialize the frame allocator: %r", result);
 	}
 
 	SK_LOG_DEBUG("Mapped Physical memory offset: %x", g_bootInfo.PhysicalMemoryOffset);
@@ -64,31 +64,31 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Initializing the kernel's memory heap");
 	result = HeapInit(&g_heapMemoryAllocator, 102400, 0x6969'6969'0000);
 	if (result) {
-		SK_LOG_ERROR("Could not initialize the kernel's heap memory pool");
+		SK_LOG_ERROR("Could not initialize the kernel's heap memory pool: %r", result);
 	}
 
 	SK_LOG_INFO("Parsing the ACPI structures");
 	result = InitXSDT();
 	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to parse ACPI structures");
+		SK_LOG_ERROR("An unexpected error occured while trying to parse ACPI structures: %r", result);
 	}
 
 	SK_LOG_INFO("Initializing the x2APIC");
 	result = InitAPIC();
 	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to initialize the x2APIC");
+		SK_LOG_ERROR("An unexpected error occured while trying to initialize the x2APIC: %r", result);
 	}
 
 	SK_LOG_INFO("Scanning for available PCI devices");
 	result = ScanPCIDevices();
 	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to scan for available PCI devices");
+		SK_LOG_ERROR("An unexpected error occured while trying to scan for available PCI devices: %r", result);
 	}
 
 	SK_LOG_INFO("Initializing the NVMe storage driver");
 	result = NVMeInit(&g_nvmeDriver);
 	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while initializing the NVMe storage driver");
+		SK_LOG_ERROR("An unexpected error occured while initializing the NVMe storage driver: %r", result);
 	}
 
 	// __asm__ volatile("int3");

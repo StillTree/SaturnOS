@@ -1,6 +1,7 @@
 #include "Logger.h"
 
 #include "Format.h"
+#include "Result.h"
 #include <stdarg.h>
 
 Logger g_mainLogger;
@@ -49,6 +50,139 @@ static void LogString(Logger* logger, const i8* string)
 		SerialConsoleWriteString(&logger->SerialConsole, string);
 }
 
+static void LogResult(Logger* logger, Result result)
+{
+	if (logger->FramebufferEnabled) {
+		switch (result) {
+		case ResultOk:
+			FramebufferWriteString(&logger->Framebuffer, "ResultOk");
+			break;
+		case ResultNotEnoughMemoryPages:
+			FramebufferWriteString(&logger->Framebuffer, "ResultNotEnoughMemoryPages");
+			break;
+		case ResultNotEnoughMemoryFrames:
+			FramebufferWriteString(&logger->Framebuffer, "ResultNotEnoughMemoryFrames");
+			break;
+		case ResultSerialOutputUnavailabe:
+			FramebufferWriteString(&logger->Framebuffer, "ResultSerialOutputUnavailabe");
+			break;
+		case ResultOutOfMemory:
+			FramebufferWriteString(&logger->Framebuffer, "ResultOutOfMemory");
+			break;
+		case ResultFrameAlreadyDeallocated:
+			FramebufferWriteString(&logger->Framebuffer, "ResultFrameAlreadyDeallocated");
+			break;
+		case ResultPageAlreadyMapped:
+			FramebufferWriteString(&logger->Framebuffer, "ResultPageAlreadyMapped");
+			break;
+		case ResultPageAlreadyUnmapped:
+			FramebufferWriteString(&logger->Framebuffer, "ResultPageAlreadyUnmapped");
+			break;
+		case ResultHeapBlockTooSmall:
+			FramebufferWriteString(&logger->Framebuffer, "ResultHeapBlockTooSmall");
+			break;
+		case ResultHeapBlockIncorrectAlignment:
+			FramebufferWriteString(&logger->Framebuffer, "ResultHeapBlockIncorrectAlignment");
+			break;
+		case ResultHeapBlockIncorrectSplitSize:
+			FramebufferWriteString(&logger->Framebuffer, "ResultHeapBlockIncorrectSplitSize");
+			break;
+		case ResultInvalidSDTSignature:
+			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidSDTSignature");
+			break;
+		case ResultXSDTCorrupted:
+			FramebufferWriteString(&logger->Framebuffer, "ResultXSDTCorrupted");
+			break;
+		case ResultX2APICUnsupported:
+			FramebufferWriteString(&logger->Framebuffer, "ResultX2APICUnsupported");
+			break;
+		case ResultIOAPICNotPresent:
+			FramebufferWriteString(&logger->Framebuffer, "ResultIOAPICNotPresent");
+			break;
+		case ResultInvalidBARIndex:
+			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidBARIndex");
+			break;
+		case ResultInvalidMSIXVector:
+			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidMSIXVector");
+			break;
+		case ResultPCICapabilitiesNotSupported:
+			FramebufferWriteString(&logger->Framebuffer, "ResultPCICapabilitiesNotSupported");
+			break;
+		case ResultTimeout:
+			FramebufferWriteString(&logger->Framebuffer, "ResultTimeout");
+			break;
+		default:
+			FramebufferWriteString(&logger->Framebuffer, "UnknownResultValue");
+			break;
+		}
+	}
+
+	if (logger->SerialConsoleEnabled) {
+		switch (result) {
+		case ResultOk:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultOk");
+			break;
+		case ResultNotEnoughMemoryPages:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultNotEnoughMemoryPages");
+			break;
+		case ResultNotEnoughMemoryFrames:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultNotEnoughMemoryFrames");
+			break;
+		case ResultSerialOutputUnavailabe:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultSerialOutputUnavailabe");
+			break;
+		case ResultOutOfMemory:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultOutOfMemory");
+			break;
+		case ResultFrameAlreadyDeallocated:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultFrameAlreadyDeallocated");
+			break;
+		case ResultPageAlreadyMapped:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultPageAlreadyMapped");
+			break;
+		case ResultPageAlreadyUnmapped:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultPageAlreadyUnmapped");
+			break;
+		case ResultHeapBlockTooSmall:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultHeapBlockTooSmall");
+			break;
+		case ResultHeapBlockIncorrectAlignment:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultHeapBlockIncorrectAlignment");
+			break;
+		case ResultHeapBlockIncorrectSplitSize:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultHeapBlockIncorrectSplitSize");
+			break;
+		case ResultInvalidSDTSignature:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidSDTSignature");
+			break;
+		case ResultXSDTCorrupted:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultXSDTCorrupted");
+			break;
+		case ResultX2APICUnsupported:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultX2APICUnsupported");
+			break;
+		case ResultIOAPICNotPresent:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultIOAPICNotPresent");
+			break;
+		case ResultInvalidBARIndex:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidBARIndex");
+			break;
+		case ResultInvalidMSIXVector:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidMSIXVector");
+			break;
+		case ResultPCICapabilitiesNotSupported:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultPCICapabilitiesNotSupported");
+			break;
+		case ResultTimeout:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultTimeout");
+			break;
+		default:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultUnknownValue");
+			break;
+		}
+	}
+}
+
 void Log(Logger* logger, LogLevel logLevel, const i8* format, ...)
 {
 	if (logger->FramebufferEnabled) {
@@ -91,6 +225,7 @@ void Log(Logger* logger, LogLevel logLevel, const i8* format, ...)
 	while (*format != '\0') {
 		if (*format == '%') {
 			format++;
+
 			switch (*format) {
 			case 'c': {
 				char c = (char)va_arg(args, i32);
@@ -123,6 +258,12 @@ void Log(Logger* logger, LogLevel logLevel, const i8* format, ...)
 				u64 pointer = va_arg(args, u64);
 				NumberToHexString(pointer, hexOutput);
 				LogString(logger, hexOutput);
+				break;
+			}
+			// My custom format specifier for printing Result values
+			case 'r': {
+				Result result = (Result)va_arg(args, i32);
+				LogResult(logger, result);
 				break;
 			}
 			case '%': {
