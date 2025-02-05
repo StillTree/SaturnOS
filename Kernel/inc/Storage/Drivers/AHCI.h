@@ -15,26 +15,26 @@ typedef enum FISType : u8 {
 } FISType;
 
 typedef struct FISRegisterH2D {
-	FISType FISType; // FIS_TYPE_REG_H2D
-	u8 PortMultiplier; // Port multiplier
-	ATACommand Command; // Command register
-	u8 FeatureLow; // Feature register, 7:0
+	FISType FISType;
+	u8 PortMultiplier;
+	ATACommand Command;
+	u8 FeatureLow;
 
-	u8 LBA0; // LBA low register, 7:0
-	u8 LBA1; // LBA mid register, 15:8
-	u8 LBA2; // LBA high register, 23:16
-	u8 Device; // Device register
+	u8 LBA0;
+	u8 LBA1;
+	u8 LBA2;
+	u8 Device;
 
-	u8 LBA3; // LBA register, 31:24
-	u8 LBA4; // LBA register, 39:32
-	u8 LBA5; // LBA register, 47:40
-	u8 FeatureHigh; // Feature register, 15:8
+	u8 LBA3;
+	u8 LBA4;
+	u8 LBA5;
+	u8 FeatureHigh;
 
-	u16 Count; // Count register, 7:0
-	u8 IsochronousCommandCompletion; // Isochronous command completion
-	u8 Control; // Control register
+	u16 Count;
+	u8 IsochronousCommandCompletion;
+	u8 Control;
 
-	u8 Reserved[4]; // Reserved
+	u8 Reserved[4];
 } FISRegisterH2D;
 
 constexpr u16 FIS_DWORD_LENGTH_REGISTER_H2D = sizeof(FISRegisterH2D) / sizeof(u32);
