@@ -20,6 +20,9 @@ typedef enum Result : u8 {
 	ResultIOAPICNotPresent,
 	ResultInvalidBARIndex,
 	ResultInvalidMSIXVector,
-	ResultPCICapabilitiesNotSupported,
+	ResultPCICapabilitiesUnsupported,
 	ResultTimeout,
+	ResultOutOfRange,
+	ResultAHCI64BitAddressingUnsupported,
+	ResultAHCIDeviceUnsupportedSectorSize,
 } Result;

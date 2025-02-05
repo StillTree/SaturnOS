@@ -104,7 +104,7 @@ void Panic(const i8* message, const i8* fileName, usz lineNumber)
 	// present.
 	u32* framebuffer = g_bootInfo.Framebuffer;
 
-	MemoryFill(framebuffer, 0, g_bootInfo.FramebufferSize);
+	// MemoryFill(framebuffer, 0, g_bootInfo.FramebufferSize);
 	// We don't know if the COM1 serial output device has been initialized in any way, so we initialize it here ourselves
 	PanicReinitializeSerialConsole();
 

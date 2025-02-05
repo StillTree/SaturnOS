@@ -105,11 +105,20 @@ static void LogResult(Logger* logger, Result result)
 		case ResultInvalidMSIXVector:
 			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidMSIXVector");
 			break;
-		case ResultPCICapabilitiesNotSupported:
+		case ResultPCICapabilitiesUnsupported:
 			FramebufferWriteString(&logger->Framebuffer, "ResultPCICapabilitiesNotSupported");
 			break;
 		case ResultTimeout:
 			FramebufferWriteString(&logger->Framebuffer, "ResultTimeout");
+			break;
+		case ResultOutOfRange:
+			FramebufferWriteString(&logger->Framebuffer, "ResultOutOfRange");
+			break;
+		case ResultAHCI64BitAddressingUnsupported:
+			FramebufferWriteString(&logger->Framebuffer, "ResultAHCI64BitAddressingUnsupported");
+			break;
+		case ResultAHCIDeviceUnsupportedSectorSize:
+			FramebufferWriteString(&logger->Framebuffer, "ResultAHCIDeviceUnsupportedSectorSize");
 			break;
 		default:
 			FramebufferWriteString(&logger->Framebuffer, "UnknownResultValue");
@@ -170,7 +179,7 @@ static void LogResult(Logger* logger, Result result)
 		case ResultInvalidMSIXVector:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidMSIXVector");
 			break;
-		case ResultPCICapabilitiesNotSupported:
+		case ResultPCICapabilitiesUnsupported:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultPCICapabilitiesNotSupported");
 			break;
 		case ResultTimeout:

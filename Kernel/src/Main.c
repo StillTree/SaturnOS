@@ -10,7 +10,7 @@
 #include "Memory/HeapMemoryAllocator.h"
 #include "PCI.h"
 #include "Result.h"
-#include "Storage/Drivers/NVMe.h"
+#include "Storage/Drivers/AHCI.h"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -39,6 +39,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 	Result result = CPUIDSaveInfo(&g_cpuInformation);
 	if (result) {
 		SK_LOG_ERROR("Could not read the CPUID information: %r", result);
+		goto halt;
 	}
 
 	DisableInterrupts();
@@ -57,6 +58,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 	result = BitmapFrameAllocatorInit(&g_frameAllocator, (MemoryMapEntry*)g_bootInfo.MemoryMap, g_bootInfo.MemoryMapEntries);
 	if (result) {
 		SK_LOG_ERROR("Could not initialize the frame allocator: %r", result);
+		goto halt;
 	}
 
 	SK_LOG_DEBUG("Mapped Physical memory offset: %x", g_bootInfo.PhysicalMemoryOffset);
@@ -65,34 +67,39 @@ void KernelMain(KernelBootInfo* bootInfo)
 	result = HeapInit(&g_heapMemoryAllocator, 102400, 0x6969'6969'0000);
 	if (result) {
 		SK_LOG_ERROR("Could not initialize the kernel's heap memory pool: %r", result);
+		goto halt;
 	}
 
 	SK_LOG_INFO("Parsing the ACPI structures");
 	result = InitXSDT();
 	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while trying to parse ACPI structures: %r", result);
+		goto halt;
 	}
 
 	SK_LOG_INFO("Initializing the x2APIC");
 	result = InitAPIC();
 	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while trying to initialize the x2APIC: %r", result);
+		goto halt;
 	}
 
 	SK_LOG_INFO("Scanning for available PCI devices");
 	result = ScanPCIDevices();
 	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while trying to scan for available PCI devices: %r", result);
+		goto halt;
 	}
 
-	SK_LOG_INFO("Initializing the NVMe storage driver");
-	result = NVMeInit(&g_nvmeDriver);
+	result = InitAHCI();
 	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while initializing the NVMe storage driver: %r", result);
+		SK_LOG_ERROR("An unexpected error occured while trying to initialize the AHCI driver: %r", result);
+		goto halt;
 	}
 
 	// __asm__ volatile("int3");
 
+halt:
 	while (true)
 		__asm__("hlt");
 }

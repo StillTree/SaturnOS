@@ -67,6 +67,36 @@ Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapE
 	return ResultOk;
 }
 
+Result AllocateContiguousFrames(BitmapFrameAllocator* frameAllocator, usz number, Frame4KiB* frame)
+{
+	for (Frame4KiB checkedFrame = 0; checkedFrame <= frameAllocator->LastFrame; checkedFrame += FRAME_4KIB_SIZE_BYTES) {
+		if (GetFrameStatus(frameAllocator, checkedFrame))
+			continue;
+
+		bool contiguous = true;
+		for (usz i = 1; i < number; i++) {
+			if (GetFrameStatus(frameAllocator, checkedFrame + (i * FRAME_4KIB_SIZE_BYTES))) {
+				contiguous = false;
+				break;
+			}
+		}
+
+		if (!contiguous) {
+			checkedFrame += (number - 1) * FRAME_4KIB_SIZE_BYTES;
+			continue;
+		}
+
+		for (usz i = 0; i < number; i++) {
+			SetFrameStatus(frameAllocator, checkedFrame + (i * FRAME_4KIB_SIZE_BYTES), true);
+		}
+
+		*frame = checkedFrame;
+		return ResultOk;
+	}
+
+	return ResultOutOfMemory;
+}
+
 Result AllocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB* frame)
 {
 	for (Frame4KiB checkedFrame = 0; checkedFrame <= frameAllocator->LastFrame; checkedFrame += FRAME_4KIB_SIZE_BYTES) {
@@ -80,6 +110,26 @@ Result AllocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB* frame)
 	}
 
 	return ResultOutOfMemory;
+}
+
+Result DeallocateContiguousFrames(BitmapFrameAllocator* frameAllocator, Frame4KiB frame, usz number)
+{
+	if (frame + (number * FRAME_4KIB_SIZE_BYTES) > frameAllocator->LastFrame) {
+		return ResultOutOfRange;
+	}
+
+	for (usz i = 0; i < number; i++) {
+		Frame4KiB currentFrame = frame + (i * FRAME_4KIB_SIZE_BYTES);
+		if (!GetFrameStatus(frameAllocator, currentFrame)) {
+			return ResultFrameAlreadyDeallocated;
+		}
+	}
+
+	for (usz i = 0; i < number; i++) {
+		SetFrameStatus(frameAllocator, frame + (i * FRAME_4KIB_SIZE_BYTES), false);
+	}
+
+	return ResultOk;
 }
 
 Result DeallocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB frame)

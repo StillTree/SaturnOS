@@ -17,6 +17,11 @@ Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapE
 
 /// Allocates a single 4 KiB memory frame.
 Result AllocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB* frame);
+/// Allocates a contiguous range of 4 KiB memory frames.
+Result AllocateContiguousFrames(BitmapFrameAllocator* frameAllocator, usz number, Frame4KiB* frame);
+/// Deallocates a single 4 KiB memory frame.
 Result DeallocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB frame);
+/// Deallocates a contiguous range of 4 KiB memory frames.
+Result DeallocateContiguousFrames(BitmapFrameAllocator* frameAllocator, Frame4KiB frame, usz number);
 
 extern BitmapFrameAllocator g_frameAllocator;

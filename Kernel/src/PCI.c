@@ -18,77 +18,100 @@ Result PCIDeviceInit(PCIDevice* device)
 		return result;
 	}
 
-	if (!(device->ConfigurationSpace->Status & StatusRegisterCapabilitiesList)) {
-		return ResultPCICapabilitiesNotSupported;
-	}
+	// if (!(device->ConfigurationSpace->Status & StatusRegisterCapabilitiesList)) {
+	// 	return ResultPCICapabilitiesNotSupported;
+	// }
 
-	u8* pciHeader = (u8*)device->ConfigurationSpace;
-	u8 capPtr = device->ConfigurationSpace->CapabilitiesPtr;
+	// u8* pciHeader = (u8*)device->ConfigurationSpace;
+	// u8 capPtr = device->ConfigurationSpace->CapabilitiesPtr;
 
-	while (capPtr != 0) {
-		DeviceCapability* capability = (DeviceCapability*)(pciHeader + capPtr);
+	// while (capPtr != 0) {
+	// 	DeviceCapability* capability = (DeviceCapability*)(pciHeader + capPtr);
 
-		// TODO: Support MSI and not only MSI-X
-		if (capability->ID == CAPABILITY_ID_MSIX) {
-			device->MSIX = (MSIXCapability*)(capability);
-			break;
-		}
+	// 	// TODO: Support MSI and not only MSI-X
+	// 	if (capability->ID == CAPABILITY_ID_MSIX) {
+	// 		device->MSIX = (MSIXCapability*)(capability);
+	// 		break;
+	// 	}
 
-		capPtr = capability->Next;
-	}
+	// 	capPtr = capability->Next;
+	// }
 
-	// If we didn't break from the loop earlier, this means that MSI-X is not supported
-	if (capPtr == 0) {
-		return ResultSerialOutputUnavailabe;
-	}
+	// // If we didn't break from the loop earlier, this means that MSI-X is not supported
+	// if (capPtr == 0) {
+	// 	return ResultSerialOutputUnavailabe;
+	// }
 
-	u32 tableOffset = device->MSIX->TableOffset & ~0x7;
-	u8 barIndex = device->MSIX->TableOffset & 0x7;
+	// u32 tableOffset = device->MSIX->TableOffset & ~0x7;
+	// u8 barIndex = device->MSIX->TableOffset & 0x7;
 
-	PhysicalAddress barAddress;
-	result = PCIDeviceBarAddress(device, barIndex, &barAddress);
-	if (result) {
-		return result;
-	}
+	// PhysicalAddress barAddress;
+	// result = PCIDeviceBarAddress(device, barIndex, &barAddress);
+	// if (result) {
+	// 	return result;
+	// }
 
-	barAddress += tableOffset;
+	// barAddress += tableOffset;
 
-	device->MSIXTable = (MSIXTableEntry*)barAddress;
+	// device->MSIXTable = (MSIXTableEntry*)barAddress;
 
 	return ResultOk;
 }
 
 Result PCIDeviceMapBars(const PCIDevice* device)
 {
-	for (u8 i = 0; i < 6; i += 2) {
+	for (u8 i = 0; i < 6; i++) {
 		// I do not support, I/O BARs
 		if ((device->ConfigurationSpace->Bar[i] & 1) != 0 || device->ConfigurationSpace->Bar[i] == 0)
 			continue;
 
 		if ((device->ConfigurationSpace->Bar[i] & 0xf) != 4) {
-			SK_LOG_WARN("Non 64-bit memory BAR found while mapping, skipping");
-			// TODO: Support them :D
+			const u32 bar = device->ConfigurationSpace->Bar[i];
+
+			PhysicalAddress address = bar & 0xfffffff0;
+
+			device->ConfigurationSpace->Bar[i] = 0xffffffff;
+
+			const u32 barSize = device->ConfigurationSpace->Bar[i];
+
+			const u32 sizeMask = barSize & 0xfffffff0;
+			const u32 size = ~sizeMask + 1;
+
+			device->ConfigurationSpace->Bar[i] = bar;
+
+			for (Page4KiB page = address; page < address + size; page += PAGE_4KIB_SIZE_BYTES) {
+				// TODO: If prefetchable enable cache
+				Result result = Page4KiBMapTo(page, page, PagePresent | PageWriteable | PageNoCache);
+				if (result) {
+					// This is an extremally dangerous approach but since the kernel will panic later,
+					// I'll jsut leave it like this for now
+					return result;
+				}
+			}
+
+			SK_LOG_DEBUG("Mapping 32-bit BAR with address: %x and size: %x", address, size);
+
 			continue;
 		}
 
 		const u32 barLow = device->ConfigurationSpace->Bar[i];
 		const u32 barHigh = device->ConfigurationSpace->Bar[i + 1];
 
-		PhysicalAddress address = (u64)(barLow & 0xFFFFFFF0) | ((u64)(barHigh) << 32);
+		PhysicalAddress address = (u64)(barLow & 0xfffffff0) | ((u64)(barHigh) << 32);
 
-		device->ConfigurationSpace->Bar[i] = 0xFFFFFFFF;
-		device->ConfigurationSpace->Bar[i + 1] = 0xFFFFFFFF;
+		device->ConfigurationSpace->Bar[i] = 0xffffffff;
+		device->ConfigurationSpace->Bar[i + 1] = 0xffffffff;
 
 		const u32 barSizeLow = device->ConfigurationSpace->Bar[i];
 		const u32 barSizeHigh = device->ConfigurationSpace->Bar[i + 1];
 
-		const u64 sizeMask = ((u64)(barSizeLow & 0xFFFFFFF0) | ((u64)barSizeHigh << 32));
-		const u64 barSize = ~sizeMask + 1;
+		const u64 sizeMask = ((u64)(barSizeLow & 0xfffffff0) | ((u64)barSizeHigh << 32));
+		const u64 size = ~sizeMask + 1;
 
 		device->ConfigurationSpace->Bar[i] = barLow;
 		device->ConfigurationSpace->Bar[i + 1] = barHigh;
 
-		for (Page4KiB page = address; page < address + barSize; page += PAGE_4KIB_SIZE_BYTES) {
+		for (Page4KiB page = address; page < address + size; page += PAGE_4KIB_SIZE_BYTES) {
 			// TODO: If prefetchable enable cache
 			Result result = Page4KiBMapTo(page, page, PagePresent | PageWriteable | PageNoCache);
 			if (result) {
@@ -97,6 +120,8 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 				return result;
 			}
 		}
+
+		SK_LOG_DEBUG("Mapping 64-bit BAR with address: %x and size: %x", address, size);
 	}
 
 	return ResultOk;
@@ -104,27 +129,28 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 
 Result PCIDeviceBarAddress(const PCIDevice* device, u8 index, PhysicalAddress* address)
 {
-	for (u8 i = 0; i < 6; i += 2) {
-		// I do not support, I/O BARs
-		if ((device->ConfigurationSpace->Bar[i] & 1) != 0 || device->ConfigurationSpace->Bar[i] == 1)
-			continue;
+	// I do not support, I/O BARs
+	if ((device->ConfigurationSpace->Bar[index] & 1) != 0 || device->ConfigurationSpace->Bar[index] == 1)
+		return ResultInvalidBARIndex;
 
-		if ((device->ConfigurationSpace->Bar[i] & 0xf) != 4) {
-			continue;
-		}
+	// 32-bit BAR
+	if ((device->ConfigurationSpace->Bar[index] & 0xf) != 4) {
+		u32 bar = device->ConfigurationSpace->Bar[index];
 
-		const u32 barLow = device->ConfigurationSpace->Bar[i];
-		const u32 barHigh = device->ConfigurationSpace->Bar[i + 1];
+		const PhysicalAddress barAddress = bar & 0xfffffff0;
 
-		const PhysicalAddress barAddress = (u64)(barLow & 0xFFFFFFF0) | ((u64)barHigh << 32);
-
-		if (index == i) {
-			*address = barAddress;
-			return ResultOk;
-		}
+		*address = barAddress;
+		return ResultOk;
 	}
 
-	return ResultInvalidBARIndex;
+	// 64-bit BAR
+	const u32 barLow = device->ConfigurationSpace->Bar[index];
+	const u32 barHigh = device->ConfigurationSpace->Bar[index + 1];
+
+	const PhysicalAddress barAddress = (u64)(barLow & 0xfffffff0) | ((u64)barHigh << 32);
+
+	*address = barAddress;
+	return ResultOk;
 }
 
 void PCIDeviceEnableMSIX(const PCIDevice* device) { device->MSIX->MessageControl |= 0x8000; }
@@ -199,19 +225,21 @@ static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus)
 			if (configSpace->VendorID == 0xffff)
 				continue;
 
-			SK_LOG_DEBUG("Detected PCI Device: bus = %u, device = %u, function = %u, vendorID = %x, deviceID = %x, class = %x, "
-						 "subclass = %x",
-				bus, device, function, configSpace->VendorID, configSpace->DeviceID, configSpace->ClassCode, configSpace->Subclass);
+			SK_LOG_DEBUG("Detected PCI Device: device = %u, function = %u, vendorID = %x, deviceID = %x, class = %x, "
+						 "subclass = %x, progIF = %x",
+				device, function, configSpace->VendorID, configSpace->DeviceID, configSpace->ClassCode, configSpace->Subclass,
+				configSpace->ProgIF);
 
-			if (configSpace->ClassCode == 0x1 && configSpace->Subclass == 0x8 && configSpace->ProgIF == 0x2) {
-				PCIDevice pciDevice = { .ConfigurationSpace = configSpace,
+			// The function is a temporary thing, later I plan on supporting multiple devices of course
+			if (configSpace->ClassCode == 0x1 && configSpace->Subclass == 0x6 && configSpace->ProgIF == 0x1 && function == 0) {
+				PCIDevice ahciController = { .ConfigurationSpace = configSpace,
 					.PCISegmentGroupNumber = segmentGroup->SegmentGroupNumber,
 					.BusNumber = bus,
 					.DeviceNumber = device,
 					.FunctionNumber = function,
 					.MSIX = nullptr,
 					.MSIXTable = nullptr };
-				g_pciStorageDevices[0] = pciDevice;
+				g_pciStorageDevices[0] = ahciController;
 				auto result = PCIDeviceInit(&g_pciStorageDevices[0]);
 				SK_PANIC_ASSERT(!result, "An error occured while trying to initialize a PCI Device");
 			}

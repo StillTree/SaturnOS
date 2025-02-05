@@ -108,11 +108,13 @@ fi
 
 function PrepareDiskFolders()
 {
-	echo "Preparing folders to be mapped as disks..."
+	echo "Preparing mapped disks..."
 
 	mkdir -p esp/efi/boot/
 	mkdir -p esp/Supernova/
-	mkdir -p nvme/
+	if [ ! -f "sata.img" ]; then
+		dd if=/dev/zero of=sata.img bs=1M count=1024
+	fi
 
 	cp Bootloader/out/bootx64.efi esp/efi/boot/
 	cp Kernel/out/Kernel.elf esp/Supernova/
@@ -147,15 +149,16 @@ function Run()
 		-drive if=pflash,format=raw,readonly=on,file=$OVMF_CODE_LOCATION \
 		-drive if=pflash,format=raw,readonly=on,file=$OVMF_VARS_LOCATION \
 		-drive format=raw,file=fat:rw:esp \
-		-drive format=raw,if=none,id=nvm,file=fat:rw:nvme \
-		-device nvme,serial=deadbeef,drive=nvm
+		-drive format=raw,if=none,id=sata,file=sata.img \
+		-device ahci,id=ahci \
+		-device ide-hd,drive=sata,bus=ahci.0
 }
 
 function Clean()
 {
-	echo "Removing folders mapped as disks..."
+	echo "Removing mapped disks..."
 	rm -rf esp
-	rm -rf nvme
+	rm sata.img
 
 	echo "Cleaning the bootloader..."
 	make clean -C Bootloader
