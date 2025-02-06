@@ -12,7 +12,7 @@ typedef struct MemoryMapEntry {
 /// C's memset but without a shitty name.
 void MemoryFill(void* ptr, u8 value, usz size);
 /// C's memcpy but without a shitty name.
-void MemoryCopy(void* ptr1, void* ptr2, usz size);
+void MemoryCopy(void* source, void* destination, usz size);
 /// C's memcmp but without a shitty name.
 bool MemoryCompare(const void* ptr1, const void* ptr2, usz size);
 

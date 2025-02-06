@@ -17,6 +17,20 @@ typedef double f64;
 
 typedef u64 usz;
 
+/// Globally Unique Identifier, as defined by th UEFI Specification.
+typedef struct GUID {
+	u32 Data1;
+	u16 Data2;
+	u16 Data3;
+	u8 Data4[8];
+} GUID;
+
+static inline bool GUIDEmpty(GUID guid)
+{
+	return guid.Data1 == 0 && guid.Data2 == 0 && guid.Data3 == 0 && guid.Data4[0] == 0 && guid.Data4[1] == 0 && guid.Data4[2] == 0
+		&& guid.Data4[3] == 0 && guid.Data4[4] == 0 && guid.Data4[5] == 0 && guid.Data4[6] == 0 && guid.Data4[7] == 0;
+}
+
 /// Boot information passed to the kernel by the bootloader.
 typedef struct KernelBootInfo {
 	u32* Framebuffer;

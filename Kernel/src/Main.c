@@ -11,6 +11,7 @@
 #include "PCI.h"
 #include "Result.h"
 #include "Storage/Drivers/AHCI.h"
+#include "Storage/GPT.h"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -94,6 +95,12 @@ void KernelMain(KernelBootInfo* bootInfo)
 	result = InitAHCI();
 	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while trying to initialize the AHCI driver: %r", result);
+		goto halt;
+	}
+
+	result = DetectGPTPartitions();
+	if (result) {
+		SK_LOG_ERROR("An unexpected error occured while trying to detect GPT partitions: %r", result);
 		goto halt;
 	}
 

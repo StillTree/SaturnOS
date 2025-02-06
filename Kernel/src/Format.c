@@ -5,7 +5,7 @@ static constexpr i8 HEX_DIGITS[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '
 
 usz NumberToHexStringLength(u64 number)
 {
-	usz length = 3;
+	usz length = 0;
 
 	do {
 		length++;
@@ -15,21 +15,21 @@ usz NumberToHexStringLength(u64 number)
 	return length;
 }
 
-void NumberToHexString(u64 number, i8* buffer)
+void NumberToHexString(u64 number, i8* buffer, u8 zeroPad)
 {
-	buffer[0] = '0';
-	buffer[1] = 'x';
-
-	if (number == 0) {
-		buffer[2] = '0';
-		buffer[3] = '\0';
-		return;
+	usz i = NumberToHexStringLength(number);
+	if (zeroPad < i) {
+		zeroPad = i;
 	}
+	usz lengthDifference = zeroPad - i;
 
-	usz i = NumberToHexStringLength(number) - 1;
+	for (usz j = 0; j < lengthDifference; j++) {
+		buffer[j] = '0';
+	}
+	i = zeroPad;
 	buffer[i] = '\0';
 
-	while (number > 0 && i > 1) {
+	while (i > lengthDifference) {
 		buffer[--i] = HEX_DIGITS[number % 16];
 		number /= 16;
 	}
@@ -37,7 +37,7 @@ void NumberToHexString(u64 number, i8* buffer)
 
 usz NumberToDecimalStringLength(u64 number)
 {
-	usz length = 1;
+	usz length = 0;
 
 	do {
 		length++;
@@ -55,7 +55,7 @@ void NumberToDecimalString(u64 number, i8* buffer)
 		return;
 	}
 
-	usz i = NumberToDecimalStringLength(number) - 1;
+	usz i = NumberToDecimalStringLength(number);
 	buffer[i] = '\0';
 
 	while (number > 0 && i > 0) {

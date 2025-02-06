@@ -8,10 +8,10 @@ void MemoryFill(void* ptr, u8 value, usz size)
 	}
 }
 
-void MemoryCopy(void* ptr1, void* ptr2, usz size)
+void MemoryCopy(void* source, void* destination, usz size)
 {
-	u8* src = ptr1;
-	u8* dest = ptr2;
+	u8* src = source;
+	u8* dest = destination;
 
 	for (usz i = 0; i < size; i++) {
 		dest[i] = src[i];

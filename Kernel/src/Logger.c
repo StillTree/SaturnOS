@@ -50,6 +50,65 @@ static void LogString(Logger* logger, const i8* string)
 		SerialConsoleWriteString(&logger->SerialConsole, string);
 }
 
+static void LogWideString(Logger* logger, const u16* string)
+{
+	// TODO: Make this not absolute shit and use some sort of conversion system or something
+	if (logger->FramebufferEnabled) {
+		usz i = 0;
+		while (string[i]) {
+			FramebufferWriteChar(&logger->Framebuffer, (u8)string[i++]);
+		}
+	}
+
+	if (logger->SerialConsoleEnabled) {
+		usz i = 0;
+		while (string[i]) {
+			SerialConsoleWriteChar(&logger->SerialConsole, (u8)string[i++]);
+		}
+	}
+}
+
+static void LogGUID(Logger* logger, GUID guid)
+{
+	// I know, I know, this is a terribly written function but hey, it works alright
+	i8 guidString[37];
+	guidString[36] = '\0';
+	usz printOffset = 0;
+	NumberToHexString(guid.Data1, guidString + printOffset, 8);
+
+	guidString[8] = '-';
+	printOffset += 9;
+
+	NumberToHexString(guid.Data2, guidString + printOffset, 4);
+
+	guidString[13] = '-';
+	printOffset += 5;
+
+	NumberToHexString(guid.Data3, guidString + printOffset, 4);
+
+	guidString[18] = '-';
+	printOffset += 5;
+
+	for (usz i = 0; i < 8; i++) {
+		NumberToHexString(guid.Data4[i], guidString + printOffset, 2);
+		printOffset += 2;
+
+		if (i == 1) {
+			printOffset++;
+		}
+	}
+
+	guidString[23] = '-';
+
+	if (logger->FramebufferEnabled) {
+		FramebufferWriteString(&logger->Framebuffer, guidString);
+	}
+
+	if (logger->SerialConsoleEnabled) {
+		SerialConsoleWriteString(&logger->SerialConsole, guidString);
+	}
+}
+
 static void LogResult(Logger* logger, Result result)
 {
 	if (logger->FramebufferEnabled) {
@@ -185,6 +244,15 @@ static void LogResult(Logger* logger, Result result)
 		case ResultTimeout:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultTimeout");
 			break;
+		case ResultOutOfRange:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultOutOfRange");
+			break;
+		case ResultAHCI64BitAddressingUnsupported:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultAHCI64BitAddressingUnsupported");
+			break;
+		case ResultAHCIDeviceUnsupportedSectorSize:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultAHCIDeviceUnsupportedSectorSize");
+			break;
 		default:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultUnknownValue");
 			break;
@@ -251,7 +319,7 @@ void Log(Logger* logger, LogLevel logLevel, const i8* format, ...)
 			case 'x': {
 				i8 hexOutput[MAX_HEX_LENGTH];
 				u64 number = va_arg(args, u64);
-				NumberToHexString(number, hexOutput);
+				NumberToHexString(number, hexOutput, 0);
 				LogString(logger, hexOutput);
 				break;
 			}
@@ -265,14 +333,26 @@ void Log(Logger* logger, LogLevel logLevel, const i8* format, ...)
 			case 'p': {
 				i8 hexOutput[MAX_HEX_LENGTH];
 				u64 pointer = va_arg(args, u64);
-				NumberToHexString(pointer, hexOutput);
+				NumberToHexString(pointer, hexOutput, 0);
 				LogString(logger, hexOutput);
 				break;
 			}
-			// My custom format specifier for printing Result values
+			// A custom format specifier for printing Result values
 			case 'r': {
 				Result result = (Result)va_arg(args, i32);
 				LogResult(logger, result);
+				break;
+			}
+			// A custom format specifier for printing GUID values
+			case 'g': {
+				GUID guid = va_arg(args, GUID);
+				LogGUID(logger, guid);
+				break;
+			}
+			// A custom format specifier for printing wide strings
+			case 'w': {
+				const u16* string = va_arg(args, u16*);
+				LogWideString(logger, string);
 				break;
 			}
 			case '%': {
