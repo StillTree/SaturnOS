@@ -12,6 +12,7 @@
 #include "Result.h"
 #include "Storage/Drivers/AHCI.h"
 #include "Storage/GPT.h"
+#include "Storage/Filesystems/Ext2.h"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -101,6 +102,12 @@ void KernelMain(KernelBootInfo* bootInfo)
 	result = DetectGPTPartitions();
 	if (result) {
 		SK_LOG_ERROR("An unexpected error occured while trying to detect GPT partitions: %r", result);
+		goto halt;
+	}
+
+	result = InitExt2();
+	if (result) {
+		SK_LOG_ERROR("An unexpected error occured while trying to initialize the Ext2 driver: %r", result);
 		goto halt;
 	}
 

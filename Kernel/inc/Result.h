@@ -25,4 +25,6 @@ typedef enum Result : u8 {
 	ResultOutOfRange,
 	ResultAHCI64BitAddressingUnsupported,
 	ResultAHCIDeviceUnsupportedSectorSize,
+	ResultInvalidPath,
+	ResultInodeNotFound,
 } Result;

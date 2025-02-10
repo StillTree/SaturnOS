@@ -7,6 +7,8 @@
 #include "Memory/PhysicalAddress.h"
 #include "Storage/Drivers/AHCI.h"
 
+Partition g_usablePartitions[1];
+
 Result DetectGPTPartitions()
 {
 	Result result = ResultOk;
@@ -33,8 +35,7 @@ Result DetectGPTPartitions()
 
 	usz neededSectors = ((usz)gptHeader->PartitionEntryCount * gptHeader->PartitionEntrySize + g_ahciDriver.Devices[0].SectorSize - 1)
 		/ g_ahciDriver.Devices[0].SectorSize;
-	usz neededFrames
-		= ((usz)gptHeader->PartitionEntryCount * gptHeader->PartitionEntrySize + FRAME_4KIB_SIZE_BYTES - 1) / FRAME_4KIB_SIZE_BYTES;
+	usz neededFrames = (neededSectors + 7) / 8;
 
 	Frame4KiB tableStartFrame;
 	result = AllocateContiguousFrames(&g_frameAllocator, neededFrames, &tableStartFrame);
@@ -54,6 +55,19 @@ Result DetectGPTPartitions()
 
 		SK_LOG_DEBUG("Detected usable GPT partition: StartLBA = %u, EndLBA = %u, Attributes = %x, Name = \"%w\", GUID = %g",
 			gptEntries[i].StartLBA, gptEntries[i].EndLBA, gptEntries[i].Attributes, gptEntries[i].Name, gptEntries[i].PartitionGUID);
+	}
+
+	g_usablePartitions[0].StartLBA = gptEntries[0].StartLBA;
+	g_usablePartitions[0].EndLBA = gptEntries[0].EndLBA;
+
+	result = DeallocateContiguousFrames(&g_frameAllocator, tableStartFrame, neededFrames);
+	if (result) {
+		return result;
+	}
+
+	result = DeallocateFrame(&g_frameAllocator, partitionTableHeader);
+	if (result) {
+		return result;
 	}
 
 	return result;

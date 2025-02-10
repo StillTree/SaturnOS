@@ -89,7 +89,7 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 				}
 			}
 
-			SK_LOG_DEBUG("Mapping 32-bit BAR with address: %x and size: %x", address, size);
+			SK_LOG_DEBUG("Mapping 32-bit BAR with address: 0x%x and size: 0x%x", address, size);
 
 			continue;
 		}
@@ -121,7 +121,7 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 			}
 		}
 
-		SK_LOG_DEBUG("Mapping 64-bit BAR with address: %x and size: %x", address, size);
+		SK_LOG_DEBUG("Mapping 64-bit BAR with address: 0x%x and size: 0x%x", address, size);
 	}
 
 	return ResultOk;
@@ -225,8 +225,8 @@ static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus)
 			if (configSpace->VendorID == 0xffff)
 				continue;
 
-			SK_LOG_DEBUG("Detected PCI Device: device = %u, function = %u, vendorID = %x, deviceID = %x, class = %x, "
-						 "subclass = %x, progIF = %x",
+			SK_LOG_DEBUG("Detected PCI Device: device = %u, function = %u, VendorID = %x, DeviceID = %x, ClassCode = %x, "
+						 "Subclass = %x, ProgIF = %x",
 				device, function, configSpace->VendorID, configSpace->DeviceID, configSpace->ClassCode, configSpace->Subclass,
 				configSpace->ProgIF);
 

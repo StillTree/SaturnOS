@@ -28,3 +28,10 @@ typedef struct __attribute__((packed)) GPTEntry {
 } GPTEntry;
 
 Result DetectGPTPartitions();
+
+typedef struct Partition {
+	usz StartLBA;
+	usz EndLBA;
+} Partition;
+
+extern Partition g_usablePartitions[1];
