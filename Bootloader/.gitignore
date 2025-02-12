@@ -1,4 +1,4 @@
-out/
+Output/
 .cache/
 compile_commands.json
 
