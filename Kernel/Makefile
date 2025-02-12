@@ -1,6 +1,6 @@
-TARGET_DIR = out
-SRC_DIR    = src
-INC_DIR    = inc
+TARGET_DIR = Output
+SRC_DIR    = Source
+INC_DIR    = Include
 TARGET     = $(TARGET_DIR)/Kernel.elf
 
 CC = x86_64-elf-gcc

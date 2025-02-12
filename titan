@@ -116,8 +116,8 @@ function PrepareDiskFolders()
 		dd if=/dev/zero of=sata.img bs=1M count=1024
 	fi
 
-	cp Bootloader/out/bootx64.efi esp/efi/boot/
-	cp Kernel/out/Kernel.elf esp/Supernova/
+	cp Bootloader/Output/bootx64.efi esp/efi/boot/
+	cp Kernel/Output/Kernel.elf esp/Supernova/
 }
 
 function Compile()
