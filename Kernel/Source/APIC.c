@@ -63,17 +63,25 @@ void IOAPICSetRedirectionEntry(u8 irq, u64 entry)
 
 Result InitAPIC()
 {
-	// TODO: Add xAPIC support
-	if (!g_cpuInformation.SupportsX2APIC)
-		return ResultX2APICUnsupported;
+	if (!g_cpuInformation.SupportsX2APIC) {
+		SK_LOG_DEBUG("x2APIC not supported, falling back to xAPIC");
 
-	// Enables the x2APIC
-	u64 apicBase = ReadMSR(LAPIC_BASE_MSR);
-	apicBase |= (1 << 11) | (1 << 10);
-	WriteMSR(LAPIC_BASE_MSR, apicBase);
+		// Enabled the xAPIC (or just APIC, I guess)
+		u64 apicBase = ReadMSR(X2APIC_BASE_MSR);
+		apicBase |= (1 << 11);
+		WriteMSR(X2APIC_BASE_MSR, apicBase);
 
-	u64 svr = ReadMSR(LAPIC_SVR_REGISTER_MSR);
-	WriteMSR(LAPIC_SVR_REGISTER_MSR, svr | 0x100);
+		u64 svr = ReadMSR(X2APIC_SVR_REGISTER_MSR);
+		WriteMSR(X2APIC_SVR_REGISTER_MSR, svr | 0x100);
+	} else {
+		// Enables the x2APIC
+		u64 apicBase = ReadMSR(X2APIC_BASE_MSR);
+		apicBase |= (1 << 11) | (1 << 10);
+		WriteMSR(X2APIC_BASE_MSR, apicBase);
+
+		u64 svr = ReadMSR(X2APIC_SVR_REGISTER_MSR);
+		WriteMSR(X2APIC_SVR_REGISTER_MSR, svr | 0x100);
+	}
 
 	PhysicalAddress ioapicAddress;
 	Result result = FindIOAPICAddress(&ioapicAddress);
@@ -94,4 +102,4 @@ Result InitAPIC()
 	return ResultOk;
 }
 
-void EOISignal() { WriteMSR(LAPIC_SVC_REGISTER_EOI, 0); }
+void EOISignal() { WriteMSR(X2APIC_SVC_REGISTER_EOI, 0); }

@@ -82,7 +82,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Initializing the x2APIC");
 	result = InitAPIC();
 	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to initialize the x2APIC: %r", result);
+		SK_LOG_ERROR("An unexpected error occured while trying to initialize the APIC: %r", result);
 		goto halt;
 	}
 

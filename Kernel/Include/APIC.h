@@ -6,10 +6,10 @@ constexpr u8 PIC_MASTER_DATA = 0x21;
 constexpr u8 PIC_SLAVE_COMMAND = 0xa0;
 constexpr u8 PIC_SLAVE_DATA = 0xa1;
 
-constexpr u32 LAPIC_BASE_MSR = 0x1b;
-constexpr u32 LAPIC_ID_REGISTER_MSR = 0x802;
-constexpr u32 LAPIC_SVR_REGISTER_MSR = 0x80f;
-constexpr u32 LAPIC_SVC_REGISTER_EOI = 0x80b;
+constexpr u32 X2APIC_BASE_MSR = 0x1b;
+constexpr u32 X2APIC_ID_REGISTER_MSR = 0x802;
+constexpr u32 X2APIC_SVR_REGISTER_MSR = 0x80f;
+constexpr u32 X2APIC_SVC_REGISTER_EOI = 0x80b;
 
 constexpr u32 IOAPIC_ID_REGISTER_INDEX = 0x0;
 constexpr u32 IOAPIC_VERSION_REGISTER_INDEX = 0x2;
