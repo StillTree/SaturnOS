@@ -67,17 +67,17 @@ Result InitAPIC()
 		SK_LOG_DEBUG("x2APIC not supported, falling back to xAPIC");
 
 		// Enabled the xAPIC (or just APIC, I guess)
-		u64 apicBase = ReadMSR(X2APIC_BASE_MSR);
+		u64 apicBase = ReadMSR(APIC_BASE_MSR);
 		apicBase |= (1 << 11);
-		WriteMSR(X2APIC_BASE_MSR, apicBase);
+		WriteMSR(APIC_BASE_MSR, apicBase);
 
 		u64 svr = ReadMSR(X2APIC_SVR_REGISTER_MSR);
 		WriteMSR(X2APIC_SVR_REGISTER_MSR, svr | 0x100);
 	} else {
 		// Enables the x2APIC
-		u64 apicBase = ReadMSR(X2APIC_BASE_MSR);
+		u64 apicBase = ReadMSR(APIC_BASE_MSR);
 		apicBase |= (1 << 11) | (1 << 10);
-		WriteMSR(X2APIC_BASE_MSR, apicBase);
+		WriteMSR(APIC_BASE_MSR, apicBase);
 
 		u64 svr = ReadMSR(X2APIC_SVR_REGISTER_MSR);
 		WriteMSR(X2APIC_SVR_REGISTER_MSR, svr | 0x100);
