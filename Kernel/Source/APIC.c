@@ -13,6 +13,8 @@ void DisablePIC()
 	OutputU8(PIC_SLAVE_DATA, 0xff);
 }
 
+APIC g_apic;
+
 /// Simply returns the base address of the first I/O APIC found.
 ///
 /// TODO: Probably should do some ACPI magic and actually pick the correct one or something.
@@ -38,18 +40,37 @@ Result FindIOAPICAddress(PhysicalAddress* address)
 	return ResultIOAPICNotPresent;
 }
 
-u32* g_ioapic = nullptr;
+u32 LAPICReadRegister(u32 reg)
+{
+	if (g_apic.X2APICMode) {
+		return ReadMSR(X2APIC_MSR_BASE + (reg >> 4));
+	}
+
+	// xAPIC mode
+	return *(g_apic.XAPICAddress + (reg / 4));
+}
+
+void LAPICWriteRegister(u32 reg, u32 value)
+{
+	if (g_apic.X2APICMode) {
+		WriteMSR(X2APIC_MSR_BASE + (reg >> 4), value);
+		return;
+	}
+
+	// xAPIC mode
+	*(g_apic.XAPICAddress + (reg / 4)) = value;
+}
 
 u32 IOAPICReadRegister(u32 reg)
 {
-	g_ioapic[0] = reg & 0xff;
-	return g_ioapic[4];
+	g_apic.IOAPICAddress[0] = reg & 0xff;
+	return g_apic.IOAPICAddress[4];
 }
 
 void IOAPICWriteRegister(u32 reg, u32 value)
 {
-	g_ioapic[0] = reg & 0xff;
-	g_ioapic[4] = value;
+	g_apic.IOAPICAddress[0] = reg & 0xff;
+	g_apic.IOAPICAddress[4] = value;
 }
 
 void IOAPICSetRedirectionEntry(u8 irq, u64 entry)
@@ -71,17 +92,20 @@ Result InitAPIC()
 		apicBase |= (1 << 11);
 		WriteMSR(APIC_BASE_MSR, apicBase);
 
-		u64 svr = ReadMSR(X2APIC_SVR_REGISTER_MSR);
-		WriteMSR(X2APIC_SVR_REGISTER_MSR, svr | 0x100);
+		g_apic.X2APICMode = false;
+		g_apic.XAPICAddress = (u32*)(apicBase & ~0xfff);
 	} else {
 		// Enables the x2APIC
 		u64 apicBase = ReadMSR(APIC_BASE_MSR);
 		apicBase |= (1 << 11) | (1 << 10);
 		WriteMSR(APIC_BASE_MSR, apicBase);
 
-		u64 svr = ReadMSR(X2APIC_SVR_REGISTER_MSR);
-		WriteMSR(X2APIC_SVR_REGISTER_MSR, svr | 0x100);
+		g_apic.X2APICMode = true;
+		g_apic.XAPICAddress = nullptr;
 	}
+
+	u64 svr = LAPICReadRegister(LAPIC_SVR_REGISTER);
+	LAPICWriteRegister(LAPIC_SVR_REGISTER, svr | 0x100);
 
 	PhysicalAddress ioapicAddress;
 	Result result = FindIOAPICAddress(&ioapicAddress);
@@ -94,7 +118,7 @@ Result InitAPIC()
 		return result;
 	}
 
-	g_ioapic = (u32*)ioapicAddress;
+	g_apic.IOAPICAddress = (u32*)ioapicAddress;
 
 	// Set the PS/2 keyboard handler
 	IOAPICSetRedirectionEntry(1, 33);
@@ -102,4 +126,6 @@ Result InitAPIC()
 	return ResultOk;
 }
 
-void EOISignal() { WriteMSR(X2APIC_SVC_REGISTER_EOI, 0); }
+void EOISignal() { LAPICWriteRegister(LAPIC_EOI_REGISTER, 0); }
+
+Result InitAPICTimer() { return ResultOk; }

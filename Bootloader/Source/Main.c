@@ -191,8 +191,8 @@ halt:
 	return EFI_SUCCESS;
 }
 
-VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP4Table, EFI_VIRTUAL_ADDRESS stackAddress,
-	EFI_VIRTUAL_ADDRESS bootInfoAddress)
+__attribute__((noreturn)) VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP4Table,
+	EFI_VIRTUAL_ADDRESS stackAddress, EFI_VIRTUAL_ADDRESS bootInfoAddress)
 {
 	__asm__ volatile("xor %%rbp, %%rbp\n\t" // Zero out the base pointer, the kernel will take
 											// care of it from here
@@ -210,6 +210,8 @@ VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP
 		: "memory");
 
 	// We should not ever exit this function...
+	while (TRUE)
+		;
 }
 
 EFI_STATUS OpenFileSystem(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable, EFI_FILE_PROTOCOL** rootVolume)

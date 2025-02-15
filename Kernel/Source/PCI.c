@@ -162,7 +162,7 @@ Result PCIDeviceSetMSIXVector(const PCIDevice* device, usz msiVector, u8 systemV
 	}
 
 	// TODO: Do not hardcode these values here
-	u64 lapicID = ReadMSR(X2APIC_ID_REGISTER_MSR);
+	u64 lapicID = LAPICReadRegister(LAPIC_ID_REGISTER);
 	u32 addressLow = 0xfee00000 | (1 << 3) | ((lapicID & 0xff) << 12);
 	u32 addressHigh = 0x0 | ((lapicID >> 8) & 0xffffff);
 	u32 data = systemVector;
