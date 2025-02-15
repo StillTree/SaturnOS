@@ -92,8 +92,14 @@ Result InitAPIC()
 		apicBase |= (1 << 11);
 		WriteMSR(APIC_BASE_MSR, apicBase);
 
+		PhysicalAddress xapicAddress = apicBase & ~0xfff;
 		g_apic.X2APICMode = false;
-		g_apic.XAPICAddress = (u32*)(apicBase & ~0xfff);
+		g_apic.XAPICAddress = (u32*)xapicAddress;
+
+		Result result = Page4KiBMapTo(xapicAddress, xapicAddress, PagePresent | PageWriteable | PageNoCache);
+		if (result) {
+			return result;
+		}
 	} else {
 		// Enables the x2APIC
 		u64 apicBase = ReadMSR(APIC_BASE_MSR);
