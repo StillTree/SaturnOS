@@ -125,3 +125,9 @@ __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /* unus
 
 	EOISignal();
 }
+
+__attribute__((interrupt)) void TimerInterruptHandler(InterruptFrame* /* unused */)
+{
+	SK_LOG_DEBUG("Timer tick");
+	EOISignal();
+}

@@ -12,6 +12,10 @@ constexpr u32 X2APIC_MSR_BASE = 0x800;
 constexpr u32 LAPIC_ID_REGISTER = 0x20;
 constexpr u32 LAPIC_SVR_REGISTER = 0xf0;
 constexpr u32 LAPIC_EOI_REGISTER = 0xb0;
+constexpr u32 LAPIC_LVT_TIMER_REGISTER = 0x320;
+constexpr u32 LAPIC_TIMER_INITIAL_REGISTER = 0x380;
+constexpr u32 LAPIC_TIMER_CURRENT_REGISTER = 0x390;
+constexpr u32 LAPIC_TIMER_DIVISOR_REGISTER = 0x3e0;
 
 constexpr u32 IOAPIC_ID_REGISTER_INDEX = 0x0;
 constexpr u32 IOAPIC_VERSION_REGISTER_INDEX = 0x2;
@@ -32,10 +36,14 @@ typedef struct APIC {
 	u32* IOAPICAddress;
 	/// Unused when in x2APIC mode.
 	u32* XAPICAddress;
+
+	// In Hz
+	u64 LAPICTimerFrequency;
 } APIC;
 
 void DisablePIC();
 Result InitAPIC();
+void InitAPICTimer();
 void EOISignal();
 
 extern APIC g_apic;

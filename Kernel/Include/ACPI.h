@@ -44,6 +44,16 @@ usz MCFGEntries(const MCFG* mcfg);
 
 MCFGEntry* MCFGGetPCISegmentGroup(MCFG* mcfg, usz index);
 
+typedef enum MADTEntryType : u8 {
+	MADTEntryLocalAPIC = 0,
+	MADTEntryIOAPIC = 1,
+	MADTEntryIOAPICInterruptSourceOverride = 2,
+	MADTEntryIOAPICNMISource = 3,
+	MADTEntryLocalAPICNMI = 4,
+	MADTEntryLocalAPICAddressOverride = 5,
+	MADTEntryLocalX2APIC = 9,
+} MADTEntryType;
+
 typedef struct __attribute__((packed)) MADTBaseEntry {
 	u8 Type;
 	u8 Length;

@@ -19,3 +19,5 @@ __attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* fram
 __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, u64 errorCode);
 
 __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame*);
+
+__attribute__((interrupt)) void TimerInterruptHandler(InterruptFrame*);

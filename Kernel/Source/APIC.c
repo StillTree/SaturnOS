@@ -30,7 +30,7 @@ Result FindIOAPICAddress(PhysicalAddress* address)
 
 	MADTBaseEntry* entry = madt->Entries;
 	while (MADTGetAPICEntry(madt, &entry)) {
-		if (entry->Type == 1) {
+		if (entry->Type == MADTEntryIOAPIC) {
 			MADTEntryIO* ioEntry = (MADTEntryIO*)entry;
 			*address = ioEntry->IOAPICAddress;
 			return ResultOk;
@@ -110,8 +110,7 @@ Result InitAPIC()
 		g_apic.XAPICAddress = nullptr;
 	}
 
-	u64 svr = LAPICReadRegister(LAPIC_SVR_REGISTER);
-	LAPICWriteRegister(LAPIC_SVR_REGISTER, svr | 0x100);
+	LAPICWriteRegister(LAPIC_SVR_REGISTER, 0x1ff);
 
 	PhysicalAddress ioapicAddress;
 	Result result = FindIOAPICAddress(&ioapicAddress);
@@ -126,6 +125,8 @@ Result InitAPIC()
 
 	g_apic.IOAPICAddress = (u32*)ioapicAddress;
 
+	InitAPICTimer();
+
 	// Set the PS/2 keyboard handler
 	IOAPICSetRedirectionEntry(1, 33);
 
@@ -134,4 +135,48 @@ Result InitAPIC()
 
 void EOISignal() { LAPICWriteRegister(LAPIC_EOI_REGISTER, 0); }
 
-Result InitAPICTimer() { return ResultOk; }
+void InitAPICTimer()
+{
+	u16 pitDivisor = 1193182 / 100;
+
+	// Disable, configure and enable for calibrating
+	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, 0);
+	LAPICWriteRegister(LAPIC_TIMER_DIVISOR_REGISTER, 0xb);
+	LAPICWriteRegister(LAPIC_LVT_TIMER_REGISTER, 0x10000);
+	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, 0xffffffff);
+
+	u32 initialCount = LAPICReadRegister(LAPIC_TIMER_CURRENT_REGISTER);
+
+	// Set the divisor to 100 MHz
+	OutputU8(0x43, 0x30);
+	OutputU8(0x40, pitDivisor & 0xff);
+	OutputU8(0x40, pitDivisor >> 8);
+
+	u16 currentCounter = pitDivisor;
+	u16 oldCurrentCounter = pitDivisor;
+
+	while ((currentCounter <= oldCurrentCounter) && currentCounter) {
+		oldCurrentCounter = currentCounter;
+
+		OutputU8(0x43, 0);
+		currentCounter = (u16)InputU8(0x40);
+		currentCounter |= (u16)InputU8(0x40) << 8;
+	}
+
+	u32 finalCount = LAPICReadRegister(LAPIC_TIMER_CURRENT_REGISTER);
+
+	// Disable the LAPIC timer
+	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, 0);
+	g_apic.LAPICTimerFrequency = (u64)(initialCount - finalCount) * 100;
+
+	// Disable the PIT (setting an invalid divisor)
+	// I don't know if this even does somthing, but hey, that won't hurt (hopefully...)
+	OutputU8(0x43, 0x30);
+	OutputU8(0x40, 0);
+	OutputU8(0x40, 0);
+
+	SK_LOG_DEBUG("LAPIC Timer frequency: %u MHz", g_apic.LAPICTimerFrequency / 1000000);
+
+	LAPICWriteRegister(LAPIC_LVT_TIMER_REGISTER, ((1 << 17) & ~(1 << 18)) | 34);
+	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, g_apic.LAPICTimerFrequency);
+}
