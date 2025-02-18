@@ -1,7 +1,9 @@
 #include "Core.h"
 #include "Memory/Frame.h"
 
-/// I have no clue if this is enough, but for now it should suffice I guess...
+// I have no clue if this is enough, but for now it should suffice I guess...
+// TODO: Check for other stuff that might need saving like the TSS (or mapping them actually),
+// exception handling, do I need to map the kernel? and other shit...
 typedef struct CPUContext {
 	u64 RSP;
 	u64 RIP;
