@@ -84,7 +84,7 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 				Result result = Page4KiBMapTo(page, page, PagePresent | PageWriteable | PageNoCache);
 				if (result) {
 					// This is an extremally dangerous approach but since the kernel will panic later,
-					// I'll jsut leave it like this for now
+					// I'll just leave it like this for now
 					return result;
 				}
 			}
