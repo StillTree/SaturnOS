@@ -4,6 +4,7 @@ TSS g_tss;
 GDT g_gdt;
 u8 g_doubleFaultStack[20480];
 u8 g_pageFaultStack[20480];
+u8 g_schedulerInterruptStack[20480];
 
 GDTEntry64 SetGDTEntry64(u64 address, u32 limit, u8 access, u8 flags)
 {
@@ -42,6 +43,7 @@ void InitGDT()
 	g_tss.IOPermissionBitMap = sizeof(g_tss);
 	g_tss.IST[0] = (u64)g_doubleFaultStack + (sizeof(u8) * 20480);
 	g_tss.IST[1] = (u64)g_pageFaultStack + (sizeof(u8) * 20480);
+	g_tss.IST[6] = (u64)g_schedulerInterruptStack + (sizeof(u8) * 20480);
 
 	g_gdt.Null = SetGDTEntry32(0, 0, 0, 0);
 	g_gdt.KernelCode = SetGDTEntry32(0, 0xfffff, 0x9a, 0xa);

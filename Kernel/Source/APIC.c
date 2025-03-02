@@ -96,7 +96,8 @@ Result InitAPIC()
 		g_apic.X2APICMode = false;
 		g_apic.XAPICAddress = (u32*)xapicAddress;
 
-		Result result = Page4KiBMapTo(xapicAddress, xapicAddress, PagePresent | PageWriteable | PageNoCache);
+		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
+		Result result = Page4KiBMapTo(kernelPML4, xapicAddress, xapicAddress, PageWriteable | PageNoCache);
 		if (result) {
 			return result;
 		}
@@ -118,7 +119,8 @@ Result InitAPIC()
 		return result;
 	}
 
-	result = Page4KiBMapTo(ioapicAddress, ioapicAddress, PagePresent | PageWriteable | PageNoCache);
+	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
+	result = Page4KiBMapTo(kernelPML4, ioapicAddress, ioapicAddress, PageWriteable | PageNoCache);
 	if (result) {
 		return result;
 	}
@@ -180,5 +182,5 @@ void InitAPICTimer()
 	SK_LOG_DEBUG("LAPIC Timer frequency: %u MHz", g_apic.LAPICTimerFrequency / 1000000);
 
 	LAPICWriteRegister(LAPIC_LVT_TIMER_REGISTER, ((1 << 17) & ~(1 << 18)) | 34);
-	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, g_apic.LAPICTimerFrequency);
+	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, g_apic.LAPICTimerFrequency / 10);
 }

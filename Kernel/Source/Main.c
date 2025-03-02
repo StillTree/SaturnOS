@@ -13,6 +13,7 @@
 #include "Storage/Drivers/AHCI.h"
 #include "Storage/GPT.h"
 #include "Storage/Filesystems/Ext2.h"
+#include "Scheduler.h"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -79,6 +80,13 @@ void KernelMain(KernelBootInfo* bootInfo)
 		goto halt;
 	}
 
+	SK_LOG_INFO("Initializing the scheduler");
+	result = InitScheduler();
+	if (result) {
+		SK_LOG_ERROR("An unexpected error occured while trying to initialize the scheduler: %r", result);
+		goto halt;
+	}
+
 	SK_LOG_INFO("Initializing the x2APIC");
 	result = InitAPIC();
 	if (result) {
@@ -111,8 +119,16 @@ void KernelMain(KernelBootInfo* bootInfo)
 		goto halt;
 	}
 
-	// __asm__ volatile("int3");
+	while (true) {
+		u32* f = (u32*)0xFFFFFFFF8004B000;
 
+		for (usz i = 0; i < 100000; i++) {
+			f[i] = 0x00ff0000;
+		}
+	}
+
+	// __asm__ volatile("int3");
+	
 halt:
 	while (true)
 		__asm__("hlt");

@@ -5,8 +5,8 @@
 #include "Memory.h"
 #include "elf.h"
 
-EFI_STATUS LoadKernel(
-	UINT8* loadedFile, FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDRESS p4TableAddress, EFI_VIRTUAL_ADDRESS* entryPoint)
+EFI_STATUS LoadKernel(UINT8* loadedFile, FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDRESS p4TableAddress,
+	EFI_VIRTUAL_ADDRESS* entryPoint, EFI_VIRTUAL_ADDRESS* nextUsableMemoryFrame)
 {
 	Elf64_Ehdr* elfHeader = (Elf64_Ehdr*)loadedFile;
 
@@ -25,6 +25,7 @@ EFI_STATUS LoadKernel(
 			continue;
 
 		UINTN numPages = (header->p_memsz + 4095) / 4096;
+		*nextUsableMemoryFrame = header->p_vaddr;
 		for (UINTN j = 0; j < numPages; j++) {
 			// Allocate a memory frame, zero it out and copy the segments data to it
 			// and map it to the kernel's P4 Table, if there's an error somewhere - shit yourself.
@@ -50,6 +51,8 @@ EFI_STATUS LoadKernel(
 				SN_LOG_ERROR(L"An unexpected error occured while trying to map a memory frame in the kernel's P4 table");
 				return status;
 			}
+
+			*nextUsableMemoryFrame += 4096;
 		}
 	}
 

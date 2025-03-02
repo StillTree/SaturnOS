@@ -5,6 +5,7 @@ RELEASE=false
 BUILD_KERNEL=true
 BUILD_BOOTLOADER=true
 ENABLE_KVM=""
+REMOTE_GDB=""
 ACTION=""
 OVMF_CODE_LOCATION="/opt/OVMF/OVMF_CODE.fd"
 OVMF_VARS_LOCATION="/opt/OVMF/OVMF_VARS.fd"
@@ -30,6 +31,7 @@ function PrintUsage()
 	echo "	--with-ovmf-code <path>     Uses the given OVMF code binary instead of the default /opt/OVMF/OVMF_CODE.fd"
 	echo "	--with-ovmf-vars <path>     Uses the given OVMF vars binary instead of the default /opt/OVMF/OVMF_VARS.fd"
 	echo "	--enable-kvm                Enables KVM in QEMU"
+	echo "	--remote-gdb                Enables remote QEMU GDB debugging"
 	echo "	-h, --help                  Prints help information"
 }
 
@@ -71,6 +73,10 @@ while [[ $# -gt 0 ]]; do
 			;;
 		--enable-kvm)
 			ENABLE_KVM="-enable-kvm"
+			shift
+			;;
+		--remote-gdb)
+			REMOTE_GDB="-s -S"
 			shift
 			;;
 		--with-ovmf-code)
@@ -144,6 +150,7 @@ function Run()
 	echo "Starting QEMU..."
 	$QEMU_BINARY \
 		$ENABLE_KVM \
+		$REMOTE_GDB \
 		-machine pc-q35-8.2 \
 		-serial stdio \
 		-drive if=pflash,format=raw,readonly=on,file=$OVMF_CODE_LOCATION \

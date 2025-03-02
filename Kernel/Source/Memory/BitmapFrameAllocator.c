@@ -132,16 +132,13 @@ Result DeallocateContiguousFrames(BitmapFrameAllocator* frameAllocator, Frame4Ki
 	return ResultOk;
 }
 
-Result DeallocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB frame)
+void DeallocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB frame)
 {
 	bool allocated = GetFrameStatus(frameAllocator, frame);
 
 	if (!allocated) {
 		SK_LOG_WARN("An attempt was made to deallocate an unallocated memory frame");
-		return ResultFrameAlreadyDeallocated;
 	}
 
 	SetFrameStatus(frameAllocator, frame, false);
-
-	return ResultOk;
 }

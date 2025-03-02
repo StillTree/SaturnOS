@@ -81,7 +81,8 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 
 			for (Page4KiB page = address; page < address + size; page += PAGE_4KIB_SIZE_BYTES) {
 				// TODO: If prefetchable enable cache
-				Result result = Page4KiBMapTo(page, page, PagePresent | PageWriteable | PageNoCache);
+				PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
+				Result result = Page4KiBMapTo(kernelPML4, page, page, PageWriteable | PageNoCache);
 				if (result) {
 					// This is an extremally dangerous approach but since the kernel will panic later,
 					// I'll just leave it like this for now
@@ -113,7 +114,8 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 
 		for (Page4KiB page = address; page < address + size; page += PAGE_4KIB_SIZE_BYTES) {
 			// TODO: If prefetchable enable cache
-			Result result = Page4KiBMapTo(page, page, PagePresent | PageWriteable | PageNoCache);
+			PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
+			Result result = Page4KiBMapTo(kernelPML4, page, page, PageWriteable | PageNoCache);
 			if (result) {
 				// This is an extremally dangerous approach but since the kernel will panic later,
 				// I'll jsut leave it like this for now
@@ -182,7 +184,8 @@ static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus)
 
 	// An entire bus is 256 4K pages, so 1 MB
 	for (usz i = 0; i < 256; i++) {
-		auto result = Page4KiBMapTo(page, frame, PagePresent | PageWriteable);
+		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
+		auto result = Page4KiBMapTo(kernelPML4, page, frame, PageWriteable);
 		if (result) {
 			return result;
 		}

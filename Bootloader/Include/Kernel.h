@@ -16,9 +16,10 @@ typedef struct KernelBootInfo {
 	EFI_PHYSICAL_ADDRESS xsdtAddress;
 } KernelBootInfo;
 
-/// Loads the kernel ELF64 executable into memory and maps it to the provided P4 table.
+/// Loads the kernel ELF64 executable into memory and maps it to the provided P4 table. After this function call the kernel file's memory
+/// can be deallocated.
 /// Returns the entry point address in the entryPoint parameter.
 ///
 /// Note: The whole kernel file must already be in memory before calling this function.
-EFI_STATUS LoadKernel(
-	UINT8* loadedFile, FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDRESS p4TableAddress, EFI_VIRTUAL_ADDRESS* entryPoint);
+EFI_STATUS LoadKernel(UINT8* loadedFile, FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDRESS p4TableAddress,
+	EFI_VIRTUAL_ADDRESS* entryPoint, EFI_VIRTUAL_ADDRESS* nextUsableMemoryFrame);

@@ -65,10 +65,7 @@ Result DetectGPTPartitions()
 		return result;
 	}
 
-	result = DeallocateFrame(&g_frameAllocator, partitionTableHeader);
-	if (result) {
-		return result;
-	}
+	DeallocateFrame(&g_frameAllocator, partitionTableHeader);
 
 	return result;
 }

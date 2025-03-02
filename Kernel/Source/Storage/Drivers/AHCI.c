@@ -120,10 +120,7 @@ static Result AHCIDeviceIdentify(AHCIDevice* device)
 	device->SectorCount = identifyDataRaw[100] | (identifyDataRaw[101] << 16);
 	device->SectorSize = 512;
 
-	Result result = DeallocateFrame(&g_frameAllocator, identifyFrame);
-	if (result) {
-		return result;
-	}
+	DeallocateFrame(&g_frameAllocator, identifyFrame);
 
 	return ResultOk;
 }

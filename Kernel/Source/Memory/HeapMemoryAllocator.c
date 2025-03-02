@@ -20,7 +20,8 @@ Result HeapInit(HeapMemoryAllocator* heap, usz heapSize, VirtualAddress heapBegi
 			return result;
 		}
 
-		result = Page4KiBMapTo(heapPage, frame, PagePresent | PageWriteable);
+		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
+		result = Page4KiBMapTo(kernelPML4, heapPage, frame, PageWriteable);
 		if (result) {
 			SK_LOG_ERROR("An unexpected error occured while trying to map a memory frame for the kernel's heap");
 			return result;

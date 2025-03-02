@@ -74,8 +74,10 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
+	// Every kernel "thing" will be allocated one after another right after the kernel itself
+	EFI_VIRTUAL_ADDRESS nextUsableVirtualPage;
 	EFI_VIRTUAL_ADDRESS kernelEntryPoint;
-	status = LoadKernel(kernelFile, &frameAllocator, kernelP4Table, &kernelEntryPoint);
+	status = LoadKernel(kernelFile, &frameAllocator, kernelP4Table, &kernelEntryPoint, &nextUsableVirtualPage);
 	if (EFI_ERROR(status)) {
 		goto halt;
 	}
@@ -93,10 +95,10 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 
 	SN_LOG_INFO(L"Successfully identity-mapped the context switch function");
 
-	// We need a guard page at the end of the stack to page fault when overflowing
-	EFI_VIRTUAL_ADDRESS virtualStackAddress = 0x8000001000;
-	// Allocate 20 frames for the kernel's stack (80 KiB)
-	for (UINTN i = 0; i < 20; i++) {
+	// We need a quard page right after the stack to fault when overflowing
+	nextUsableVirtualPage += 4096;
+	// Allocate 25 frames for the kernel's stack (100 KiB)
+	for (UINTN i = 0; i < 25; i++) {
 		EFI_PHYSICAL_ADDRESS frameAddress;
 		status = AllocateFrame(&frameAllocator, &frameAddress);
 		if (EFI_ERROR(status)) {
@@ -104,18 +106,20 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		}
 
 		status = MapMemoryPage4KiB(
-			virtualStackAddress, frameAddress, kernelP4Table, &frameAllocator, ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_NO_EXECUTE);
+			nextUsableVirtualPage, frameAddress, kernelP4Table, &frameAllocator, ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_NO_EXECUTE);
 		if (EFI_ERROR(status)) {
 			goto halt;
 		}
 
-		virtualStackAddress += 4096;
+		nextUsableVirtualPage += 4096;
 	}
 
-	SN_LOG_INFO(L"Successfully allocated an 80 KiB kernel stack");
+	EFI_VIRTUAL_ADDRESS virtualStackAddress = nextUsableVirtualPage;
+
+	SN_LOG_INFO(L"Successfully allocated a 100 KiB kernel stack");
 
 	// Allocate the boot info right after the stack
-	EFI_VIRTUAL_ADDRESS bootInfoVirtualAddress = virtualStackAddress;
+	EFI_VIRTUAL_ADDRESS bootInfoVirtualAddress = nextUsableVirtualPage;
 	EFI_PHYSICAL_ADDRESS bootInfoPhysicalAddress;
 	status = AllocateFrame(&frameAllocator, &bootInfoPhysicalAddress);
 	if (EFI_ERROR(status)) {
@@ -154,9 +158,9 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		framebufferVirtualAddress += 4096;
 	}
 
-	bootInfo->physicalMemoryOffset = 0xA0000000000;
+	bootInfo->physicalMemoryOffset = 0xA0000000000; // 10 TiB in hex
 	// Mapping the whole (512 huge pages for now) physical memory at an offset using 2 MiB huge pages
-	const EFI_VIRTUAL_ADDRESS mappingOffset = bootInfo->physicalMemoryOffset; // 10 TiB in hex (I think...)
+	const EFI_VIRTUAL_ADDRESS mappingOffset = bootInfo->physicalMemoryOffset;
 	for (UINT64 i = 0; i < 512; i++) {
 		status = MapMemoryPage2MiB(
 			mappingOffset + 0x200000 * i, 0x200000 * i, kernelP4Table, &frameAllocator, ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_HUGE_PAGE);
@@ -165,7 +169,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		}
 	}
 
-	// After this function call, no other frame allocations should be made
+	// After this function call, no other frame allocations should be performed
 	UINTN kernelMemoryMapEntries = 0;
 	status = CreateMemoryMap(&frameAllocator, kernelP4Table, &kernelMemoryMapEntries, memoryMap, memoryMapSize, descriptorSize,
 		framebufferVirtualAddress); // We want the memory map to be allocated in virtual memory right after the framebuffer
@@ -178,8 +182,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	SN_LOG_INFO(L"Performing context switch");
 
 	ContextSwitch(kernelEntryPoint, kernelP4Table,
-		virtualStackAddress & ~1, // x86_64 System V ABI requires the stack to be 16
-								  // bit aligned so we do exactly that :D
+		virtualStackAddress & ~1, // x86_64 System V ABI requires the stack to be 16 bit aligned so we do exactly that :D
 		bootInfoVirtualAddress);
 
 halt:
@@ -194,22 +197,18 @@ halt:
 __attribute__((noreturn)) VOID ContextSwitch(EFI_PHYSICAL_ADDRESS entryPoint, EFI_PHYSICAL_ADDRESS kernelP4Table,
 	EFI_VIRTUAL_ADDRESS stackAddress, EFI_VIRTUAL_ADDRESS bootInfoAddress)
 {
-	__asm__ volatile("xor %%rbp, %%rbp\n\t" // Zero out the base pointer, the kernel will take
-											// care of it from here
+	__asm__ volatile("xor %%rbp, %%rbp\n\t" // Zero out the base pointer (a qequirement when loading ELF64 files)
 					 "mov %0, %%cr3\n\t" // Load the P4's address - address space switch
-					 "mov %1, %%rsp\n\t" // We want a new stack so we load it into the stack
-										 // pointer
-					 "mov %2, %%rdi\n\t" // The first function argument is a pointer to the
-										 // boot info
-					 "push $0\n\t" // To be honest, I don't know if that even does something
+					 "mov %1, %%rsp\n\t" // We want a new stack so we load it into the stack pointer
+					 "mov %2, %%rdi\n\t" // The first function argument is a pointer to the boot info
+					 "push $0\n\t"
 					 "call *%3\n\t" // Call the kernel function
-					 "outb %b4, %w5\n\t" // If we exit the kernel's function which shouldn't
-										 // happen, we print "^" to the COM1 serial output
+					 "outb %b4, %w5\n\t" // If we exit the kernel's function which shouldn't happen, we print "^" to the COM1 serial output
 		:
 		: "r"(kernelP4Table), "r"(stackAddress), "r"(bootInfoAddress), "r"(entryPoint), "a"('^'), "Nd"(0x3f8)
 		: "memory");
 
-	// We should not ever exit this function...
+	// We shouldn't ever exit this function...
 	while (TRUE)
 		;
 }

@@ -17,6 +17,13 @@ typedef double f64;
 
 typedef u64 usz;
 
+constexpr u8 U8_MAX = 0xff;
+constexpr u16 U16_MAX = 0xffff;
+constexpr u32 U32_MAX = 0xffffffff;
+constexpr usz U64_MAX = 0xffffffffffffffff;
+
+constexpr usz USZ_MAX = U64_MAX;
+
 /// Globally Unique Identifier, as defined by th UEFI Specification.
 typedef struct GUID {
 	u32 Data1;

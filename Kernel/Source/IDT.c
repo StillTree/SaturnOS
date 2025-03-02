@@ -20,11 +20,11 @@ void InitIDT()
 	// TODO: The rest of exception handlers
 	SetIDTEntry(3, (u64)BreakpointInterruptHandler, 0x8e, 0);
 	SetIDTEntry(8, (u64)DoubleFaultInterruptHandler, 0x8f, 1);
-	SetIDTEntry(13, (u64)GeneralProtectionFaultInterruptHandler, 0x8f, 1);
-	SetIDTEntry(14, (u64)PageFaultInterruptHandler, 0x8f, 0);
+	SetIDTEntry(13, (u64)GeneralProtectionFaultInterruptHandler, 0x8f, 0);
+	SetIDTEntry(14, (u64)PageFaultInterruptHandler, 0x8f, 2);
 
 	SetIDTEntry(33, (u64)KeyboardInterruptHandler, 0x8e, 0);
-	SetIDTEntry(34, (u64)TimerInterruptHandler, 0x8e, 0);
+	SetIDTEntry(34, (u64)ScheduleInterruptHandler, 0x8e, 7);
 
 	IDTRegister idtRegister = {};
 	idtRegister.Size = 0xfff;

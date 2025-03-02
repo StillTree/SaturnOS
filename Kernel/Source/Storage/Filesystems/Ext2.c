@@ -95,10 +95,7 @@ Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTab
 	}
 
 	*inodePointer = currentInode;
-	result = DeallocateFrame(&g_frameAllocator, directoryEntriesFrame);
-	if (result) {
-		return result;
-	}
+	DeallocateFrame(&g_frameAllocator, directoryEntriesFrame);
 
 	return ResultOk;
 }

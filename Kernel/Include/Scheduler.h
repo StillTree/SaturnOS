@@ -1,12 +1,11 @@
 #include "Core.h"
+#include "InterruptHandlers.h"
 #include "Memory/Frame.h"
+#include "Result.h"
 
 // I have no clue if this is enough, but for now it should suffice I guess...
-// TODO: Check for other stuff that might need saving like the TSS (or mapping them actually),
-// exception handling, do I need to map the kernel? and other shit...
 typedef struct CPUContext {
-	u64 RSP;
-	u64 RIP;
+	u64 CR3;
 	u64 RAX;
 	u64 RBX;
 	u64 RCX;
@@ -22,16 +21,12 @@ typedef struct CPUContext {
 	u64 R13;
 	u64 R14;
 	u64 R15;
-	u64 RFLAGS;
-	u64 FS;
-	u64 GS;
-	u64 CS;
-	u64 SS;
-	u64 CR3;
+	// u64 FS;
+	// u64 GS;
+	InterruptFrame InterruptFrame;
 } CPUContext;
 
 typedef enum ThreadStatus : u8 {
-	ThreadInactive,
 	ThreadReady,
 	ThreadRunning,
 	ThreadDead,
@@ -43,8 +38,9 @@ typedef struct Thread {
 	usz ID;
 	CPUContext Context;
 	ThreadStatus Status;
-	/// The first frame of this thread's stack.
+	/// The first frame of this thread's stack. A process's stack for now is always 20 pages long.
 	Frame4KiB Stack;
+	PhysicalAddress EntryPoint;
 } Thread;
 
 typedef struct Process {
@@ -54,8 +50,9 @@ typedef struct Process {
 	Thread Threads[1];
 } Process;
 
-void InitScheduler();
-void Schedule();
+Result InitScheduler();
+void Schedule(CPUContext* cpuContext);
 
-// "Non-existing" processes get assigned an ID of 0 for now
-Process g_processes[10];
+// "Non-existing" processes get assigned an ID of `USZ_MAX`
+extern Process g_processes[10];
+extern Thread* g_currentThread;

@@ -14,7 +14,7 @@ static inline Page4KiB Page4KiBContainingAddress(u64 address) { return address &
 
 /// Maps this virtual memory page to the given physical memory frame, using the global frame allocator if needed.
 /// Does not flush the TLB.
-Result Page4KiBMapTo(Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags);
+Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags);
 /// Clears the page table entry associated with this page.
 /// Does not flush the TLB.
 Result Page4KiBUnmap(Page4KiB page);
