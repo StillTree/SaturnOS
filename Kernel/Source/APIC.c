@@ -182,5 +182,5 @@ void InitAPICTimer()
 	SK_LOG_DEBUG("LAPIC Timer frequency: %u MHz", g_apic.LAPICTimerFrequency / 1000000);
 
 	LAPICWriteRegister(LAPIC_LVT_TIMER_REGISTER, ((1 << 17) & ~(1 << 18)) | 34);
-	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, g_apic.LAPICTimerFrequency / 10);
+	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, g_apic.LAPICTimerFrequency / 100);
 }
