@@ -10,7 +10,7 @@ Process g_processes[10];
 
 static Result AllocateProcessStack(Process* process)
 {
-	// For now, since there is only one thread per process, every process's stack gets allocated on a predefined address
+	// For now, since there is only one thread per process, every thread's stack gets allocated on a predefined address
 	Page4KiB stackPage = 0x8000001000;
 	for (usz i = 0; i < 20; i++) {
 		Frame4KiB stackFrame;
@@ -92,10 +92,7 @@ Result CreateProcess(Process** process, void (*entryPoint)())
 
 	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
 	PageTableEntry* processPML4 = PhysicalAddressAsPointer(pml4Frame);
-	// This is a complete overkill but whatever
-	for (usz i = 256; i < 512; i++) {
-		processPML4[i] = kernelPML4[i] & ~PageUserAccessible;
-	}
+	processPML4[511] = kernelPML4[511] & ~PageUserAccessible;
 
 	PhysicalAddress entryPointPhysicalAddress;
 	result = VirtualAddressToPhysical((VirtualAddress)entryPoint, kernelPML4, &entryPointPhysicalAddress);
@@ -123,7 +120,7 @@ Result CreateProcess(Process** process, void (*entryPoint)())
 	g_processes[index].Threads[0].Context.InterruptFrame.RIP = 0x4000000000 + VirtualAddressPageOffset((VirtualAddress)entryPoint);
 	g_processes[index].Threads[0].Context.InterruptFrame.RSP = (0x8000001000 + (20 * FRAME_4KIB_SIZE_BYTES)) & ~1;
 	g_processes[index].Threads[0].Context.RBP = 0;
-	g_processes[index].Threads[0].Context.InterruptFrame.RFLAGS = 0x3202;
+	g_processes[index].Threads[0].Context.InterruptFrame.RFLAGS = 0x202;
 
 	u16 cs;
 	__asm__ volatile("mov %%cs, %0" : "=r"(cs));
