@@ -126,7 +126,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 			f[i] = 0x00ff0000;
 		}
 	}
-
+	
 	// __asm__ volatile("int3");
 	
 halt:

@@ -179,6 +179,12 @@ static void LogResult(Logger* logger, Result result)
 		case ResultAHCIDeviceUnsupportedSectorSize:
 			FramebufferWriteString(&logger->Framebuffer, "ResultAHCIDeviceUnsupportedSectorSize");
 			break;
+		case ResultInvalidPath:
+			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidPath");
+			break;
+		case ResultInodeNotFound:
+			FramebufferWriteString(&logger->Framebuffer, "ResultInodeNotFound");
+			break;
 		default:
 			FramebufferWriteString(&logger->Framebuffer, "UnknownResultValue");
 			break;
@@ -252,6 +258,12 @@ static void LogResult(Logger* logger, Result result)
 			break;
 		case ResultAHCIDeviceUnsupportedSectorSize:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultAHCIDeviceUnsupportedSectorSize");
+			break;
+		case ResultInvalidPath:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidPath");
+			break;
+		case ResultInodeNotFound:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultInodeNotFound");
 			break;
 		default:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultUnknownValue");
