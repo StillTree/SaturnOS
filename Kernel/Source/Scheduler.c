@@ -3,10 +3,12 @@
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
 #include "Memory/PageTable.h"
-#include "Panic.h"
 #include "Result.h"
 
 Process g_processes[10];
+Thread* g_currentThread = nullptr;
+usz g_currentThreadIndex = 0;
+usz g_processCount = 1;
 
 static Result AllocateProcessStack(Process* process)
 {
@@ -55,16 +57,22 @@ static usz FirstUsableProcessIndex()
 
 Result DeleteProcess(usz id)
 {
-	for (usz i = 0; i < 10; i++) {
+	// This is the kernel itself, so let's not delete it perhaps...
+	if (id == 0) {
+		return ResultInvalidProcessID;
+	}
+
+	for (usz i = 1; i < 10; i++) {
 		if (g_processes[i].ID != id)
 			continue;
 
 		MemoryFill(g_processes + i, 0, sizeof(Process));
 		g_processes[i].ID = USZ_MAX;
+		g_processCount--;
 		return ResultOk;
 	}
 
-	return ResultSerialOutputUnavailabe;
+	return ResultInvalidProcessID;
 }
 
 Result CreateProcess(Process** process, void (*entryPoint)())
@@ -133,33 +141,9 @@ Result CreateProcess(Process** process, void (*entryPoint)())
 	g_processes[index].Threads[0].Context.InterruptFrame.SS = ss;
 
 	*process = g_processes + index;
+	g_processCount++;
 
 	return ResultOk;
-}
-
-Thread* g_currentThread = nullptr;
-usz g_currentThreadIndex = 0;
-
-void TestProcess1()
-{
-	while (true) {
-		u32* f = (u32*)0xFFFFFFFF8004B000;
-
-		for (usz i = 0; i < 100000; i++) {
-			f[i] = 0x0000ff00;
-		}
-	}
-}
-
-void TestProcess2()
-{
-	while (true) {
-		u32* f = (u32*)0xFFFFFFFF8004B000;
-
-		for (usz i = 0; i < 100000; i++) {
-			f[i] = 0x000000ff;
-		}
-	}
 }
 
 Result InitScheduler()
@@ -168,6 +152,7 @@ Result InitScheduler()
 		g_processes[i].ID = USZ_MAX;
 	}
 
+	// The kernel process at ID 0, won't get ever deleted
 	g_processes[0].ID = 0;
 	g_processes[0].Threads[0].ID = 0;
 	g_processes[0].Threads[0].Status = ThreadRunning;
@@ -177,25 +162,17 @@ Result InitScheduler()
 	g_currentThread = &g_processes[0].Threads[0];
 	g_currentThreadIndex = 0;
 
-	Process* process = nullptr;
-	Result result = CreateProcess(&process, TestProcess1);
-	if (result) {
-		return result;
-	}
-
-	result = CreateProcess(&process, TestProcess2);
-	if (result) {
-		return result;
-	}
-
 	return ResultOk;
 }
 
 void Schedule(CPUContext* cpuContext)
 {
-	usz startIndex = g_currentThreadIndex;
+	// This means only the kernel is running so we can just safely return
+	if (g_processCount == 1) {
+		return;
+	}
 
-	do {
+	while (true) {
 		g_currentThreadIndex = (g_currentThreadIndex + 1) % 10;
 
 		if (g_processes[g_currentThreadIndex].ID == USZ_MAX) {
@@ -206,24 +183,16 @@ void Schedule(CPUContext* cpuContext)
 			continue;
 		}
 
-		if (g_processes[g_currentThreadIndex].Threads[0].ID == g_currentThread->ID) {
-			return;
-		}
-
 		Thread* oldThread = g_currentThread;
 
 		g_currentThread = &g_processes[g_currentThreadIndex].Threads[0];
 
-		if (oldThread) {
-			oldThread->Status = ThreadReady;
-			oldThread->Context = *cpuContext;
-		}
+		oldThread->Status = ThreadReady;
+		oldThread->Context = *cpuContext;
 
 		g_currentThread->Status = ThreadRunning;
 		*cpuContext = g_currentThread->Context;
 
 		return;
-	} while (g_currentThreadIndex != startIndex);
-
-	Hang();
+	}
 }

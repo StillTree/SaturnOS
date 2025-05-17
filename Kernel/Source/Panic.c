@@ -96,6 +96,16 @@ void PanicWriteChar(i8 character, u32* framebuffer, usz* positionX, usz* positio
 	PanicFramebufferWriteChar(character, framebuffer, positionX, positionY);
 }
 
+void PanicClearScreen(u32* framebuffer)
+{
+	for (usz y = 0; y < g_bootInfo.FramebufferHeight; y++) {
+		for (usz x = 0; x < g_bootInfo.FramebufferWidth; x++) {
+			usz framebufferIndex = (y * g_bootInfo.FramebufferWidth) + x;
+			framebuffer[framebufferIndex] = 0;
+		}
+	}
+}
+
 void Panic(const i8* message, const i8* fileName, usz lineNumber)
 {
 	usz cursorPositionX = 0;
@@ -107,6 +117,8 @@ void Panic(const i8* message, const i8* fileName, usz lineNumber)
 	// MemoryFill(framebuffer, 0, g_bootInfo.FramebufferSize);
 	// We don't know if the COM1 serial output device has been initialized in any way, so we initialize it here ourselves
 	PanicReinitializeSerialConsole();
+
+	PanicClearScreen(framebuffer);
 
 	PanicWriteString("!!!UNRECOVERABLE KERNEL PANIC!!!\n", framebuffer, &cursorPositionX, &cursorPositionY);
 

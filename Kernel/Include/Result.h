@@ -27,4 +27,5 @@ typedef enum Result : u8 {
 	ResultAHCIDeviceUnsupportedSectorSize,
 	ResultInvalidPath,
 	ResultInodeNotFound,
+	ResultInvalidProcessID,
 } Result;

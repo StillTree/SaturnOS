@@ -119,16 +119,6 @@ void KernelMain(KernelBootInfo* bootInfo)
 		goto halt;
 	}
 
-	while (true) {
-		u32* f = (u32*)0xFFFFFFFF8004B000;
-
-		for (usz i = 0; i < 100000; i++) {
-			f[i] = 0x00ff0000;
-		}
-	}
-	
-	// __asm__ volatile("int3");
-	
 halt:
 	while (true)
 		__asm__("hlt");

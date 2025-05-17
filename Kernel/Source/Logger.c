@@ -185,6 +185,9 @@ static void LogResult(Logger* logger, Result result)
 		case ResultInodeNotFound:
 			FramebufferWriteString(&logger->Framebuffer, "ResultInodeNotFound");
 			break;
+		case ResultInvalidProcessID:
+			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidProcessID");
+			break;
 		default:
 			FramebufferWriteString(&logger->Framebuffer, "UnknownResultValue");
 			break;
@@ -264,6 +267,9 @@ static void LogResult(Logger* logger, Result result)
 			break;
 		case ResultInodeNotFound:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultInodeNotFound");
+			break;
+		case ResultInvalidProcessID:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidProcessID");
 			break;
 		default:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultUnknownValue");
