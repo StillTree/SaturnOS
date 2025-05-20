@@ -18,3 +18,10 @@ void Panic(const i8* message, const i8* fileName, usz lineNumber);
 			Panic("Assertion failure: " #condition "\n" message, __FILE__, __LINE__);                                                      \
 		}                                                                                                                                  \
 	} while (false)
+/// Panics if the function's result value is not `ResultOk`.
+#define SK_PANIC_ON_ERROR(function, message)                                                                                               \
+	do {                                                                                                                                   \
+		if ((function) != ResultOk) {                                                                                                      \
+			Panic("Function " #function " failed.\n" message, __FILE__, __LINE__);                                                         \
+		}                                                                                                                                  \
+	} while (false)

@@ -9,11 +9,12 @@
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/HeapMemoryAllocator.h"
 #include "PCI.h"
+#include "Panic.h"
 #include "Result.h"
-#include "Storage/Drivers/AHCI.h"
-#include "Storage/GPT.h"
-#include "Storage/Filesystems/Ext2.h"
 #include "Scheduler.h"
+#include "Storage/Drivers/AHCI.h"
+#include "Storage/Filesystems/Ext2.h"
+#include "Storage/GPT.h"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -39,11 +40,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_LOG_INFO("under certain conditions; type `` for details.\n");
 
 	SK_LOG_INFO("Saving the CPUID processor information");
-	Result result = CPUIDSaveInfo(&g_cpuInformation);
-	if (result) {
-		SK_LOG_ERROR("Could not read the CPUID information: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(CPUIDSaveInfo(&g_cpuInformation), "Could not read the CPUID information");
 
 	DisableInterrupts();
 
@@ -58,68 +55,32 @@ void KernelMain(KernelBootInfo* bootInfo)
 	EnableInterrupts();
 
 	SK_LOG_INFO("Initializing the bitmap frame allocator");
-	result = BitmapFrameAllocatorInit(&g_frameAllocator, (MemoryMapEntry*)g_bootInfo.MemoryMap, g_bootInfo.MemoryMapEntries);
-	if (result) {
-		SK_LOG_ERROR("Could not initialize the frame allocator: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(BitmapFrameAllocatorInit(&g_frameAllocator, (MemoryMapEntry*)g_bootInfo.MemoryMap, g_bootInfo.MemoryMapEntries),
+		"Could not initialize the frame allocator");
 
 	SK_LOG_DEBUG("Mapped Physical memory offset: %x", g_bootInfo.PhysicalMemoryOffset);
 
 	SK_LOG_INFO("Initializing the kernel's memory heap");
-	result = HeapInit(&g_heapMemoryAllocator, 102400, 0x6969'6969'0000);
-	if (result) {
-		SK_LOG_ERROR("Could not initialize the kernel's heap memory pool: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(HeapInit(&g_heapMemoryAllocator, 102400, 0x6969'6969'0000), "Could not initialize the kernel's heap memory pool");
 
 	SK_LOG_INFO("Parsing the ACPI structures");
-	result = InitXSDT();
-	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to parse ACPI structures: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(InitXSDT(), "An unexpected error occured while trying to parse ACPI structures");
 
 	SK_LOG_INFO("Initializing the scheduler");
-	result = InitScheduler();
-	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to initialize the scheduler: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(InitScheduler(), "An unexpected error occured while trying to initialize the scheduler");
 
 	SK_LOG_INFO("Initializing the x2APIC");
-	result = InitAPIC();
-	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to initialize the APIC: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(InitAPIC(), "An unexpected error occured while trying to initialize the APIC");
 
 	SK_LOG_INFO("Scanning for available PCI devices");
-	result = ScanPCIDevices();
-	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to scan for available PCI devices: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(ScanPCIDevices(), "An unexpected error occured while trying to scan for available PCI devices");
 
-	result = InitAHCI();
-	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to initialize the AHCI driver: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(InitAHCI(), "An unexpected error occured while trying to initialize the AHCI driver");
 
-	result = DetectGPTPartitions();
-	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to detect GPT partitions: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(DetectGPTPartitions(), "An unexpected error occured while trying to detect GPT partitions");
 
-	result = InitExt2();
-	if (result) {
-		SK_LOG_ERROR("An unexpected error occured while trying to initialize the Ext2 driver: %r", result);
-		goto halt;
-	}
+	SK_PANIC_ON_ERROR(InitExt2(), "An unexpected error occured while trying to initialize the Ext2 driver");
 
-halt:
 	while (true)
-		__asm__("hlt");
+		__asm__ volatile("hlt");
 }
