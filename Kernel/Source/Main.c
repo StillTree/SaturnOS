@@ -8,6 +8,7 @@
 #include "MSR.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/HeapMemoryAllocator.h"
+#include "Memory/SizedBlockAllocator.h"
 #include "PCI.h"
 #include "Panic.h"
 #include "Scheduler.h"

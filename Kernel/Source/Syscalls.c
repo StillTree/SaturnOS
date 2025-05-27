@@ -5,19 +5,19 @@
 #include "Memory/VirtualAddress.h"
 #include "Result.h"
 
-Result Syscall1()
+VirtualAddress g_syscallFunctions[2] = { (VirtualAddress)TestSyscall1, (VirtualAddress)TestSyscall2 };
+
+Result TestSyscall1()
 {
 	SK_LOG_DEBUG("Syscall 1");
 	return ResultOk;
 }
 
-Result Syscall2()
+Result TestSyscall2()
 {
 	SK_LOG_DEBUG("Syscall 2");
 	return ResultOk;
 }
-
-VirtualAddress g_syscallFunctions[2] = { (VirtualAddress)Syscall1, (VirtualAddress)Syscall2 };
 
 void InitSyscalls()
 {

@@ -3,7 +3,6 @@
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
 #include "Memory/PageTable.h"
-#include "Panic.h"
 #include "Result.h"
 
 Process g_processes[10];
@@ -140,18 +139,6 @@ Result CreateProcess(Process** process, void (*entryPoint)())
 	return ResultOk;
 }
 
-void TestProcess()
-{
-	__asm__ volatile("movq $0, %rax\n\t"
-					 "syscall");
-
-	__asm__ volatile("movq $1, %rax\n\t"
-					 "syscall");
-
-	while (true)
-		;
-}
-
 void InitScheduler()
 {
 	for (usz i = 0; i < 10; i++) {
@@ -167,9 +154,6 @@ void InitScheduler()
 
 	g_currentThread = &g_processes[0].Threads[0];
 	g_currentThreadIndex = 0;
-
-	Process* process = nullptr;
-	SK_PANIC_ON_ERROR(CreateProcess(&process, TestProcess), "lol");
 }
 
 void Schedule(CPUContext* cpuContext)
