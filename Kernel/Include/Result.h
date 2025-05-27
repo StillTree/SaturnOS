@@ -28,4 +28,5 @@ typedef enum Result : u8 {
 	ResultInvalidPath,
 	ResultInodeNotFound,
 	ResultInvalidProcessID,
+	ResultInvalidSyscallNumber,
 } Result;

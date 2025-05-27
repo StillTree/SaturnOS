@@ -48,6 +48,8 @@ typedef struct KernelBootInfo {
 	u64 MemoryMapEntries;
 	u64 PhysicalMemoryOffset;
 	u64 XSDTAddress;
+	/// The beginning of the kernel's stack.
+	u64 KernelStackTop;
 } KernelBootInfo;
 
 /// Globally accessible boot information.

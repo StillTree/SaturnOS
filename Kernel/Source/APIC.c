@@ -43,7 +43,7 @@ Result FindIOAPICAddress(PhysicalAddress* address)
 u32 LAPICReadRegister(u32 reg)
 {
 	if (g_apic.X2APICMode) {
-		return ReadMSR(X2APIC_MSR_BASE + (reg >> 4));
+		return ReadMSR(MSR_X2APIC_BASE + (reg >> 4));
 	}
 
 	// xAPIC mode
@@ -53,7 +53,7 @@ u32 LAPICReadRegister(u32 reg)
 void LAPICWriteRegister(u32 reg, u32 value)
 {
 	if (g_apic.X2APICMode) {
-		WriteMSR(X2APIC_MSR_BASE + (reg >> 4), value);
+		WriteMSR(MSR_X2APIC_BASE + (reg >> 4), value);
 		return;
 	}
 
@@ -88,9 +88,9 @@ Result InitAPIC()
 		SK_LOG_DEBUG("x2APIC not supported, falling back to xAPIC");
 
 		// Enabled the xAPIC (or just APIC, I guess)
-		u64 apicBase = ReadMSR(APIC_BASE_MSR);
+		u64 apicBase = ReadMSR(MSR_APIC_BASE);
 		apicBase |= (1 << 11);
-		WriteMSR(APIC_BASE_MSR, apicBase);
+		WriteMSR(MSR_APIC_BASE, apicBase);
 
 		PhysicalAddress xapicAddress = apicBase & ~0xfff;
 		g_apic.X2APICMode = false;
@@ -103,9 +103,9 @@ Result InitAPIC()
 		}
 	} else {
 		// Enables the x2APIC
-		u64 apicBase = ReadMSR(APIC_BASE_MSR);
+		u64 apicBase = ReadMSR(MSR_APIC_BASE);
 		apicBase |= (1 << 11) | (1 << 10);
-		WriteMSR(APIC_BASE_MSR, apicBase);
+		WriteMSR(MSR_APIC_BASE, apicBase);
 
 		g_apic.X2APICMode = true;
 		g_apic.XAPICAddress = nullptr;

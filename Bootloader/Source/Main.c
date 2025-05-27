@@ -133,6 +133,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	KernelBootInfo* bootInfo = (KernelBootInfo*)bootInfoPhysicalAddress;
+	bootInfo->kernelStackTop = virtualStackAddress & ~1;
 	bootInfo->xsdtAddress = (EFI_PHYSICAL_ADDRESS)xsdpPointer->XsdtAddress;
 	bootInfo->framebufferSize = g_mainLogger.framebuffer.framebufferSize;
 	bootInfo->framebufferWidth = g_mainLogger.framebuffer.width;

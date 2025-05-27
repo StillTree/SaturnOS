@@ -31,8 +31,8 @@ typedef struct __attribute__((packed)) GDT {
 	GDTEntry32 Null;
 	GDTEntry32 KernelCode;
 	GDTEntry32 KernelData;
-	GDTEntry32 UserCode;
 	GDTEntry32 UserData;
+	GDTEntry32 UserCode;
 	GDTEntry64 TSS;
 } GDT;
 

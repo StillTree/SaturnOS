@@ -50,7 +50,7 @@ typedef struct Process {
 	Thread Threads[1];
 } Process;
 
-Result InitScheduler();
+void InitScheduler();
 void Schedule(CPUContext* cpuContext);
 
 // "Non-existing" processes get assigned an ID of `USZ_MAX`

@@ -10,11 +10,11 @@
 #include "Memory/HeapMemoryAllocator.h"
 #include "PCI.h"
 #include "Panic.h"
-#include "Result.h"
 #include "Scheduler.h"
 #include "Storage/Drivers/AHCI.h"
 #include "Storage/Filesystems/Ext2.h"
 #include "Storage/GPT.h"
+#include "Syscalls.h"
 
 #ifndef __x86_64__
 #error SaturnKernel requires the x86 64-bit architecture to run properly!
@@ -67,7 +67,8 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_PANIC_ON_ERROR(InitXSDT(), "An unexpected error occured while trying to parse ACPI structures");
 
 	SK_LOG_INFO("Initializing the scheduler");
-	SK_PANIC_ON_ERROR(InitScheduler(), "An unexpected error occured while trying to initialize the scheduler");
+	InitSyscalls();
+	InitScheduler();
 
 	SK_LOG_INFO("Initializing the x2APIC");
 	SK_PANIC_ON_ERROR(InitAPIC(), "An unexpected error occured while trying to initialize the APIC");

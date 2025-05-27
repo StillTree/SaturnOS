@@ -6,8 +6,8 @@ constexpr u8 PIC_MASTER_DATA = 0x21;
 constexpr u8 PIC_SLAVE_COMMAND = 0xa0;
 constexpr u8 PIC_SLAVE_DATA = 0xa1;
 
-constexpr u32 APIC_BASE_MSR = 0x1b;
-constexpr u32 X2APIC_MSR_BASE = 0x800;
+constexpr u32 MSR_APIC_BASE = 0x1b;
+constexpr u32 MSR_X2APIC_BASE = 0x800;
 
 constexpr u32 LAPIC_ID_REGISTER = 0x20;
 constexpr u32 LAPIC_SVR_REGISTER = 0xf0;

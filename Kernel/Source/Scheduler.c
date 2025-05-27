@@ -3,6 +3,7 @@
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
 #include "Memory/PageTable.h"
+#include "Panic.h"
 #include "Result.h"
 
 Process g_processes[10];
@@ -22,7 +23,7 @@ static Result AllocateProcessStack(Process* process)
 		}
 
 		PageTableEntry* pml4 = PhysicalAddressAsPointer(process->PML4);
-		result = Page4KiBMapTo(pml4, stackPage, stackFrame, PageWriteable | PageUserAccessible);
+		result = Page4KiBMapTo(pml4, stackPage, stackFrame, PageWriteable | PageUserAccessible | PageNoExecute);
 		if (result) {
 			return result;
 		}
@@ -111,7 +112,7 @@ Result CreateProcess(Process** process, void (*entryPoint)())
 	g_processes[index].Threads[0].EntryPoint = entryPointPhysicalAddress;
 
 	// TODO: Take care of other identity mapped memory regions so the interrupt handler doesn't absolutely shit itself
-	result = Page4KiBMapTo(processPML4, 0xFEE00000, 0xFEE00000, PageWriteable);
+	result = Page4KiBMapTo(processPML4, 0xFEE00000, 0xFEE00000, PageWriteable | PageNoExecute);
 	if (result) {
 		DeallocateFrame(&g_frameAllocator, pml4Frame);
 		return result;
@@ -130,15 +131,8 @@ Result CreateProcess(Process** process, void (*entryPoint)())
 	g_processes[index].Threads[0].Context.RBP = 0;
 	g_processes[index].Threads[0].Context.InterruptFrame.RFLAGS = 0x202;
 
-	u16 cs;
-	__asm__ volatile("mov %%cs, %0" : "=r"(cs));
-
-	u16 ss;
-	__asm__ volatile("mov %%ss, %0" : "=r"(ss));
-
-	// TODO: Take care of this shit, for now I just ignore that completely
-	g_processes[index].Threads[0].Context.InterruptFrame.CS = cs;
-	g_processes[index].Threads[0].Context.InterruptFrame.SS = ss;
+	g_processes[index].Threads[0].Context.InterruptFrame.CS = 0x23;
+	g_processes[index].Threads[0].Context.InterruptFrame.SS = 0x1b;
 
 	*process = g_processes + index;
 	g_processCount++;
@@ -146,7 +140,19 @@ Result CreateProcess(Process** process, void (*entryPoint)())
 	return ResultOk;
 }
 
-Result InitScheduler()
+void TestProcess()
+{
+	__asm__ volatile("movq $0, %rax\n\t"
+					 "syscall");
+
+	__asm__ volatile("movq $1, %rax\n\t"
+					 "syscall");
+
+	while (true)
+		;
+}
+
+void InitScheduler()
 {
 	for (usz i = 0; i < 10; i++) {
 		g_processes[i].ID = USZ_MAX;
@@ -162,7 +168,8 @@ Result InitScheduler()
 	g_currentThread = &g_processes[0].Threads[0];
 	g_currentThreadIndex = 0;
 
-	return ResultOk;
+	Process* process = nullptr;
+	SK_PANIC_ON_ERROR(CreateProcess(&process, TestProcess), "lol");
 }
 
 void Schedule(CPUContext* cpuContext)

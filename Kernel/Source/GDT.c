@@ -1,5 +1,7 @@
 #include "GDT.h"
 
+#include "Core.h"
+
 TSS g_tss;
 GDT g_gdt;
 u8 g_doubleFaultStack[20480];
@@ -44,12 +46,13 @@ void InitGDT()
 	g_tss.IST[0] = (u64)g_doubleFaultStack + (sizeof(u8) * 20480);
 	g_tss.IST[1] = (u64)g_pageFaultStack + (sizeof(u8) * 20480);
 	g_tss.IST[6] = (u64)g_schedulerInterruptStack + (sizeof(u8) * 20480);
+	g_tss.RSP[0] = g_bootInfo.KernelStackTop;
 
 	g_gdt.Null = SetGDTEntry32(0, 0, 0, 0);
 	g_gdt.KernelCode = SetGDTEntry32(0, 0xfffff, 0x9a, 0xa);
 	g_gdt.KernelData = SetGDTEntry32(0, 0xfffff, 0x92, 0xc);
-	g_gdt.UserCode = SetGDTEntry32(0, 0xfffff, 0xfa, 0xa);
 	g_gdt.UserData = SetGDTEntry32(0, 0xfffff, 0xf2, 0xc);
+	g_gdt.UserCode = SetGDTEntry32(0, 0xfffff, 0xfa, 0xa);
 	g_gdt.TSS = SetGDTEntry64((u64)&g_tss, sizeof(g_tss) - 1, 0x89, 0);
 
 	GDTDescriptor gdtDescriptor = {};

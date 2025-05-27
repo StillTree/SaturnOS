@@ -9,8 +9,9 @@
 Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags)
 {
 	u16 p4Index = VirtualAddressPage4Index(page);
+	PageTableEntryFlags userAccessible = flags & PageUserAccessible;
 
-	// If there is no Level 3 table at the expected level 4's index, we need to create it.
+	// If there is no Level 3 table at the expected level 4's index, we need to create it
 	if (!(p4Table[p4Index] & PagePresent)) {
 		Frame4KiB newP3;
 		Result result = AllocateFrame(&g_frameAllocator, &newP3);
@@ -25,10 +26,13 @@ Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, Pa
 		p4Table[p4Index] = newP3 | PagePresent | PageWriteable;
 	}
 
+	// If the entry pointing to the Level 3 table is not user accessible but it should be, we make it user accessible
+	p4Table[p4Index] |= userAccessible;
+
 	u16 p3Index = VirtualAddressPage3Index(page);
 	PageTableEntry* p3Table = PhysicalAddressAsPointer(p4Table[p4Index] & ~(0xfff));
 
-	// If there is no Level 2 table at the expected level 3's index, we need to create it.
+	// If there is no Level 2 table at the expected level 3's index, we need to create it
 	if (!(p3Table[p3Index] & PagePresent)) {
 		Frame4KiB newP2;
 		Result result = AllocateFrame(&g_frameAllocator, &newP2);
@@ -43,10 +47,13 @@ Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, Pa
 		p3Table[p3Index] = newP2 | PagePresent | PageWriteable;
 	}
 
+	// If the entry pointing to the Level 2 table is not user accessible but it should be, we make it user accessible
+	p3Table[p3Index] |= userAccessible;
+
 	u16 p2Index = VirtualAddressPage2Index(page);
 	PageTableEntry* p2Table = PhysicalAddressAsPointer(p3Table[p3Index] & ~(0xfff));
 
-	// If there is no Level 1 table at the expected level 2's index, we need to create it.
+	// If there is no Level 1 table at the expected level 2's index, we need to create it
 	if (!(p2Table[p2Index] & PagePresent)) {
 		Frame4KiB newP1;
 		Result result = AllocateFrame(&g_frameAllocator, &newP1);
@@ -60,6 +67,9 @@ Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, Pa
 
 		p2Table[p2Index] = newP1 | PagePresent | PageWriteable;
 	}
+
+	// If the entry pointing to the Level 1 table is not user accessible but it should be, we make it user accessible
+	p2Table[p2Index] |= userAccessible;
 
 	u16 p1Index = VirtualAddressPage1Index(page);
 	PageTableEntry* p1Table = PhysicalAddressAsPointer(p2Table[p2Index] & ~(0xfff));
