@@ -6,7 +6,7 @@
 #include "Memory/Frame.h"
 #include "Memory/Page.h"
 #include "Memory/PageTable.h"
-#include <immintrin.h>
+#include "Random.h"
 
 VirtualMemoryAllocator g_virtualMemoryAllocator = {};
 
@@ -42,10 +42,7 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 		return ResultSerialOutputUnavailabe;
 	}
 
-	usz randomIndex;
-	while (!_rdrand64_step(&randomIndex))
-		;
-	randomIndex %= regionCount;
+	usz randomIndex = Random() % regionCount;
 
 	region = allocator->List;
 	while (region) {
@@ -56,9 +53,7 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 				usz pageSlotCount = (maxOffset / PAGE_4KIB_SIZE_BYTES) + 1;
 				usz offsetPages = 0;
 				if (pageSlotCount > 1) {
-					while (!_rdrand64_step(&offsetPages))
-						;
-					offsetPages %= pageSlotCount;
+					offsetPages = Random() % pageSlotCount;
 				}
 
 				*randomPage = region->Begin + offsetPages * PAGE_4KIB_SIZE_BYTES;
@@ -160,7 +155,7 @@ Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, 
 	}
 
 	const Page4KiB endPage = pageBegin + size;
-	for (Page4KiB page = pageBegin; page <= endPage; page += PAGE_4KIB_SIZE_BYTES) {
+	for (Page4KiB page = pageBegin; page < endPage; page += PAGE_4KIB_SIZE_BYTES) {
 		PhysicalAddress frame;
 		Result result = AllocateFrame(&g_frameAllocator, &frame);
 		if (result) {
@@ -189,7 +184,7 @@ Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, Page4KiB
 	// TODO: Check if page and size are 4096-byte aligned
 
 	const Page4KiB endPage = allocatedPage + size;
-	for (Page4KiB page = allocatedPage; page <= endPage; page += PAGE_4KIB_SIZE_BYTES) {
+	for (Page4KiB page = allocatedPage; page < endPage; page += PAGE_4KIB_SIZE_BYTES) {
 		Frame4KiB frame;
 		result = VirtualAddressToPhysical(page, PhysicalAddressAsPointer(allocator->PML4), &frame);
 		if (result) {
@@ -197,6 +192,7 @@ Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, Page4KiB
 		}
 
 		DeallocateFrame(&g_frameAllocator, frame);
+
 		result = Page4KiBUnmap(page);
 		if (result) {
 			return result;
@@ -206,6 +202,62 @@ Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, Page4KiB
 	}
 
 	result = MarkVirtualMemoryUnused(allocator, allocatedPage, endPage);
+	if (result) {
+		return result;
+	}
+
+	return result;
+}
+
+Result AllocateMMIORegion(VirtualMemoryAllocator* allocator, Frame4KiB begin, usz size, PageTableEntryFlags flags, Page4KiB* mmioBegin)
+{
+	Result result = ResultOk;
+
+	// TODO: Check if frame and size are 4096-byte aligned
+
+	Page4KiB pageBegin;
+	result = GetRandomRegion(allocator, size, &pageBegin);
+	if (result) {
+		return result;
+	}
+
+	const Page4KiB endPage = pageBegin + size;
+	Frame4KiB frame = begin;
+	for (Page4KiB page = pageBegin; page < endPage; page += PAGE_4KIB_SIZE_BYTES) {
+		result = Page4KiBMapTo(PhysicalAddressAsPointer(allocator->PML4), page, frame, flags);
+		if (result) {
+			return result;
+		}
+
+		frame += PAGE_4KIB_SIZE_BYTES;
+	}
+
+	result = MarkVirtualMemoryUsed(allocator, pageBegin, endPage);
+	if (result) {
+		return result;
+	}
+
+	*mmioBegin = pageBegin;
+	return result;
+}
+
+Result DeallocateMMIORegion(VirtualMemoryAllocator* allocator, Page4KiB begin, usz size)
+{
+	Result result = ResultOk;
+
+	// TODO: Check if page and size are 4096-byte aligned
+
+	const Page4KiB endPage = begin + size;
+	for (Page4KiB page = begin; page < endPage; page += PAGE_4KIB_SIZE_BYTES) {
+		result = Page4KiBUnmap(page);
+		if (result) {
+			return result;
+		}
+
+		FlushPage(page);
+	}
+
+	result = MarkVirtualMemoryUnused(allocator, begin, endPage);
 	if (result) {
 		return result;
 	}

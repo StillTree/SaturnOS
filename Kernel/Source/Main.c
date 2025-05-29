@@ -6,6 +6,7 @@
 #include "IDT.h"
 #include "Logger.h"
 #include "Memory/BitmapFrameAllocator.h"
+#include "Memory/PageTable.h"
 #include "Memory/VirtualMemoryAllocator.h"
 #include "PCI.h"
 #include "Panic.h"
@@ -60,7 +61,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_LOG_DEBUG("Mapped Physical memory offset: 0x%x", g_bootInfo.PhysicalMemoryOffset);
 
 	SK_LOG_INFO("Initializing the virtual memory allocator");
-	SK_PANIC_ON_ERROR(InitVirtualMemoryAllocator(&g_virtualMemoryAllocator, 0x696969690000, 102400),
+	SK_PANIC_ON_ERROR(InitVirtualMemoryAllocator(&g_virtualMemoryAllocator, 0x696969690000, 102400, KernelPageTable4Address()),
 		"An unexpected error occured while trying to initialize the virtual memory allocator");
 
 	SK_LOG_INFO("Parsing the ACPI structures");

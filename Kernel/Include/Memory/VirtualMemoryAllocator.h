@@ -26,6 +26,10 @@ Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddr
 
 Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, PageTableEntryFlags flags, Page4KiB* allocatedPage);
 Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, Page4KiB allocatedPage, usz size);
+
+Result AllocateMMIORegion(VirtualMemoryAllocator* allocator, Frame4KiB begin, usz size, PageTableEntryFlags flags, Page4KiB* mmioBegin);
+Result DeallocateMMIORegion(VirtualMemoryAllocator* allocator, Page4KiB begin, usz size);
+
 Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, VirtualAddress begin, VirtualAddress end);
 Result MarkVirtualMemoryUnused(VirtualMemoryAllocator* allocator, VirtualAddress begin, VirtualAddress end);
 
