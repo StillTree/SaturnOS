@@ -5,10 +5,8 @@
 #include "GDT.h"
 #include "IDT.h"
 #include "Logger.h"
-#include "MSR.h"
 #include "Memory/BitmapFrameAllocator.h"
-#include "Memory/HeapMemoryAllocator.h"
-#include "Memory/SizedBlockAllocator.h"
+#include "Memory/VirtualMemoryAllocator.h"
 #include "PCI.h"
 #include "Panic.h"
 #include "Scheduler.h"
@@ -59,10 +57,11 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_PANIC_ON_ERROR(BitmapFrameAllocatorInit(&g_frameAllocator, (MemoryMapEntry*)g_bootInfo.MemoryMap, g_bootInfo.MemoryMapEntries),
 		"Could not initialize the frame allocator");
 
-	SK_LOG_DEBUG("Mapped Physical memory offset: %x", g_bootInfo.PhysicalMemoryOffset);
+	SK_LOG_DEBUG("Mapped Physical memory offset: 0x%x", g_bootInfo.PhysicalMemoryOffset);
 
-	SK_LOG_INFO("Initializing the kernel's memory heap");
-	SK_PANIC_ON_ERROR(HeapInit(&g_heapMemoryAllocator, 102400, 0x6969'6969'0000), "Could not initialize the kernel's heap memory pool");
+	SK_LOG_INFO("Initializing the virtual memory allocator");
+	SK_PANIC_ON_ERROR(InitVirtualMemoryAllocator(&g_virtualMemoryAllocator, 0x696969690000, 102400),
+		"An unexpected error occured while trying to initialize the virtual memory allocator");
 
 	SK_LOG_INFO("Parsing the ACPI structures");
 	SK_PANIC_ON_ERROR(InitXSDT(), "An unexpected error occured while trying to parse ACPI structures");

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Uefi.h"
 
 typedef struct __attribute__((packed)) XSDP {

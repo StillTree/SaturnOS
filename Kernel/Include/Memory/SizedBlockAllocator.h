@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Core.h"
 #include "Memory/VirtualAddress.h"
 #include "Result.h"

@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Core.h"
 #include "Memory/PhysicalAddress.h"
 #include "Result.h"

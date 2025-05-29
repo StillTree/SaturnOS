@@ -27,6 +27,8 @@ static bool GetBlockStatus(SizedBlockAllocator* blockAllocator, VirtualAddress b
 
 Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, VirtualAddress poolStart, usz poolSizeBytes, usz blockSizeBytes)
 {
+	// TODO: Checks for correctness
+	// TODO: Optimize using the last-allocated method
 	blockAllocator->BlockSizeBytes = blockSizeBytes;
 	blockAllocator->PoolSizeBytes = poolSizeBytes;
 

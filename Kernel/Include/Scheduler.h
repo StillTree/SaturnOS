@@ -1,7 +1,8 @@
+#pragma once
+
 #include "Core.h"
 #include "InterruptHandlers.h"
 #include "Memory/Frame.h"
-#include "Result.h"
 
 // I have no clue if this is enough, but for now it should suffice I guess...
 typedef struct CPUContext {

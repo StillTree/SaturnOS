@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Core.h"
 
 static inline u64 ReadMSR(u32 msr)

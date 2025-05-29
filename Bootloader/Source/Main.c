@@ -133,6 +133,8 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	KernelBootInfo* bootInfo = (KernelBootInfo*)bootInfoPhysicalAddress;
+	bootInfo->kernelAddress = 0xffffffff80010000;
+	bootInfo->kernelSize = nextUsableVirtualPage + 4096 - bootInfo->kernelAddress;
 	bootInfo->kernelStackTop = virtualStackAddress & ~1;
 	bootInfo->xsdtAddress = (EFI_PHYSICAL_ADDRESS)xsdpPointer->XsdtAddress;
 	bootInfo->framebufferSize = g_mainLogger.framebuffer.framebufferSize;
@@ -159,6 +161,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		framebufferVirtualAddress += 4096;
 	}
 
+	bootInfo->physicalMemoryMappingSize = 1073741824; // 1 GiB
 	bootInfo->physicalMemoryOffset = 0xA0000000000; // 10 TiB in hex
 	// Mapping the whole (512 huge pages for now) physical memory at an offset using 2 MiB huge pages
 	const EFI_VIRTUAL_ADDRESS mappingOffset = bootInfo->physicalMemoryOffset;
