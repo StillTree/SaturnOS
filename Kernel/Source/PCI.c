@@ -185,7 +185,7 @@ static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus)
 	// An entire bus is 256 4K pages, so 1 MB
 	for (usz i = 0; i < 256; i++) {
 		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
-		auto result = Page4KiBMapTo(kernelPML4, page, frame, PageWriteable);
+		Result result = Page4KiBMapTo(kernelPML4, page, frame, PageWriteable);
 		if (result) {
 			return result;
 		}
@@ -203,7 +203,7 @@ static Result UnmapEntireBus(VirtualAddress baseAddress, u8 bus)
 
 	// An entire bus is 256 4K pages, so 1 MB
 	for (usz i = 0; i < 256; i++) {
-		auto result = Page4KiBUnmap(page);
+		Result result = Page4KiBUnmap(page);
 		if (result) {
 			return result;
 		}
@@ -244,7 +244,7 @@ static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus)
 					.MSIX = nullptr,
 					.MSIXTable = nullptr };
 				g_pciStorageDevices[0] = ahciController;
-				auto result = PCIDeviceInit(&g_pciStorageDevices[0]);
+				Result result = PCIDeviceInit(&g_pciStorageDevices[0]);
 				SK_PANIC_ASSERT(!result, "An error occured while trying to initialize a PCI Device");
 			}
 
@@ -271,7 +271,7 @@ Result ScanPCIDevices()
 		MCFGEntry* segmentGroup = MCFGGetPCISegmentGroup(mcfg, i);
 
 		for (usz bus = segmentGroup->StartBusNumber; bus <= segmentGroup->EndBusNumber; bus++) {
-			auto result = MapEntireBus(segmentGroup->BaseAddress, bus);
+			Result result = MapEntireBus(segmentGroup->BaseAddress, bus);
 			if (result)
 				return result;
 

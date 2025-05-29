@@ -12,6 +12,7 @@ typedef struct SizedBlockAllocator {
 	usz BlockSizeBytes;
 } SizedBlockAllocator;
 
+/// Expects a contiguous virtual memory region.
 Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, VirtualAddress poolStart, usz poolSizeBytes, usz blockSizeBytes);
 Result AllocateSizedBlock(SizedBlockAllocator* blockAllocator, void** block);
 Result DeallocateSizedBlock(SizedBlockAllocator* blockAllocator, void* block);
