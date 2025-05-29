@@ -23,17 +23,15 @@ static Result GetContainingRegion(
 	return ResultSerialOutputUnavailabe;
 }
 
-void PrintList(VirtualMemoryAllocator* allocator)
-{
-	UnusedVirtualRegion* region = allocator->List;
-	while (region) {
-		SK_LOG_DEBUG("Begin = 0x%x End = 0x%x", region->Begin, region->End);
-
-		region = region->Next;
-	}
-}
-
-void PrintRegion(UnusedVirtualRegion* region) { SK_LOG_DEBUG("Begin = 0x%x End = 0x%x", region->Begin, region->End); }
+// void PrintList(VirtualMemoryAllocator* allocator)
+// {
+// 	UnusedVirtualRegion* region = allocator->List;
+// 	while (region) {
+// 		SK_LOG_DEBUG("Begin = 0x%x End = 0x%x", region->Begin, region->End);
+// 
+// 		region = region->Next;
+// 	}
+// }
 
 Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddress listBeginning, usz listSize)
 {
@@ -92,8 +90,6 @@ Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddr
 	if (result) {
 		return result;
 	}
-
-	PrintList(allocator);
 
 	return result;
 }
