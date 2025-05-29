@@ -114,7 +114,6 @@ Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddr
 	allocator->List->End = U64_MAX;
 	allocator->List->Next = nullptr;
 	allocator->List->Previous = nullptr;
-	allocator->ListRegionCount = 1;
 
 	result = MarkVirtualMemoryUsed(allocator, listBeginning, listBeginning + listSize);
 	if (result) {
@@ -284,7 +283,6 @@ Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, VirtualAddress b
 		beginningRegion->Previous = nullptr;
 		allocator->List->Previous = beginningRegion;
 		allocator->List = beginningRegion;
-		allocator->ListRegionCount++;
 	}
 
 	if (end < containingRegion->End) {
@@ -298,7 +296,6 @@ Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, VirtualAddress b
 		endingRegion->Previous = nullptr;
 		allocator->List->Previous = endingRegion;
 		allocator->List = endingRegion;
-		allocator->ListRegionCount++;
 	}
 
 	if (containingRegion->Previous) {
@@ -312,7 +309,6 @@ Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, VirtualAddress b
 	}
 
 	DeallocateSizedBlock(&allocator->ListBackingStorage, containingRegion);
-	allocator->ListRegionCount--;
 
 	return ResultOk;
 }
@@ -332,7 +328,6 @@ Result MarkVirtualMemoryUnused(VirtualMemoryAllocator* allocator, VirtualAddress
 	region->Previous = nullptr;
 	allocator->List->Previous = region;
 	allocator->List = region;
-	allocator->ListRegionCount++;
 
 	return result;
 }

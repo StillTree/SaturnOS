@@ -17,7 +17,6 @@ typedef struct UnusedVirtualRegion {
 
 typedef struct VirtualMemoryAllocator {
 	UnusedVirtualRegion* List;
-	usz ListRegionCount;
 	SizedBlockAllocator ListBackingStorage;
 	Frame4KiB PML4;
 } VirtualMemoryAllocator;
