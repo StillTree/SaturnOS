@@ -86,6 +86,15 @@ Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddr
 		return result;
 	}
 
+	// TODO: Not assume that the framebuffer is perfectly 4096 bytes aligned
+	result = AllocateVirtualMemory(
+		allocator, (VirtualAddress)g_bootInfo.Framebuffer, (VirtualAddress)g_bootInfo.Framebuffer + g_bootInfo.FramebufferSize + 4096);
+	if (result) {
+		return result;
+	}
+
+	PrintList(allocator);
+
 	return result;
 }
 
