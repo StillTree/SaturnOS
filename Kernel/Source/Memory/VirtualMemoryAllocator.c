@@ -1,6 +1,7 @@
 #include "Memory/VirtualMemoryAllocator.h"
 
 #include "Core.h"
+#include "Logger.h"
 #include "Memory.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Frame.h"
@@ -13,14 +14,44 @@ VirtualMemoryAllocator g_virtualMemoryAllocator = {};
 static Result GetContainingRegion(
 	VirtualMemoryAllocator* allocator, VirtualAddress begin, VirtualAddress end, UnusedVirtualRegion** containingRegion)
 {
-	UnusedVirtualRegion* region = allocator->List;
-	while (region) {
-		if (begin >= region->Begin && end <= region->End) {
-			*containingRegion = region;
+	UnusedVirtualRegion* regionPointer = allocator->List;
+	while (regionPointer) {
+		if (begin >= regionPointer->Begin && end <= regionPointer->End) {
+			*containingRegion = regionPointer;
 			return ResultOk;
 		}
 
-		region = region->Next;
+		regionPointer = regionPointer->Next;
+	}
+
+	return ResultSerialOutputUnavailabe;
+}
+
+static Result GetBorderingBegin(VirtualMemoryAllocator* allocator, Page4KiB begin, UnusedVirtualRegion** borderingRegion)
+{
+	UnusedVirtualRegion* regionPointer = allocator->List;
+	while (regionPointer) {
+		if (regionPointer->End == begin) {
+			*borderingRegion = regionPointer;
+			return ResultOk;
+		}
+
+		regionPointer = regionPointer->Next;
+	}
+
+	return ResultSerialOutputUnavailabe;
+}
+
+static Result GetBorderingEnd(VirtualMemoryAllocator* allocator, Page4KiB end, UnusedVirtualRegion** borderingRegion)
+{
+	UnusedVirtualRegion* regionPointer = allocator->List;
+	while (regionPointer) {
+		if (regionPointer->Begin == end) {
+			*borderingRegion = regionPointer;
+			return ResultOk;
+		}
+
+		regionPointer = regionPointer->Next;
 	}
 
 	return ResultSerialOutputUnavailabe;
@@ -29,13 +60,13 @@ static Result GetContainingRegion(
 static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4KiB* randomPage)
 {
 	usz regionCount = 0;
-	UnusedVirtualRegion* region = allocator->List;
-	while (region) {
-		if (region->End - region->Begin >= size) {
+	UnusedVirtualRegion* regionPointer = allocator->List;
+	while (regionPointer) {
+		if (regionPointer->End - regionPointer->Begin >= size) {
 			regionCount++;
 		}
 
-		region = region->Next;
+		regionPointer = regionPointer->Next;
 	}
 
 	if (regionCount == 0) {
@@ -44,11 +75,11 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 
 	usz randomIndex = Random() % regionCount;
 
-	region = allocator->List;
-	while (region) {
-		if (region->End - region->Begin >= size) {
+	regionPointer = allocator->List;
+	while (regionPointer) {
+		if (regionPointer->End - regionPointer->Begin >= size) {
 			if (randomIndex == 0) {
-				usz maxOffset = region->End - region->Begin - size;
+				usz maxOffset = regionPointer->End - regionPointer->Begin - size;
 
 				usz pageSlotCount = (maxOffset / PAGE_4KIB_SIZE_BYTES) + 1;
 				usz offsetPages = 0;
@@ -56,28 +87,28 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 					offsetPages = Random() % pageSlotCount;
 				}
 
-				*randomPage = region->Begin + offsetPages * PAGE_4KIB_SIZE_BYTES;
+				*randomPage = regionPointer->Begin + offsetPages * PAGE_4KIB_SIZE_BYTES;
 				return ResultOk;
 			}
 
 			randomIndex--;
 		}
 
-		region = region->Next;
+		regionPointer = regionPointer->Next;
 	}
 
 	return ResultSerialOutputUnavailabe;
 }
 
-// void PrintList(VirtualMemoryAllocator* allocator)
-// {
-// 	UnusedVirtualRegion* region = allocator->List;
-// 	while (region) {
-// 		SK_LOG_DEBUG("Begin = 0x%x End = 0x%x", region->Begin, region->End);
-//
-// 		region = region->Next;
-// 	}
-// }
+void PrintList(VirtualMemoryAllocator* allocator)
+{
+	UnusedVirtualRegion* region = allocator->List;
+	while (region) {
+		SK_LOG_DEBUG("Begin = 0x%x End = 0x%x", region->Begin, region->End);
+
+		region = region->Next;
+	}
+}
 
 Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddress listBeginning, usz listSize, Frame4KiB pml4)
 {
@@ -143,12 +174,10 @@ Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddr
 
 Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, PageTableEntryFlags flags, Page4KiB* allocatedPage)
 {
-	Result result = ResultOk;
-
 	// TODO: Check if size is 4096-byte aligned
 
 	Page4KiB pageBegin;
-	result = GetRandomRegion(allocator, size, &pageBegin);
+	Result result = GetRandomRegion(allocator, size, &pageBegin);
 	if (result) {
 		return result;
 	}
@@ -210,12 +239,10 @@ Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, Page4KiB
 
 Result AllocateMMIORegion(VirtualMemoryAllocator* allocator, Frame4KiB begin, usz size, PageTableEntryFlags flags, Page4KiB* mmioBegin)
 {
-	Result result = ResultOk;
-
 	// TODO: Check if frame and size are 4096-byte aligned
 
 	Page4KiB pageBegin;
-	result = GetRandomRegion(allocator, size, &pageBegin);
+	Result result = GetRandomRegion(allocator, size, &pageBegin);
 	if (result) {
 		return result;
 	}
@@ -264,6 +291,37 @@ Result DeallocateMMIORegion(VirtualMemoryAllocator* allocator, Page4KiB begin, u
 	return result;
 }
 
+void RemoveRegion(VirtualMemoryAllocator* allocator, UnusedVirtualRegion* region)
+{
+	if (region->Previous) {
+		region->Previous->Next = region->Next;
+	} else {
+		allocator->List = region->Next;
+	}
+
+	if (region->Next) {
+		region->Next->Previous = region->Previous;
+	}
+
+	DeallocateSizedBlock(&allocator->ListBackingStorage, region);
+}
+
+void AddRegion(VirtualMemoryAllocator* allocator, VirtualAddress begin, VirtualAddress end)
+{
+	UnusedVirtualRegion* region = nullptr;
+	AllocateSizedBlock(&allocator->ListBackingStorage, (void**)&region);
+
+	region->Begin = begin;
+	region->End = end;
+
+	region->Next = allocator->List;
+	region->Previous = nullptr;
+	if (allocator->List) {
+		allocator->List->Previous = region;
+	}
+	allocator->List = region;
+}
+
 Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, VirtualAddress begin, VirtualAddress end)
 {
 	UnusedVirtualRegion* containingRegion = nullptr;
@@ -273,61 +331,36 @@ Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, VirtualAddress b
 	}
 
 	if (begin > containingRegion->Begin) {
-		UnusedVirtualRegion* beginningRegion = nullptr;
-		AllocateSizedBlock(&allocator->ListBackingStorage, (void**)&beginningRegion);
-
-		beginningRegion->Begin = containingRegion->Begin;
-		beginningRegion->End = begin;
-
-		beginningRegion->Next = allocator->List;
-		beginningRegion->Previous = nullptr;
-		allocator->List->Previous = beginningRegion;
-		allocator->List = beginningRegion;
+		AddRegion(allocator, containingRegion->Begin, begin);
 	}
 
 	if (end < containingRegion->End) {
-		UnusedVirtualRegion* endingRegion = nullptr;
-		AllocateSizedBlock(&allocator->ListBackingStorage, (void**)&endingRegion);
-
-		endingRegion->Begin = end;
-		endingRegion->End = containingRegion->End;
-
-		endingRegion->Next = allocator->List;
-		endingRegion->Previous = nullptr;
-		allocator->List->Previous = endingRegion;
-		allocator->List = endingRegion;
+		AddRegion(allocator, end, containingRegion->End);
 	}
 
-	if (containingRegion->Previous) {
-		containingRegion->Previous->Next = containingRegion->Next;
-	} else {
-		allocator->List = containingRegion->Next;
-	}
-
-	if (containingRegion->Next) {
-		containingRegion->Next->Previous = containingRegion->Previous;
-	}
-
-	DeallocateSizedBlock(&allocator->ListBackingStorage, containingRegion);
+	RemoveRegion(allocator, containingRegion);
 
 	return ResultOk;
 }
 
 Result MarkVirtualMemoryUnused(VirtualMemoryAllocator* allocator, VirtualAddress begin, VirtualAddress end)
 {
-	// TODO: Merge adjecent memory regions
-	UnusedVirtualRegion* region = nullptr;
-	Result result = AllocateSizedBlock(&allocator->ListBackingStorage, (void**)&region);
-	if (result) {
-		return result;
+	UnusedVirtualRegion* region;
+	Result result = GetBorderingBegin(allocator, begin, &region);
+	if (!result) {
+		begin = region->Begin;
+
+		RemoveRegion(allocator, region);
 	}
 
-	region->Begin = begin;
-	region->End = end;
-	region->Next = allocator->List;
-	region->Previous = nullptr;
-	allocator->List->Previous = region;
-	allocator->List = region;
+	result = GetBorderingEnd(allocator, end, &region);
+	if (!result) {
+		end = region->End;
+
+		RemoveRegion(allocator, region);
+	}
+
+	AddRegion(allocator, begin, end);
 
 	return result;
 }
