@@ -182,7 +182,7 @@ static void LogResult(Logger* logger, Result result)
 		case ResultInvalidPath:
 			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidPath");
 			break;
-		case ResultInodeNotFound:
+		case ResultNotFound:
 			FramebufferWriteString(&logger->Framebuffer, "ResultInodeNotFound");
 			break;
 		case ResultInvalidProcessID:
@@ -265,7 +265,7 @@ static void LogResult(Logger* logger, Result result)
 		case ResultInvalidPath:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidPath");
 			break;
-		case ResultInodeNotFound:
+		case ResultNotFound:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultInodeNotFound");
 			break;
 		case ResultInvalidProcessID:

@@ -90,7 +90,7 @@ Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTab
 		// But if no entries matched, this path doesn't exist
 		if (!found) {
 			DeallocateFrame(&g_frameAllocator, directoryEntriesFrame);
-			return ResultInodeNotFound;
+			return ResultNotFound;
 		}
 	}
 
