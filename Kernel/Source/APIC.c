@@ -6,6 +6,7 @@
 #include "Logger.h"
 #include "MSR.h"
 #include "Memory/Page.h"
+#include "Memory/VirtualMemoryAllocator.h"
 
 void DisablePIC()
 {
@@ -92,15 +93,16 @@ Result InitAPIC()
 		apicBase |= (1 << 11);
 		WriteMSR(MSR_APIC_BASE, apicBase);
 
-		PhysicalAddress xapicAddress = apicBase & ~0xfff;
+		Frame4KiB xapicFrame = apicBase & ~0xfff;
 		g_apic.X2APICMode = false;
-		g_apic.XAPICAddress = (u32*)xapicAddress;
 
-		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
-		Result result = Page4KiBMapTo(kernelPML4, xapicAddress, xapicAddress, PageWriteable | PageNoCache);
+		Page4KiB xapicAddress;
+		Result result = AllocateMMIORegion(&g_virtualMemoryAllocator, xapicFrame, 0x1000, PageWriteable | PageNoCache, &xapicAddress);
 		if (result) {
 			return result;
 		}
+
+		g_apic.XAPICAddress = (u32*)xapicAddress;
 	} else {
 		// Enables the x2APIC
 		u64 apicBase = ReadMSR(MSR_APIC_BASE);
@@ -113,19 +115,19 @@ Result InitAPIC()
 
 	LAPICWriteRegister(LAPIC_SVR_REGISTER, 0x1ff);
 
-	PhysicalAddress ioapicAddress;
-	Result result = FindIOAPICAddress(&ioapicAddress);
+	PhysicalAddress ioapicBase;
+	Result result = FindIOAPICAddress(&ioapicBase);
 	if (result) {
 		return result;
 	}
 
-	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
-	result = Page4KiBMapTo(kernelPML4, ioapicAddress, ioapicAddress, PageWriteable | PageNoCache);
+	Page4KiB ioapicAddress;
+	result = AllocateMMIORegion(&g_virtualMemoryAllocator, ioapicBase & ~0xfff, 0x1000, PageWriteable | PageNoCache, &ioapicAddress);
 	if (result) {
 		return result;
 	}
 
-	g_apic.IOAPICAddress = (u32*)ioapicAddress;
+	g_apic.IOAPICAddress = (u32*)(ioapicAddress + (ioapicBase & 0xfff));
 
 	InitAPICTimer();
 

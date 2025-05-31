@@ -122,7 +122,7 @@ static void LogResult(Logger* logger, Result result)
 		case ResultNotEnoughMemoryFrames:
 			FramebufferWriteString(&logger->Framebuffer, "ResultNotEnoughMemoryFrames");
 			break;
-		case ResultSerialOutputUnavailabe:
+		case ResultSerialOutputUnavailable:
 			FramebufferWriteString(&logger->Framebuffer, "ResultSerialOutputUnavailabe");
 			break;
 		case ResultOutOfMemory:
@@ -136,15 +136,6 @@ static void LogResult(Logger* logger, Result result)
 			break;
 		case ResultPageAlreadyUnmapped:
 			FramebufferWriteString(&logger->Framebuffer, "ResultPageAlreadyUnmapped");
-			break;
-		case ResultHeapBlockTooSmall:
-			FramebufferWriteString(&logger->Framebuffer, "ResultHeapBlockTooSmall");
-			break;
-		case ResultHeapBlockIncorrectAlignment:
-			FramebufferWriteString(&logger->Framebuffer, "ResultHeapBlockIncorrectAlignment");
-			break;
-		case ResultHeapBlockIncorrectSplitSize:
-			FramebufferWriteString(&logger->Framebuffer, "ResultHeapBlockIncorrectSplitSize");
 			break;
 		case ResultInvalidSDTSignature:
 			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidSDTSignature");
@@ -183,10 +174,16 @@ static void LogResult(Logger* logger, Result result)
 			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidPath");
 			break;
 		case ResultNotFound:
-			FramebufferWriteString(&logger->Framebuffer, "ResultInodeNotFound");
+			FramebufferWriteString(&logger->Framebuffer, "ResultNotFound");
 			break;
 		case ResultInvalidProcessID:
 			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidProcessID");
+			break;
+		case ResultInvalidPageAlignment:
+			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidPageAlignment");
+			break;
+		case ResultInvalidFrameAlignment:
+			FramebufferWriteString(&logger->Framebuffer, "ResultInvalidFrameAlignment");
 			break;
 		default:
 			FramebufferWriteString(&logger->Framebuffer, "UnknownResultValue");
@@ -205,7 +202,7 @@ static void LogResult(Logger* logger, Result result)
 		case ResultNotEnoughMemoryFrames:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultNotEnoughMemoryFrames");
 			break;
-		case ResultSerialOutputUnavailabe:
+		case ResultSerialOutputUnavailable:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultSerialOutputUnavailabe");
 			break;
 		case ResultOutOfMemory:
@@ -219,15 +216,6 @@ static void LogResult(Logger* logger, Result result)
 			break;
 		case ResultPageAlreadyUnmapped:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultPageAlreadyUnmapped");
-			break;
-		case ResultHeapBlockTooSmall:
-			SerialConsoleWriteString(&logger->SerialConsole, "ResultHeapBlockTooSmall");
-			break;
-		case ResultHeapBlockIncorrectAlignment:
-			SerialConsoleWriteString(&logger->SerialConsole, "ResultHeapBlockIncorrectAlignment");
-			break;
-		case ResultHeapBlockIncorrectSplitSize:
-			SerialConsoleWriteString(&logger->SerialConsole, "ResultHeapBlockIncorrectSplitSize");
 			break;
 		case ResultInvalidSDTSignature:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidSDTSignature");
@@ -266,10 +254,16 @@ static void LogResult(Logger* logger, Result result)
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidPath");
 			break;
 		case ResultNotFound:
-			SerialConsoleWriteString(&logger->SerialConsole, "ResultInodeNotFound");
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultNotFound");
 			break;
 		case ResultInvalidProcessID:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidProcessID");
+			break;
+		case ResultInvalidPageAlignment:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidPageAlignment");
+			break;
+		case ResultInvalidFrameAlignment:
+			SerialConsoleWriteString(&logger->SerialConsole, "ResultInvalidFrameAlignment");
 			break;
 		default:
 			SerialConsoleWriteString(&logger->SerialConsole, "ResultUnknownValue");

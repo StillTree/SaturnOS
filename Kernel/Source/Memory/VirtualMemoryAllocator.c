@@ -105,6 +105,7 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 				}
 
 				*randomPage = regionPointer->Begin + offsetPages * PAGE_4KIB_SIZE_BYTES;
+				SK_LOG_DEBUG("Randomly chosen page = 0x%x", *randomPage);
 				return ResultOk;
 			}
 
@@ -163,23 +164,33 @@ Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddr
 	allocator->List->Next = nullptr;
 	allocator->List->Previous = nullptr;
 
+	// Exclue non-canonical virtual addresses
+	result = MarkVirtualMemoryUsed(allocator, 0x0000800000000000, 0xFFFF800000000000);
+	if (result) {
+		return result;
+	}
+
+	// Exclude this list's backing storage
 	result = MarkVirtualMemoryUsed(allocator, listBeginning, listBeginning + listSize);
 	if (result) {
 		return result;
 	}
 
+	// Exclude the identity mapped memory at an offset
 	result = MarkVirtualMemoryUsed(
 		allocator, g_bootInfo.PhysicalMemoryOffset, g_bootInfo.PhysicalMemoryOffset + g_bootInfo.PhysicalMemoryMappingSize);
 	if (result) {
 		return result;
 	}
 
+	// Exclude memory currently occupied by the kernel
 	result = MarkVirtualMemoryUsed(allocator, g_bootInfo.KernelAddress, g_bootInfo.KernelAddress + g_bootInfo.KernelSize);
 	if (result) {
 		return result;
 	}
 
 	// TODO: Not assume that the framebuffer is perfectly 4096 bytes aligned
+	// Exclude the framebuffer
 	result = MarkVirtualMemoryUsed(
 		allocator, (VirtualAddress)g_bootInfo.Framebuffer, (VirtualAddress)g_bootInfo.Framebuffer + g_bootInfo.FramebufferSize + 4096);
 	if (result) {

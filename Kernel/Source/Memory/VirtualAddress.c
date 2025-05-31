@@ -6,7 +6,7 @@ Result VirtualAddressToPhysical(VirtualAddress address, const PageTableEntry* p4
 
 	// If there is no Level 3 table at the expected level 4's index, the address's page is unmapped.
 	if (!(p4Table[p4Index] & PagePresent)) {
-		return ResultSerialOutputUnavailabe;
+		return ResultSerialOutputUnavailable;
 	}
 
 	u16 p3Index = VirtualAddressPage3Index(address);
@@ -14,7 +14,7 @@ Result VirtualAddressToPhysical(VirtualAddress address, const PageTableEntry* p4
 
 	// If there is no Level 2 table at the expected level 3's index, the address's page is unmapped.
 	if (!(p3Table[p3Index] & PagePresent)) {
-		return ResultSerialOutputUnavailabe;
+		return ResultSerialOutputUnavailable;
 	}
 
 	u16 p2Index = VirtualAddressPage2Index(address);
@@ -22,7 +22,7 @@ Result VirtualAddressToPhysical(VirtualAddress address, const PageTableEntry* p4
 
 	// If there is no Level 1 table at the expected level 2's index, the address's page is unmapped.
 	if (!(p2Table[p2Index] & PagePresent)) {
-		return ResultSerialOutputUnavailabe;
+		return ResultSerialOutputUnavailable;
 	}
 
 	u16 p1Index = VirtualAddressPage1Index(address);
@@ -30,7 +30,7 @@ Result VirtualAddressToPhysical(VirtualAddress address, const PageTableEntry* p4
 
 	// If the entry at the expected level 1's index is empty, the address's page is unmapped.
 	if (!(p1Table[p1Index] & PagePresent)) {
-		return ResultSerialOutputUnavailabe;
+		return ResultSerialOutputUnavailable;
 	}
 
 	*physicalAddress = p1Table[p1Index] & ~(0xfff);

@@ -7,7 +7,7 @@ CPUInfo g_cpuInformation = {};
 Result CPUID(const CPUInfo* cpuInfo, u32 leaf, u32 subleaf, CPUIDResult* result)
 {
 	if ((leaf < 0x80000000 && leaf > cpuInfo->MaximumLeaf) || (leaf >= 0x80000000 && leaf > cpuInfo->MaximumExtendedLeaf))
-		return ResultSerialOutputUnavailabe;
+		return ResultSerialOutputUnavailable;
 
 	if (subleaf != 0) {
 		__cpuid_count(leaf, subleaf, result->EAX, result->EBX, result->ECX, result->EDX);

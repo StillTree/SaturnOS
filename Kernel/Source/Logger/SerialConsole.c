@@ -21,7 +21,7 @@ Result SerialConsoleInit(SerialConsoleLogger* logger, u16 port)
 	// If we didn't get back the exact same byte that we sent in loopback mode,
 	// the device is not functioning corretly and should not be used
 	if (InputU8(logger->Port + 0) != 0xae) {
-		return ResultSerialOutputUnavailabe;
+		return ResultSerialOutputUnavailable;
 	}
 
 	// If it is functioning correctly we set it in normal operation mode

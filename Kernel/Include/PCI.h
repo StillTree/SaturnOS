@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Memory/Page.h"
 #include "Memory/PhysicalAddress.h"
 #include "Result.h"
 
@@ -86,14 +87,17 @@ typedef struct PCIDevice {
 	u8 DeviceNumber;
 	u8 FunctionNumber;
 
+	// This is ridiculous, but since right now I only use a single BAR from a single device I'll leave it in as a temporary solution.
+	Page4KiB MostUsefulBAR;
+
 	MSIXCapability* MSIX;
 	MSIXTableEntry* MSIXTable;
 } PCIDevice;
 
 Result PCIDeviceInit(PCIDevice* device);
 
-Result PCIDeviceMapBars(const PCIDevice* device);
-Result PCIDeviceBarAddress(const PCIDevice* device, u8 index, PhysicalAddress* address);
+Result PCIDeviceMapBars(PCIDevice* device);
+// Result PCIDeviceBarAddress(const PCIDevice* device, u8 index, PhysicalAddress* address);
 
 void PCIDeviceEnableMSIX(const PCIDevice* device);
 Result PCIDeviceSetMSIXVector(const PCIDevice* device, usz msiVector, u8 systemVector);

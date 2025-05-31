@@ -254,12 +254,7 @@ Result InitAHCI()
 {
 	g_pciStorageDevices[0].ConfigurationSpace->Command |= CommandRegisterEnableBusMaster | CommandRegisterEnableMemory;
 
-	PhysicalAddress hbaRegistersAddress;
-	Result result = PCIDeviceBarAddress(&g_pciStorageDevices[0], 5, &hbaRegistersAddress);
-	if (result) {
-		return result;
-	}
-	g_ahciDriver.Registers = (HBARegisters*)hbaRegistersAddress;
+	g_ahciDriver.Registers = (HBARegisters*)g_pciStorageDevices[0].MostUsefulBAR;
 
 	AHCIReset(&g_ahciDriver);
 	for (u8 i = 0; i < 32; i++) {
@@ -268,7 +263,7 @@ Result InitAHCI()
 
 		g_ahciDriver.Devices[0].Registers = g_ahciDriver.Registers->Ports + i;
 		g_ahciDriver.Devices[0].Port = i;
-		result = AHCIDeviceInit(&g_ahciDriver.Devices[0]);
+		Result result = AHCIDeviceInit(&g_ahciDriver.Devices[0]);
 		if (result) {
 			return result;
 		}

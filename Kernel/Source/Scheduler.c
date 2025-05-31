@@ -79,7 +79,7 @@ Result CreateProcess(Process** process, void (*entryPoint)())
 {
 	usz index = FirstUsableProcessIndex();
 	if (index == USZ_MAX) {
-		return ResultSerialOutputUnavailabe;
+		return ResultSerialOutputUnavailable;
 	}
 
 	Frame4KiB pml4Frame;

@@ -6,7 +6,7 @@ typedef enum Result : u8 {
 	ResultOk = 0,
 	ResultNotEnoughMemoryPages,
 	ResultNotEnoughMemoryFrames,
-	ResultSerialOutputUnavailabe,
+	ResultSerialOutputUnavailable,
 	ResultOutOfMemory,
 	ResultFrameAlreadyDeallocated,
 	ResultPageAlreadyMapped,

@@ -30,7 +30,7 @@ Result DetectGPTPartitions()
 	GPTHeader* gptHeader = PhysicalAddressAsPointer(partitionTableHeader);
 
 	if (!MemoryCompare(gptHeader->Signature, "EFI PART", 8)) {
-		return ResultSerialOutputUnavailabe;
+		return ResultSerialOutputUnavailable;
 	}
 
 	usz neededSectors = ((usz)gptHeader->PartitionEntryCount * gptHeader->PartitionEntrySize + g_ahciDriver.Devices[0].SectorSize - 1)

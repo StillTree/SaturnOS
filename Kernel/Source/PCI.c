@@ -7,6 +7,7 @@
 #include "Memory.h"
 #include "Memory/Frame.h"
 #include "Memory/Page.h"
+#include "Memory/VirtualMemoryAllocator.h"
 #include "Panic.h"
 
 PCIDevice g_pciStorageDevices[1];
@@ -58,7 +59,7 @@ Result PCIDeviceInit(PCIDevice* device)
 	return ResultOk;
 }
 
-Result PCIDeviceMapBars(const PCIDevice* device)
+Result PCIDeviceMapBars(PCIDevice* device)
 {
 	for (u8 i = 0; i < 6; i++) {
 		// I do not support, I/O BARs
@@ -79,18 +80,17 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 
 			device->ConfigurationSpace->Bar[i] = bar;
 
-			for (Page4KiB page = address; page < address + size; page += PAGE_4KIB_SIZE_BYTES) {
-				// TODO: If prefetchable enable cache
-				PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
-				Result result = Page4KiBMapTo(kernelPML4, page, page, PageWriteable | PageNoCache);
-				if (result) {
-					// This is an extremally dangerous approach but since the kernel will panic later,
-					// I'll just leave it like this for now
-					return result;
-				}
+			Page4KiB mappedBar;
+			Result result = AllocateMMIORegion(&g_virtualMemoryAllocator, address, size, PageWriteable | PageNoCache, &mappedBar);
+			if (result) {
+				// This is an extremally dangerous approach but since the kernel will panic later,
+				// I'll just leave it like this for now
+				return result;
 			}
 
-			SK_LOG_DEBUG("Mapping 32-bit BAR with address: 0x%x and size: 0x%x", address, size);
+			device->MostUsefulBAR = mappedBar;
+
+			SK_LOG_DEBUG("Mapped 32-bit BAR with virtual address: 0x%x and size: 0x%x", mappedBar, size);
 
 			continue;
 		}
@@ -112,48 +112,47 @@ Result PCIDeviceMapBars(const PCIDevice* device)
 		device->ConfigurationSpace->Bar[i] = barLow;
 		device->ConfigurationSpace->Bar[i + 1] = barHigh;
 
-		for (Page4KiB page = address; page < address + size; page += PAGE_4KIB_SIZE_BYTES) {
-			// TODO: If prefetchable enable cache
-			PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
-			Result result = Page4KiBMapTo(kernelPML4, page, page, PageWriteable | PageNoCache);
-			if (result) {
-				// This is an extremally dangerous approach but since the kernel will panic later,
-				// I'll jsut leave it like this for now
-				return result;
-			}
+		Page4KiB mappedBar;
+		Result result = AllocateMMIORegion(&g_virtualMemoryAllocator, address, size, PageWriteable | PageNoCache, &mappedBar);
+		if (result) {
+			// This is an extremally dangerous approach but since the kernel will panic later,
+			// I'll just leave it like this for now
+			return result;
 		}
 
-		SK_LOG_DEBUG("Mapping 64-bit BAR with address: 0x%x and size: 0x%x", address, size);
+		device->MostUsefulBAR = mappedBar;
+
+		SK_LOG_DEBUG("Mapped 64-bit BAR with virtual address: 0x%x and size: 0x%x", address, size);
 	}
 
 	return ResultOk;
 }
 
-Result PCIDeviceBarAddress(const PCIDevice* device, u8 index, PhysicalAddress* address)
-{
-	// I do not support, I/O BARs
-	if ((device->ConfigurationSpace->Bar[index] & 1) != 0 || device->ConfigurationSpace->Bar[index] == 1)
-		return ResultInvalidBARIndex;
-
-	// 32-bit BAR
-	if ((device->ConfigurationSpace->Bar[index] & 0xf) != 4) {
-		u32 bar = device->ConfigurationSpace->Bar[index];
-
-		const PhysicalAddress barAddress = bar & 0xfffffff0;
-
-		*address = barAddress;
-		return ResultOk;
-	}
-
-	// 64-bit BAR
-	const u32 barLow = device->ConfigurationSpace->Bar[index];
-	const u32 barHigh = device->ConfigurationSpace->Bar[index + 1];
-
-	const PhysicalAddress barAddress = (u64)(barLow & 0xfffffff0) | ((u64)barHigh << 32);
-
-	*address = barAddress;
-	return ResultOk;
-}
+// Result PCIDeviceBarAddress(const PCIDevice* device, u8 index, PhysicalAddress* address)
+// {
+// 	// I do not support, I/O BARs
+// 	if ((device->ConfigurationSpace->Bar[index] & 1) != 0 || device->ConfigurationSpace->Bar[index] == 1)
+// 		return ResultInvalidBARIndex;
+// 
+// 	// 32-bit BAR
+// 	if ((device->ConfigurationSpace->Bar[index] & 0xf) != 4) {
+// 		u32 bar = device->ConfigurationSpace->Bar[index];
+// 
+// 		const PhysicalAddress barAddress = bar & 0xfffffff0;
+// 
+// 		*address = barAddress;
+// 		return ResultOk;
+// 	}
+// 
+// 	// 64-bit BAR
+// 	const u32 barLow = device->ConfigurationSpace->Bar[index];
+// 	const u32 barHigh = device->ConfigurationSpace->Bar[index + 1];
+// 
+// 	const PhysicalAddress barAddress = (u64)(barLow & 0xfffffff0) | ((u64)barHigh << 32);
+// 
+// 	*address = barAddress;
+// 	return ResultOk;
+// }
 
 void PCIDeviceEnableMSIX(const PCIDevice* device) { device->MSIX->MessageControl |= 0x8000; }
 
@@ -244,8 +243,7 @@ static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus)
 					.MSIX = nullptr,
 					.MSIXTable = nullptr };
 				g_pciStorageDevices[0] = ahciController;
-				Result result = PCIDeviceInit(&g_pciStorageDevices[0]);
-				SK_PANIC_ASSERT(!result, "An error occured while trying to initialize a PCI Device");
+				SK_PANIC_ON_ERROR(PCIDeviceInit(&g_pciStorageDevices[0]), "An error occured while trying to initialize a PCI Device");
 			}
 
 			deviceCount++;
