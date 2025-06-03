@@ -105,7 +105,6 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 				}
 
 				*randomPage = regionPointer->Begin + offsetPages * PAGE_4KIB_SIZE_BYTES;
-				SK_LOG_DEBUG("Randomly chosen page = 0x%x", *randomPage);
 				return ResultOk;
 			}
 
@@ -140,11 +139,9 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 
 	for (usz i = PAGE_TABLE_ENTRIES - 1; i > PAGE_TABLE_ENTRIES - 1 - topPML4Entries; i--) {
 		if (kernelPML4[i] & PagePresent) {
-			SK_LOG_DEBUG("top level pml4 entry already present %u", i);
 			continue;
 		}
 
-		SK_LOG_DEBUG("top level pml4 entry not present %u", i);
 		Frame4KiB frame;
 		result = AllocateFrame(&g_frameAllocator, &frame);
 		if (result) {

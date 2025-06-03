@@ -132,23 +132,23 @@ Result PCIDeviceMapBars(PCIDevice* device)
 // 	// I do not support, I/O BARs
 // 	if ((device->ConfigurationSpace->Bar[index] & 1) != 0 || device->ConfigurationSpace->Bar[index] == 1)
 // 		return ResultInvalidBARIndex;
-// 
+//
 // 	// 32-bit BAR
 // 	if ((device->ConfigurationSpace->Bar[index] & 0xf) != 4) {
 // 		u32 bar = device->ConfigurationSpace->Bar[index];
-// 
+//
 // 		const PhysicalAddress barAddress = bar & 0xfffffff0;
-// 
+//
 // 		*address = barAddress;
 // 		return ResultOk;
 // 	}
-// 
+//
 // 	// 64-bit BAR
 // 	const u32 barLow = device->ConfigurationSpace->Bar[index];
 // 	const u32 barHigh = device->ConfigurationSpace->Bar[index + 1];
-// 
+//
 // 	const PhysicalAddress barAddress = (u64)(barLow & 0xfffffff0) | ((u64)barHigh << 32);
-// 
+//
 // 	*address = barAddress;
 // 	return ResultOk;
 // }
@@ -175,53 +175,36 @@ Result PCIDeviceSetMSIXVector(const PCIDevice* device, usz msiVector, u8 systemV
 	return ResultOk;
 }
 
-static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus)
+static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus, Page4KiB* mappedBus)
 {
 	Frame4KiB frame = baseAddress + ((u64)bus << 20);
-	Page4KiB page = frame;
 
-	// An entire bus is 256 4K pages, so 1 MB
-	for (usz i = 0; i < 256; i++) {
-		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
-		Result result = Page4KiBMapTo(kernelPML4, page, frame, PageWriteable);
-		if (result) {
-			return result;
-		}
-
-		frame += FRAME_4KIB_SIZE_BYTES;
-		page += PAGE_4KIB_SIZE_BYTES;
+	Result result = AllocateMMIORegion(&g_kernelMemoryAllocator, frame, 0x100000, PageWriteable, mappedBus);
+	if (result) {
+		return result;
 	}
 
-	return ResultOk;
+	return result;
 }
 
-static Result UnmapEntireBus(VirtualAddress baseAddress, u8 bus)
+static Result UnmapEntireBus(Page4KiB mappedBus)
 {
-	Page4KiB page = baseAddress + ((u64)bus << 20);
-
-	// An entire bus is 256 4K pages, so 1 MB
-	for (usz i = 0; i < 256; i++) {
-		Result result = Page4KiBUnmap(page);
-		if (result) {
-			return result;
-		}
-
-		FlushPage(page);
-
-		page += PAGE_4KIB_SIZE_BYTES;
+	Result result = DeallocateMMIORegion(&g_kernelMemoryAllocator, mappedBus, 0x100000);
+	if (result) {
+		return result;
 	}
 
 	return ResultOk;
 }
 
 /// Saves the devices I care about for later use and returns how many of them were detected.
-static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus)
+static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus, Page4KiB mappedBus)
 {
 	usz deviceCount = 0;
 
 	for (u8 device = 0; device < 32; device++) {
 		for (u8 function = 0; function < 8; function++) {
-			VirtualAddress configSpaceAddress = segmentGroup->BaseAddress + ((u64)bus << 20) + ((u64)device << 15) + ((u64)function << 12);
+			VirtualAddress configSpaceAddress = mappedBus + ((u64)device << 15) + ((u64)function << 12);
 			PCIDeviceHeader0* configSpace = (PCIDeviceHeader0*)configSpaceAddress;
 
 			if (configSpace->VendorID == 0xffff)
@@ -242,7 +225,8 @@ static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus)
 					.MSIX = nullptr,
 					.MSIXTable = nullptr };
 				g_pciStorageDevices[0] = ahciController;
-				SK_PANIC_ON_ERROR(PCIDeviceInit(&g_pciStorageDevices[0]), "An error occured while trying to initialize a PCI Device");
+				SK_PANIC_ON_ERROR(
+					PCIDeviceInit(&g_pciStorageDevices[0]), "An error occured while trying to initialize the PCI storage device");
 			}
 
 			deviceCount++;
@@ -268,13 +252,14 @@ Result ScanPCIDevices()
 		MCFGEntry* segmentGroup = MCFGGetPCISegmentGroup(mcfg, i);
 
 		for (usz bus = segmentGroup->StartBusNumber; bus <= segmentGroup->EndBusNumber; bus++) {
-			Result result = MapEntireBus(segmentGroup->BaseAddress, bus);
+			Page4KiB mappedBus;
+			Result result = MapEntireBus(segmentGroup->BaseAddress, bus, &mappedBus);
 			if (result)
 				return result;
 
 			// If we didn't find any devices in the bus's extended configuration space, unmap it.
-			if (EnumerateDevices(segmentGroup, bus) <= 0) {
-				result = UnmapEntireBus(segmentGroup->BaseAddress, bus);
+			if (EnumerateDevices(segmentGroup, bus, mappedBus) <= 0) {
+				result = UnmapEntireBus(mappedBus);
 
 				if (result)
 					return result;

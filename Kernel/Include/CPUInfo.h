@@ -18,6 +18,7 @@ typedef struct CPUInfo {
 	bool SupportsSSE2;
 	bool SupportsMMX;
 	bool SupportsAVX;
+	bool SupportsRDRAND;
 
 	bool SupportsXAPIC; // Or just APIC
 	bool SupportsX2APIC;

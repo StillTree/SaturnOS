@@ -1,7 +1,7 @@
-.global Random
+.global RandomRDRAND
 
 // TODO: Implement randomness with the HC-128 algorithm for systems that do not support the rdrand instruction
-Random:
+RandomRDRAND:
 	rdrand %rax
 	jnc Random
 	ret

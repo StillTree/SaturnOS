@@ -2,4 +2,6 @@
 
 #include "Core.h"
 
-extern u64 Random();
+u64 Random();
+
+extern u64 RandomRDRAND();

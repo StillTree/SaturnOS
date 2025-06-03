@@ -35,6 +35,7 @@ Result CPUIDSaveInfo(CPUInfo* cpuInfo)
 	if (!result) {
 		cpuInfo->SupportsAVX = ((featuresInfo.ECX >> 28) & 1) != 0;
 		cpuInfo->SupportsX2APIC = ((featuresInfo.ECX >> 21) & 1) != 0;
+		cpuInfo->SupportsRDRAND = ((featuresInfo.ECX >> 30) & 1) != 0;
 		cpuInfo->SupportsMMX = ((featuresInfo.EDX >> 23) & 1) != 0;
 		cpuInfo->SupportsSSE = ((featuresInfo.EDX >> 25) & 1) != 0;
 		cpuInfo->SupportsSSE2 = ((featuresInfo.EDX >> 26) & 1) != 0;
