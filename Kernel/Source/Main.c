@@ -82,21 +82,6 @@ void KernelMain(KernelBootInfo* bootInfo)
 
 	SK_PANIC_ON_ERROR(InitExt2(), "An unexpected error occured while trying to initialize the Ext2 driver");
 
-	// TODO:
-	// For the kernel reserve e.g. 2 PML4 entries and map them to some level 3 table, can be empty
-	// Then this gives 1 TiB of usable virtual memory to do ASLR in and stuff
-	// Adjust the memory manager to account for that
-	//
-	// For processes just copy these two PML4 entries into their PML4s
-	// Remember to mark it as supervisor only and never change that
-	// Never map anything for the kernel in the PML4s and onl use level 3 tables for mappings
-	// Then on every new mapping I don't have to copy these changes to every single processes' PML4
-	// since these 2 entries will stay unchanged, always pointing to the same level 3 tables and they will changes,
-	// but since they are essentially "shared" I gain speed
-	//
-	// For userspace mapping in process PML4s it doesn't matter where I map, but definitely below the kernel
-	// (in the lower canonical virtual memory region)
-
 	while (true)
 		__asm__ volatile("hlt");
 }
