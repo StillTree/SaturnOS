@@ -346,6 +346,7 @@ void Log(Logger* logger, LogLevel logLevel, const i8* format, ...)
 				i8 hexOutput[MAX_HEX_LENGTH];
 				u64 pointer = va_arg(args, u64);
 				NumberToHexString(pointer, hexOutput, 0);
+				LogString(logger, "0x");
 				LogString(logger, hexOutput);
 				break;
 			}

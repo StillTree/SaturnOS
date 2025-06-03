@@ -25,7 +25,7 @@ constexpr usz PAGE_TABLE_ENTRIES = 512;
 void InitEmptyPageTable(PageTableEntry* pageTable);
 
 /// Returns the PML4 table's physical memory address, read from the CR3 register.
-static inline PhysicalAddress KernelPageTable4Address()
+static inline PhysicalAddress KernelPML4()
 {
 	PhysicalAddress pml4Address = -1;
 	__asm__ volatile("mov %%cr3, %0" : "=r"(pml4Address));

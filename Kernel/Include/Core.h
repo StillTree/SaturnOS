@@ -53,6 +53,7 @@ typedef struct KernelBootInfo {
 	u64 KernelStackTop;
 	u64 KernelAddress;
 	u64 KernelSize;
+	u64 ContextSwitchFunctionPage;
 } KernelBootInfo;
 
 /// Globally accessible boot information.

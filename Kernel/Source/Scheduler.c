@@ -98,7 +98,7 @@ Result CreateProcess(Process** process, void (*entryPoint)())
 	}
 	g_processes[index].Threads[0].Status = ThreadReady;
 
-	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
+	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
 	PageTableEntry* processPML4 = PhysicalAddressAsPointer(pml4Frame);
 	processPML4[511] = kernelPML4[511] & ~PageUserAccessible;
 
@@ -149,7 +149,7 @@ void InitScheduler()
 	g_processes[0].ID = 0;
 	g_processes[0].Threads[0].ID = 0;
 	g_processes[0].Threads[0].Status = ThreadRunning;
-	g_processes[0].PML4 = KernelPageTable4Address();
+	g_processes[0].PML4 = KernelPML4();
 	g_processes[0].Threads[0].Context.CR3 = g_processes[0].PML4;
 
 	g_currentThread = &g_processes[0].Threads[0];

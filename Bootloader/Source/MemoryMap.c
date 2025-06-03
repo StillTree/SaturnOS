@@ -1,6 +1,5 @@
 #include "MemoryMap.h"
 
-#include "Logger.h"
 #include "Memory.h"
 
 EFI_STATUS CreateMemoryMap(FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDRESS kernelP4Table, UINTN* memoryMapEntries,

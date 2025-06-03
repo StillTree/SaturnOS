@@ -66,7 +66,7 @@ Result DeallocateSizedBlock(SizedBlockAllocator* blockAllocator, void* block)
 
 	if (!allocated) {
 		SK_LOG_WARN("An attempt was made to deallocate an unallocated memory block");
-		return ResultSerialOutputUnavailabe;
+		return ResultSerialOutputUnavailable;
 	}
 
 	SetBlockStatus(blockAllocator, (VirtualAddress)block, false);

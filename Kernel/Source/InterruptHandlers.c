@@ -64,7 +64,7 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 	u64 faultVirtualAddress = 0;
 	__asm__ volatile("mov %%cr2, %0" : "=r"(faultVirtualAddress));
 
-	u64 pml4Address = KernelPageTable4Address();
+	u64 pml4Address = KernelPML4();
 
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT");
 	SK_LOG_ERROR("Faulty virtual address = 0x%x", faultVirtualAddress);

@@ -9,7 +9,7 @@
 #include "Memory/PageTable.h"
 #include "Random.h"
 
-VirtualMemoryAllocator g_virtualMemoryAllocator = {};
+VirtualMemoryAllocator g_kernelMemoryAllocator = {};
 
 static Result GetContainingRegion(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end, UnusedVirtualRegion** containingRegion)
 {
@@ -128,18 +128,80 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 // 	}
 // }
 
+Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, usz backingMemorySize)
+{
+	Result result = Page4KiBUnmap(g_bootInfo.ContextSwitchFunctionPage);
+	if (result) {
+		return result;
+	}
+
+	Frame4KiB kernelPML4Frame = KernelPML4();
+	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(kernelPML4Frame);
+
+	for (usz i = PAGE_TABLE_ENTRIES - 1; i > PAGE_TABLE_ENTRIES - 1 - topPML4Entries; i--) {
+		if (kernelPML4[i] & PagePresent) {
+			SK_LOG_DEBUG("top level pml4 entry already present %u", i);
+			continue;
+		}
+
+		SK_LOG_DEBUG("top level pml4 entry not present %u", i);
+		Frame4KiB frame;
+		result = AllocateFrame(&g_frameAllocator, &frame);
+		if (result) {
+			return result;
+		}
+
+		InitEmptyPageTable(PhysicalAddressAsPointer(frame));
+
+		kernelPML4[i] = frame | PagePresent | PageWriteable;
+	}
+
+	result = InitVirtualMemoryAllocator(&g_kernelMemoryAllocator, backingMemoryBegin, backingMemorySize, kernelPML4Frame);
+	if (result) {
+		return result;
+	}
+
+	// Exclude everything up to the chosen amount of top PML4 entries
+	result = MarkVirtualMemoryUsed(&g_kernelMemoryAllocator, 4096, 0xffff800000000000 + (0x8000000000 * (256 - topPML4Entries)));
+	if (result) {
+		return result;
+	}
+
+	// Exclude this list's backing storage
+	result = MarkVirtualMemoryUsed(&g_kernelMemoryAllocator, backingMemoryBegin, backingMemoryBegin + backingMemorySize);
+	if (result) {
+		return result;
+	}
+
+	// Exclude memory currently occupied by the kernel
+	result = MarkVirtualMemoryUsed(&g_kernelMemoryAllocator, g_bootInfo.KernelAddress, g_bootInfo.KernelAddress + g_bootInfo.KernelSize);
+	if (result) {
+		return result;
+	}
+
+	// TODO: Not assume that the framebuffer is perfectly 4096 bytes aligned
+	// Exclude the framebuffer
+	result = MarkVirtualMemoryUsed(&g_kernelMemoryAllocator, (VirtualAddress)g_bootInfo.Framebuffer,
+		(VirtualAddress)g_bootInfo.Framebuffer + g_bootInfo.FramebufferSize + 4096);
+	if (result) {
+		return result;
+	}
+
+	return result;
+}
+
 Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddress listBeginning, usz listSize, Frame4KiB pml4)
 {
 	const Page4KiB endPage = Page4KiBContainingAddress(listBeginning + listSize);
 
-	for (Page4KiB heapPage = Page4KiBContainingAddress(listBeginning); heapPage <= endPage; heapPage += PAGE_4KIB_SIZE_BYTES) {
+	for (Page4KiB heapPage = Page4KiBContainingAddress(listBeginning); heapPage < endPage; heapPage += PAGE_4KIB_SIZE_BYTES) {
 		PhysicalAddress frame;
 		Result result = AllocateFrame(&g_frameAllocator, &frame);
 		if (result) {
 			return result;
 		}
 
-		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
+		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
 		result = Page4KiBMapTo(kernelPML4, heapPage, frame, PageWriteable);
 		if (result) {
 			return result;
@@ -159,43 +221,12 @@ Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddr
 	}
 
 	// The first page should always be unused to catch bugs
-	allocator->List->Begin = 4096;
-	allocator->List->End = U64_MAX;
+	// The last page is excluded since it's not possible to mark it as used,
+	// because `End` is exclusive so the address would wrap around to 0
+	allocator->List->Begin = PAGE_4KIB_SIZE_BYTES;
+	allocator->List->End = U64_MAX - PAGE_4KIB_SIZE_BYTES + 1;
 	allocator->List->Next = nullptr;
 	allocator->List->Previous = nullptr;
-
-	// Exclue non-canonical virtual addresses
-	result = MarkVirtualMemoryUsed(allocator, 0x0000800000000000, 0xFFFF800000000000);
-	if (result) {
-		return result;
-	}
-
-	// Exclude this list's backing storage
-	result = MarkVirtualMemoryUsed(allocator, listBeginning, listBeginning + listSize);
-	if (result) {
-		return result;
-	}
-
-	// Exclude the identity mapped memory at an offset
-	result = MarkVirtualMemoryUsed(
-		allocator, g_bootInfo.PhysicalMemoryOffset, g_bootInfo.PhysicalMemoryOffset + g_bootInfo.PhysicalMemoryMappingSize);
-	if (result) {
-		return result;
-	}
-
-	// Exclude memory currently occupied by the kernel
-	result = MarkVirtualMemoryUsed(allocator, g_bootInfo.KernelAddress, g_bootInfo.KernelAddress + g_bootInfo.KernelSize);
-	if (result) {
-		return result;
-	}
-
-	// TODO: Not assume that the framebuffer is perfectly 4096 bytes aligned
-	// Exclude the framebuffer
-	result = MarkVirtualMemoryUsed(
-		allocator, (VirtualAddress)g_bootInfo.Framebuffer, (VirtualAddress)g_bootInfo.Framebuffer + g_bootInfo.FramebufferSize + 4096);
-	if (result) {
-		return result;
-	}
 
 	return result;
 }

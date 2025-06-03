@@ -97,7 +97,7 @@ Result InitAPIC()
 		g_apic.X2APICMode = false;
 
 		Page4KiB xapicAddress;
-		Result result = AllocateMMIORegion(&g_virtualMemoryAllocator, xapicFrame, 0x1000, PageWriteable | PageNoCache, &xapicAddress);
+		Result result = AllocateMMIORegion(&g_kernelMemoryAllocator, xapicFrame, 0x1000, PageWriteable | PageNoCache, &xapicAddress);
 		if (result) {
 			return result;
 		}
@@ -122,7 +122,7 @@ Result InitAPIC()
 	}
 
 	Page4KiB ioapicAddress;
-	result = AllocateMMIORegion(&g_virtualMemoryAllocator, ioapicBase & ~0xfff, 0x1000, PageWriteable | PageNoCache, &ioapicAddress);
+	result = AllocateMMIORegion(&g_kernelMemoryAllocator, ioapicBase & ~0xfff, 0x1000, PageWriteable | PageNoCache, &ioapicAddress);
 	if (result) {
 		return result;
 	}

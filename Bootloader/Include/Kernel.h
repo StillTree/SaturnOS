@@ -18,6 +18,7 @@ typedef struct KernelBootInfo {
 	EFI_VIRTUAL_ADDRESS kernelStackTop;
 	UINTN kernelAddress;
 	UINTN kernelSize;
+	EFI_VIRTUAL_ADDRESS contextSwitchFunctionPage;
 } KernelBootInfo;
 
 /// Loads the kernel ELF64 executable into memory and maps it to the provided P4 table. After this function call the kernel file's memory

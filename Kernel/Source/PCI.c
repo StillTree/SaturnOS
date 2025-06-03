@@ -3,7 +3,6 @@
 #include "ACPI.h"
 #include "APIC.h"
 #include "Logger.h"
-#include "MSR.h"
 #include "Memory.h"
 #include "Memory/Frame.h"
 #include "Memory/Page.h"
@@ -81,7 +80,7 @@ Result PCIDeviceMapBars(PCIDevice* device)
 			device->ConfigurationSpace->Bar[i] = bar;
 
 			Page4KiB mappedBar;
-			Result result = AllocateMMIORegion(&g_virtualMemoryAllocator, address, size, PageWriteable | PageNoCache, &mappedBar);
+			Result result = AllocateMMIORegion(&g_kernelMemoryAllocator, address, size, PageWriteable | PageNoCache, &mappedBar);
 			if (result) {
 				// This is an extremally dangerous approach but since the kernel will panic later,
 				// I'll just leave it like this for now
@@ -113,7 +112,7 @@ Result PCIDeviceMapBars(PCIDevice* device)
 		device->ConfigurationSpace->Bar[i + 1] = barHigh;
 
 		Page4KiB mappedBar;
-		Result result = AllocateMMIORegion(&g_virtualMemoryAllocator, address, size, PageWriteable | PageNoCache, &mappedBar);
+		Result result = AllocateMMIORegion(&g_kernelMemoryAllocator, address, size, PageWriteable | PageNoCache, &mappedBar);
 		if (result) {
 			// This is an extremally dangerous approach but since the kernel will panic later,
 			// I'll just leave it like this for now
@@ -183,7 +182,7 @@ static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus)
 
 	// An entire bus is 256 4K pages, so 1 MB
 	for (usz i = 0; i < 256; i++) {
-		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPageTable4Address());
+		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
 		Result result = Page4KiBMapTo(kernelPML4, page, frame, PageWriteable);
 		if (result) {
 			return result;

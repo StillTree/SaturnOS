@@ -88,7 +88,7 @@ Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, Pa
 Result Page4KiBUnmap(Page4KiB page)
 {
 	u16 p4Index = VirtualAddressPage4Index(page);
-	PageTableEntry* p4Table = PhysicalAddressAsPointer(KernelPageTable4Address());
+	PageTableEntry* p4Table = PhysicalAddressAsPointer(KernelPML4());
 
 	// If there is no Level 3 table at the expected level 4's index, this virtual address is not mapped.
 	if (!(p4Table[p4Index] & PagePresent)) {

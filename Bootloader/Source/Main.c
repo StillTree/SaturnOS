@@ -133,6 +133,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	KernelBootInfo* bootInfo = (KernelBootInfo*)bootInfoPhysicalAddress;
+	bootInfo->contextSwitchFunctionPage = PhysFrameContainingAddress(contextSwitchFnAddress);
 	bootInfo->kernelAddress = 0xffffffff80010000;
 	bootInfo->kernelSize = nextUsableVirtualPage + 4096 - bootInfo->kernelAddress;
 	bootInfo->kernelStackTop = virtualStackAddress & ~1;

@@ -4,8 +4,8 @@ INC_DIR    = Include
 TARGET     = $(TARGET_DIR)/Kernel.elf
 
 CC = x86_64-elf-gcc
-AS  = x86_64-elf-as
-LD  = x86_64-elf-ld
+AS = x86_64-elf-as
+LD = x86_64-elf-ld
 
 MODE ?= -O0 -g -DSK_DEBUG
 
@@ -62,4 +62,3 @@ $(TARGET): $(OBJ_FILES)
 
 clean:
 	rm -rf $(TARGET_DIR)
-
