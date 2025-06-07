@@ -3,6 +3,12 @@
 #include "Core.h"
 #include "InterruptHandlers.h"
 #include "Memory/Frame.h"
+#include "Memory/SizedBlockAllocator.h"
+#include "Memory/VirtualMemoryAllocator.h"
+
+constexpr usz MAX_THREADS_PER_PROCESS = 64;
+constexpr usz MAX_PROCESSES = 64;
+constexpr usz THREAD_STACK_SIZE_BYTES = 102400;
 
 // I have no clue if this is enough, but for now it should suffice I guess...
 typedef struct CPUContext {
@@ -37,23 +43,30 @@ typedef enum ThreadStatus : u8 {
 
 typedef struct Thread {
 	usz ID;
-	CPUContext Context;
 	ThreadStatus Status;
+	CPUContext Context;
 	/// The first frame of this thread's stack. A process's stack for now is always 20 pages long.
 	Frame4KiB Stack;
 	PhysicalAddress EntryPoint;
+	struct Process* ParentProcess;
 } Thread;
 
 typedef struct Process {
 	usz ID;
 	Frame4KiB PML4;
-	/// For now only 1 thread per process supported.
-	Thread Threads[1];
+	/// Maximum of 64 threads per process.
+	Thread* Threads[64];
+	usz ThreadCount;
+	VirtualMemoryAllocator VirtualMemoryAllocator;
 } Process;
 
-void InitScheduler();
+typedef struct Scheduler {
+	SizedBlockAllocator Processes;
+	SizedBlockAllocator Threads;
+	Thread* CurrentThread;
+} Scheduler;
+
+Result InitScheduler(Scheduler* scheduler);
 void Schedule(CPUContext* cpuContext);
 
-// "Non-existing" processes get assigned an ID of `USZ_MAX`
-extern Process g_processes[10];
-extern Thread* g_currentThread;
+extern Scheduler g_scheduler;

@@ -20,7 +20,7 @@ typedef struct VirtualMemoryAllocator {
 	Frame4KiB PML4;
 } VirtualMemoryAllocator;
 
-/// Initializes the virtual memory manager.
+/// Initializes the virtual memory manager, expects a contiguous region of backed virtual memory.
 Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, Page4KiB listBeginning, usz listSize, Frame4KiB pml4);
 /// Allocates the given amount of physical memory and maps it to a randomly chosen virtual memory region.
 Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, PageTableEntryFlags flags, Page4KiB* allocatedPage);

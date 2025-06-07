@@ -68,7 +68,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 
 	SK_LOG_INFO("Initializing the scheduler");
 	InitSyscalls();
-	InitScheduler();
+	InitScheduler(&g_scheduler);
 
 	SK_LOG_INFO("Initializing the x2APIC");
 	SK_PANIC_ON_ERROR(InitAPIC(), "An unexpected error occured while trying to initialize the APIC");

@@ -5,7 +5,6 @@
 #include "Keyboard.h"
 #include "Logger.h"
 #include "Memory/PageTable.h"
-#include "Scheduler.h"
 #include "Panic.h"
 
 __attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame)

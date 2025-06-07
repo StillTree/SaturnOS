@@ -153,6 +153,22 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 		kernelPML4[i] = frame | PagePresent | PageWriteable;
 	}
 
+	const Page4KiB endPage = Page4KiBContaining(backingMemoryBegin + backingMemorySize);
+
+	for (Page4KiB heapPage = Page4KiBContaining(backingMemoryBegin); heapPage < endPage; heapPage += PAGE_4KIB_SIZE_BYTES) {
+		PhysicalAddress frame;
+		Result result = AllocateFrame(&g_frameAllocator, &frame);
+		if (result) {
+			return result;
+		}
+
+		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
+		result = Page4KiBMapTo(kernelPML4, heapPage, frame, PageWriteable);
+		if (result) {
+			return result;
+		}
+	}
+
 	result = InitVirtualMemoryAllocator(&g_kernelMemoryAllocator, backingMemoryBegin, backingMemorySize, kernelPML4Frame);
 	if (result) {
 		return result;
@@ -189,22 +205,6 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 
 Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddress listBeginning, usz listSize, Frame4KiB pml4)
 {
-	const Page4KiB endPage = Page4KiBContainingAddress(listBeginning + listSize);
-
-	for (Page4KiB heapPage = Page4KiBContainingAddress(listBeginning); heapPage < endPage; heapPage += PAGE_4KIB_SIZE_BYTES) {
-		PhysicalAddress frame;
-		Result result = AllocateFrame(&g_frameAllocator, &frame);
-		if (result) {
-			return result;
-		}
-
-		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
-		result = Page4KiBMapTo(kernelPML4, heapPage, frame, PageWriteable);
-		if (result) {
-			return result;
-		}
-	}
-
 	allocator->PML4 = pml4;
 
 	Result result = InitSizedBlockAllocator(&allocator->ListBackingStorage, listBeginning, listSize, sizeof(UnusedVirtualRegion));

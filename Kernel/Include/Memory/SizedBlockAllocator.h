@@ -10,6 +10,7 @@ typedef struct SizedBlockAllocator {
 	u8* BlockBitmap;
 	usz PoolSizeBytes;
 	usz BlockSizeBytes;
+	usz AllocationCount;
 } SizedBlockAllocator;
 
 /// Initializes the sized-block allocator. Expects a contiguous, mappedd virtual memory region.
@@ -18,3 +19,5 @@ Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, VirtualAddre
 Result AllocateSizedBlock(SizedBlockAllocator* blockAllocator, void** block);
 /// Deallocates a single memory block.
 Result DeallocateSizedBlock(SizedBlockAllocator* blockAllocator, void* block);
+/// Returns `true` for allocated blocks and `false` for the unallocated ones.
+bool GetSizedBlockStatus(SizedBlockAllocator* blockAllocator, VirtualAddress block);

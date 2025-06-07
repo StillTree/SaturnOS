@@ -3,7 +3,6 @@
 #include "ACPI.h"
 #include "APIC.h"
 #include "Logger.h"
-#include "Memory.h"
 #include "Memory/Frame.h"
 #include "Memory/Page.h"
 #include "Memory/VirtualMemoryAllocator.h"

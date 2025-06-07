@@ -1,36 +1,25 @@
 #include "Scheduler.h"
 
+#include "Memory.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
 #include "Memory/PageTable.h"
 #include "Result.h"
 
-Process g_processes[10];
-Thread* g_currentThread = nullptr;
-usz g_currentThreadIndex = 0;
-usz g_processCount = 1;
+Scheduler g_scheduler;
 
-static Result AllocateProcessStack(Process* process)
+static Result AllocateProcessStack(Process* process, Page4KiB* stackTop)
 {
-	// For now, since there is only one thread per process, every thread's stack gets allocated on a predefined address
-	Page4KiB stackPage = 0x8000001000;
-	for (usz i = 0; i < 20; i++) {
-		Frame4KiB stackFrame;
-		Result result = AllocateFrame(&g_frameAllocator, &stackFrame);
-		if (result) {
-			return result;
-		}
-
-		PageTableEntry* pml4 = PhysicalAddressAsPointer(process->PML4);
-		result = Page4KiBMapTo(pml4, stackPage, stackFrame, PageWriteable | PageUserAccessible | PageNoExecute);
-		if (result) {
-			return result;
-		}
-
-		stackPage += FRAME_4KIB_SIZE_BYTES;
+	Page4KiB stackBottom;
+	Result result = AllocateBackedVirtualMemory(
+		&process->VirtualMemoryAllocator, THREAD_STACK_SIZE_BYTES, PageWriteable | PageUserAccessible | PageNoExecute, &stackBottom);
+	if (result) {
+		return result;
 	}
 
-	return ResultOk;
+	*stackTop = stackBottom + THREAD_STACK_SIZE_BYTES;
+
+	return result;
 }
 
 static usz GetProcessID()
@@ -45,144 +34,224 @@ static usz GetThreadID()
 	return id++;
 }
 
-static usz FirstUsableProcessIndex()
-{
-	for (usz i = 0; i < 10; i++) {
-		if (g_processes[i].ID == USZ_MAX)
-			return i;
-	}
-
-	return USZ_MAX;
-}
-
 Result DeleteProcess(usz id)
 {
 	// This is the kernel itself, so let's not delete it perhaps...
-	if (id == 0) {
-		return ResultInvalidProcessID;
-	}
+	// if (id == 0) {
+	// 	return ResultInvalidProcessID;
+	// }
 
-	for (usz i = 1; i < 10; i++) {
-		if (g_processes[i].ID != id)
-			continue;
+	// for (usz i = 1; i < 10; i++) {
+	// 	if (g_processes[i].ID != id)
+	// 		continue;
 
-		MemoryFill(g_processes + i, 0, sizeof(Process));
-		g_processes[i].ID = USZ_MAX;
-		g_processCount--;
-		return ResultOk;
-	}
+	// 	MemoryFill(g_processes + i, 0, sizeof(Process));
+	// 	g_processes[i].ID = USZ_MAX;
+	// 	g_processCount--;
+	// 	return ResultOk;
+	// }
 
 	return ResultInvalidProcessID;
 }
 
-Result CreateProcess(Process** process, void (*entryPoint)())
+Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entryPoint)())
 {
-	usz index = FirstUsableProcessIndex();
-	if (index == USZ_MAX) {
-		return ResultSerialOutputUnavailable;
+	Process* process = nullptr;
+	Result result = AllocateSizedBlock(&scheduler->Processes, (void**)&process);
+	if (result) {
+		return result;
+	}
+
+	Thread* mainThread = nullptr;
+	result = AllocateSizedBlock(&scheduler->Threads, (void**)&mainThread);
+	if (result) {
+		return result;
 	}
 
 	Frame4KiB pml4Frame;
-	Result result = AllocateFrame(&g_frameAllocator, &pml4Frame);
+	result = AllocateFrame(&g_frameAllocator, &pml4Frame);
+	if (result) {
+		return result;
+	}
+	PageTableEntry* processPML4 = PhysicalAddressAsPointer(pml4Frame);
+	InitEmptyPageTable(processPML4);
+
+	Page4KiB processAllocatorBackingMemory;
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, 102400, PageWriteable, &processAllocatorBackingMemory);
 	if (result) {
 		return result;
 	}
 
-	g_processes[index].PML4 = pml4Frame;
-	g_processes[index].ID = GetProcessID();
-	g_processes[index].Threads[0].ID = GetThreadID();
-	result = AllocateProcessStack(g_processes + index);
+	result = InitVirtualMemoryAllocator(&process->VirtualMemoryAllocator, processAllocatorBackingMemory, 102400, pml4Frame);
 	if (result) {
-		DeallocateFrame(&g_frameAllocator, pml4Frame);
 		return result;
 	}
-	g_processes[index].Threads[0].Status = ThreadReady;
+
+	result = MarkVirtualMemoryUsed(&process->VirtualMemoryAllocator, 0x800000000000, U64_MAX - PAGE_4KIB_SIZE_BYTES + 1);
+	if (result) {
+		return result;
+	}
+
+	process->PML4 = pml4Frame;
+	process->ID = GetProcessID();
+	for (usz i = 0; i < MAX_THREADS_PER_PROCESS; i++) {
+		process->Threads[i] = nullptr;
+	}
+	process->Threads[0] = mainThread;
 
 	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
-	PageTableEntry* processPML4 = PhysicalAddressAsPointer(pml4Frame);
+	processPML4[510] = kernelPML4[510] & ~PageUserAccessible;
 	processPML4[511] = kernelPML4[511] & ~PageUserAccessible;
 
 	PhysicalAddress entryPointPhysicalAddress;
 	result = VirtualAddressToPhysical((VirtualAddress)entryPoint, kernelPML4, &entryPointPhysicalAddress);
 	if (result) {
-		DeallocateFrame(&g_frameAllocator, pml4Frame);
 		return result;
 	}
-	g_processes[index].Threads[0].EntryPoint = entryPointPhysicalAddress;
+	mainThread->EntryPoint = entryPointPhysicalAddress;
+	mainThread->ID = GetThreadID();
 
-	// TODO: Take care of other identity mapped memory regions so the interrupt handler doesn't absolutely shit itself
-	result = Page4KiBMapTo(processPML4, 0xFEE00000, 0xFEE00000, PageWriteable | PageNoExecute);
+	Page4KiB entryPointPage;
+	result = AllocateMMIORegion(&process->VirtualMemoryAllocator, Frame4KiBContaining(entryPointPhysicalAddress),
+		PAGE_4KIB_SIZE_BYTES, PageUserAccessible, &entryPointPage);
 	if (result) {
-		DeallocateFrame(&g_frameAllocator, pml4Frame);
 		return result;
 	}
 
-	result = Page4KiBMapTo(
-		processPML4, 0x4000000000, Frame4KiBContainingAddress(entryPointPhysicalAddress), PageWriteable | PageUserAccessible);
+	Page4KiB stackTop;
+	result = AllocateProcessStack(process, &stackTop);
 	if (result) {
-		DeallocateFrame(&g_frameAllocator, pml4Frame);
 		return result;
 	}
-	MemoryFill(&g_processes[index].Threads[0].Context, 0, sizeof(CPUContext));
-	g_processes[index].Threads[0].Context.CR3 = pml4Frame;
-	g_processes[index].Threads[0].Context.InterruptFrame.RIP = 0x4000000000 + VirtualAddressPageOffset((VirtualAddress)entryPoint);
-	g_processes[index].Threads[0].Context.InterruptFrame.RSP = (0x8000001000 + (20 * FRAME_4KIB_SIZE_BYTES)) & ~1;
-	g_processes[index].Threads[0].Context.RBP = 0;
-	g_processes[index].Threads[0].Context.InterruptFrame.RFLAGS = 0x202;
 
-	g_processes[index].Threads[0].Context.InterruptFrame.CS = 0x23;
-	g_processes[index].Threads[0].Context.InterruptFrame.SS = 0x1b;
+	MemoryFill(&mainThread->Context, 0, sizeof(CPUContext));
+	mainThread->Context.CR3 = pml4Frame;
+	mainThread->Context.InterruptFrame.RIP = entryPointPage + VirtualAddressPageOffset((VirtualAddress)entryPoint);
+	mainThread->Context.InterruptFrame.RSP = stackTop;
+	mainThread->Context.RBP = 0;
+	mainThread->Context.InterruptFrame.RFLAGS = 0x202;
 
-	*process = g_processes + index;
-	g_processCount++;
+	mainThread->Context.InterruptFrame.CS = 0x23;
+	mainThread->Context.InterruptFrame.SS = 0x1b;
+
+	mainThread->Status = ThreadReady;
+
+	*createdProcess = process;
 
 	return ResultOk;
 }
 
-void InitScheduler()
+void TestProcess1()
 {
-	for (usz i = 0; i < 10; i++) {
-		g_processes[i].ID = USZ_MAX;
+	__asm__ volatile("movq $0, %rax\n"
+					 "syscall");
+
+	__asm__ volatile("movq $1, %rax\n"
+					 "syscall");
+
+	__asm__ volatile("movq $0, %rax\n"
+					 "syscall");
+
+	while (true)
+		;
+}
+
+Result InitScheduler(Scheduler* scheduler)
+{
+	usz processPoolSize = sizeof(Process) * MAX_PROCESSES;
+	Page4KiB processPool;
+	Result result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, Page4KiBNext(processPoolSize), PageWriteable, &processPool);
+	if (result) {
+		return result;
 	}
 
-	// The kernel process at ID 0, won't get ever deleted
-	g_processes[0].ID = 0;
-	g_processes[0].Threads[0].ID = 0;
-	g_processes[0].Threads[0].Status = ThreadRunning;
-	g_processes[0].PML4 = KernelPML4();
-	g_processes[0].Threads[0].Context.CR3 = g_processes[0].PML4;
+	result = InitSizedBlockAllocator(&scheduler->Processes, processPool, processPoolSize, sizeof(Process));
+	if (result) {
+		return result;
+	}
 
-	g_currentThread = &g_processes[0].Threads[0];
-	g_currentThreadIndex = 0;
+	usz threadPoolSize = sizeof(Thread) * MAX_PROCESSES * MAX_THREADS_PER_PROCESS;
+	Page4KiB threadPool;
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, Page4KiBNext(threadPoolSize), PageWriteable, &threadPool);
+	if (result) {
+		return result;
+	}
+
+	result = InitSizedBlockAllocator(&scheduler->Threads, threadPool, threadPoolSize, sizeof(Thread));
+	if (result) {
+		return result;
+	}
+
+	Process* kernelProcess = nullptr;
+	result = AllocateSizedBlock(&scheduler->Processes, (void**)&kernelProcess);
+	if (result) {
+		return result;
+	}
+
+	kernelProcess->ID = 0;
+	kernelProcess->PML4 = KernelPML4();
+	for (usz i = 0; i < MAX_THREADS_PER_PROCESS; i++) {
+		kernelProcess->Threads[i] = nullptr;
+	}
+
+	Thread* kernelMainThread = nullptr;
+	result = AllocateSizedBlock(&scheduler->Threads, (void**)&kernelMainThread);
+	if (result) {
+		return result;
+	}
+
+	kernelProcess->Threads[0] = kernelMainThread;
+	kernelMainThread->ID = 0;
+	kernelMainThread->Status = ThreadRunning;
+	kernelMainThread->Context.CR3 = kernelProcess->PML4;
+	scheduler->CurrentThread = kernelMainThread;
+	kernelMainThread->Stack = g_bootInfo.KernelStackTop;
+	kernelMainThread->ParentProcess = kernelProcess;
+
+	Process* newProcess = nullptr;
+	result = CreateProcess(scheduler, &newProcess, TestProcess1);
+	if (result) {
+		return result;
+	}
+
+	return result;
 }
 
 void Schedule(CPUContext* cpuContext)
 {
-	// This means only the kernel is running so we can just safely return
-	if (g_processCount == 1) {
+	// This means only the kernel is running so we can just safely return here
+	if (g_scheduler.Threads.AllocationCount == 1) {
 		return;
 	}
 
+	Thread* thread = g_scheduler.CurrentThread + 1;
+
 	while (true) {
-		g_currentThreadIndex = (g_currentThreadIndex + 1) % 10;
+		// TODO: This iteration method is only "temporary"
+		// and when I get around to optimising the sized block allocator I'll adjust this
+		if ((VirtualAddress)thread > g_scheduler.Threads.LastBlock) {
+			thread = (Thread*)g_scheduler.Threads.FirstBlock;
+		}
 
-		if (g_processes[g_currentThreadIndex].ID == USZ_MAX) {
+		if (!GetSizedBlockStatus(&g_scheduler.Threads, (VirtualAddress)thread)) {
+			thread++;
 			continue;
 		}
 
-		if (g_processes[g_currentThreadIndex].Threads[0].Status != ThreadReady) {
+		if (thread->Status != ThreadReady) {
+			thread++;
 			continue;
 		}
 
-		Thread* oldThread = g_currentThread;
+		Thread* oldThread = g_scheduler.CurrentThread;
 
-		g_currentThread = &g_processes[g_currentThreadIndex].Threads[0];
+		g_scheduler.CurrentThread = thread;
 
 		oldThread->Status = ThreadReady;
 		oldThread->Context = *cpuContext;
 
-		g_currentThread->Status = ThreadRunning;
-		*cpuContext = g_currentThread->Context;
+		g_scheduler.CurrentThread->Status = ThreadRunning;
+		*cpuContext = g_scheduler.CurrentThread->Context;
 
 		return;
 	}
