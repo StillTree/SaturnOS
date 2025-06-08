@@ -112,8 +112,8 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 	mainThread->ID = GetThreadID();
 
 	Page4KiB entryPointPage;
-	result = AllocateMMIORegion(&process->VirtualMemoryAllocator, Frame4KiBContaining(entryPointPhysicalAddress),
-		PAGE_4KIB_SIZE_BYTES, PageUserAccessible, &entryPointPage);
+	result = AllocateMMIORegion(&process->VirtualMemoryAllocator, Frame4KiBContaining(entryPointPhysicalAddress), PAGE_4KIB_SIZE_BYTES,
+		PageUserAccessible, &entryPointPage);
 	if (result) {
 		return result;
 	}
@@ -143,14 +143,14 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 
 void TestProcess1()
 {
-	__asm__ volatile("movq $0, %rax\n"
-					 "syscall");
+	// __asm__ volatile("movq $0, %rax\n"
+	// 				 "syscall");
 
-	__asm__ volatile("movq $1, %rax\n"
-					 "syscall");
+	// __asm__ volatile("movq $1, %rax\n"
+	// 				 "syscall");
 
-	__asm__ volatile("movq $0, %rax\n"
-					 "syscall");
+	// __asm__ volatile("movq $0, %rax\n"
+	// 				 "syscall");
 
 	while (true)
 		;

@@ -19,6 +19,18 @@ __attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame
 	SK_LOG_ERROR("}");
 }
 
+__attribute__((interrupt)) void InvalidOpcodeInterruptHandler(InterruptFrame* frame)
+{
+	SK_LOG_ERROR("EXCEPTION OCCURED: INVALID OPCODE, InterruptFrame");
+	SK_LOG_ERROR("{");
+	SK_LOG_ERROR("\tStackPointer = 0x%x", frame->RSP);
+	SK_LOG_ERROR("\tFlags = 0x%x", frame->RFLAGS);
+	SK_LOG_ERROR("\tCodeSegment = 0x%x", frame->CS);
+	SK_LOG_ERROR("\tSegmentSelector = 0x%x", frame->SS);
+	SK_LOG_ERROR("\tInstruction Pointer = 0x%x", frame->RIP);
+	SK_LOG_ERROR("}");
+}
+
 __attribute__((interrupt)) void GeneralProtectionFaultInterruptHandler(InterruptFrame* frame, u64 /* unused */)
 {
 	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: GENERAL PROTECTION FAULT, InterruptFrame");

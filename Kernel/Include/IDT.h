@@ -2,6 +2,19 @@
 
 #include "Core.h"
 
+typedef enum IDTEntryFlags : u8 {
+	/// Clears the interrupt flag before running the handler function.
+	IDTEntryInterruptGate = 14,
+	/// Does not clear the interrupt flag before running the handler function.
+	IDTEntryTrapGate = 15,
+	/// Minimum ring to trigger this interrupt, otherwise #GP fault.
+	IDTEntryDPL0 = 0 << 5,
+	/// Minimum ring to trigger this interrupt, otherwise #GP fault.
+	IDTEntryDPL3 = 3 << 5,
+	/// The entry is valid.
+	IDTEntryPresent = 1 << 7
+} IDTEntryFlags;
+
 typedef struct __attribute__((packed)) IDTEntry {
 	u16 AddressLow;
 	u16 KernelCS;

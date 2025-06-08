@@ -12,6 +12,8 @@ typedef struct __attribute__((packed)) InterruptFrame {
 
 __attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame);
 
+__attribute__((interrupt)) void InvalidOpcodeInterruptHandler(InterruptFrame* frame);
+
 __attribute__((interrupt)) void GeneralProtectionFaultInterruptHandler(InterruptFrame* frame, u64);
 
 __attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, u64);
