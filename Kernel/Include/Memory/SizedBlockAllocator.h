@@ -13,7 +13,7 @@ typedef struct SizedBlockAllocator {
 	usz AllocationCount;
 } SizedBlockAllocator;
 
-/// Initializes the sized-block allocator. Expects a contiguous, mappedd virtual memory region.
+/// Initializes the sized-block allocator. Expects a contiguous, mapped virtual memory region.
 Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, VirtualAddress poolStart, usz poolSizeBytes, usz blockSizeBytes);
 /// Allocates a single memory block.
 Result AllocateSizedBlock(SizedBlockAllocator* blockAllocator, void** block);

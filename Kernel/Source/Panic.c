@@ -1,6 +1,7 @@
 #include "Panic.h"
 
 #include "Format.h"
+#include "IDT.h"
 #include "InOut.h"
 #include "Memory.h"
 
@@ -108,13 +109,13 @@ void PanicClearScreen(u32* framebuffer)
 
 void Panic(const i8* message, const i8* fileName, usz lineNumber)
 {
+	DisableInterrupts();
+
 	usz cursorPositionX = 0;
 	usz cursorPositionY = 0;
-	// The bootloader will refuse to boot the system if there is no viable framebuffer to use, so a framebuffer is guaranteed to be
-	// present.
+	// The bootloader will refuse to boot the OS if there is no viable framebuffer to use, so it's guaranteed to be present.
 	u32* framebuffer = g_bootInfo.Framebuffer;
 
-	// MemoryFill(framebuffer, 0, g_bootInfo.FramebufferSize);
 	// We don't know if the COM1 serial output device has been initialized in any way, so we initialize it here ourselves
 	PanicReinitializeSerialConsole();
 

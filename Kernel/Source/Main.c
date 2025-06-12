@@ -33,7 +33,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 
 	SK_LOG_INFO("Initializing the SaturnOS Kernel\n");
 
-	SK_LOG_INFO("SaturnOS Copyright (C) 2024 StillTree (Alexander Debowski)");
+	SK_LOG_INFO("SaturnOS Copyright (C) 2025 StillTree (Alexander Debowski)");
 	SK_LOG_INFO("This program comes with ABSOLUTELY NO WARRANTY; for details type ``.");
 	SK_LOG_INFO("This is free software, and you are welcome to redistribute it");
 	SK_LOG_INFO("under certain conditions; type `` for details.\n");

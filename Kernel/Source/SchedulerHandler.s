@@ -1,7 +1,9 @@
 .global ScheduleInterruptHandler
+.global ScheduleExceptionHandler
 
 .extern EOISignal
-.extern Schedule
+.extern ScheduleInterrupt
+.extern ScheduleException
 
 ScheduleInterruptHandler:
 	// Already present on the stack thanks to the CPU :D
@@ -32,9 +34,45 @@ ScheduleInterruptHandler:
 	push %rax
 
 	mov %rsp, %rdi
-	call Schedule
+	call ScheduleInterrupt
 
 	call EOISignal
+
+	pop %rax
+	mov %rax, %cr3
+	pop %rax
+	pop %rbx
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+	pop %rbp
+	pop %r8
+	pop %r9
+	pop %r10
+	pop %r11
+	pop %r12
+	pop %r13
+	pop %r14
+	pop %r15
+	// pop %fs
+	// pop %gs
+
+	// Restored by the CPU :D
+	// pop %rip
+	// pop %cs
+	// pop %rflags
+	// pop %rsp
+	// pop %ss
+
+	iretq
+
+ScheduleExceptionHandler:
+	// I have no clue if I should do 
+	sub $168, %rsp // sizeof(CPUContext)
+
+	mov %rsp, %rdi
+	call ScheduleException
 
 	pop %rax
 	mov %rax, %cr3

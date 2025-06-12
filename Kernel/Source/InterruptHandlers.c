@@ -6,57 +6,73 @@
 #include "Logger.h"
 #include "Memory/PageTable.h"
 #include "Panic.h"
+#include "Scheduler.h"
 
-__attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame)
+static void PrintCommonExceptionInfo(InterruptFrame* frame, const i8* exceptionName)
 {
-	SK_LOG_ERROR("EXCEPTION OCCURED: BREAKPOINT, InterruptFrame");
-	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = 0x%x", frame->RSP);
-	SK_LOG_ERROR("\tFlags = 0x%x", frame->RFLAGS);
-	SK_LOG_ERROR("\tCodeSegment = 0x%x", frame->CS);
-	SK_LOG_ERROR("\tSegmentSelector = 0x%x", frame->SS);
-	SK_LOG_ERROR("\tInstruction Pointer = 0x%x", frame->RIP);
-	SK_LOG_ERROR("}");
+	SK_LOG_ERROR("EXCEPTION ENCOUNTERED: %s", exceptionName);
+	SK_LOG_ERROR("Ring      : %u", frame->CS & 0b11);
+	SK_LOG_ERROR("Process ID: %u", g_scheduler.CurrentThread->ParentProcess->ID);
+	SK_LOG_ERROR("Thread ID : %u", g_scheduler.CurrentThread->ID);
+	SK_LOG_ERROR("");
+
+	SK_LOG_ERROR("Interrupt frame:");
+	SK_LOG_ERROR("RSP   : 0x%x", frame->RSP);
+	SK_LOG_ERROR("RFLAGS: 0x%x", frame->RFLAGS);
+	SK_LOG_ERROR("CS    : 0x%x", frame->CS);
+	SK_LOG_ERROR("SS    : 0x%x", frame->SS);
+	SK_LOG_ERROR("RIP   : 0x%x", frame->RIP);
+	SK_LOG_ERROR("");
 }
+
+__attribute__((interrupt)) void BreakpointInterruptHandler(InterruptFrame* frame) { PrintCommonExceptionInfo(frame, "Breakpoint"); }
 
 __attribute__((interrupt)) void InvalidOpcodeInterruptHandler(InterruptFrame* frame)
 {
-	SK_LOG_ERROR("EXCEPTION OCCURED: INVALID OPCODE, InterruptFrame");
-	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = 0x%x", frame->RSP);
-	SK_LOG_ERROR("\tFlags = 0x%x", frame->RFLAGS);
-	SK_LOG_ERROR("\tCodeSegment = 0x%x", frame->CS);
-	SK_LOG_ERROR("\tSegmentSelector = 0x%x", frame->SS);
-	SK_LOG_ERROR("\tInstruction Pointer = 0x%x", frame->RIP);
-	SK_LOG_ERROR("}");
+	PrintCommonExceptionInfo(frame, "Invalid Opcode");
+
+	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {
+		// Exception occured in the kernel
+		SK_LOG_ERROR("Kernel is in an unrecoverable state. Hanging...");
+		Hang();
+	} else {
+		// Exception occured in a process
+		SK_LOG_ERROR("Terminating the faulty process.");
+		DeleteProcess(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
+		ScheduleExceptionHandler();
+	}
 }
 
 __attribute__((interrupt)) void GeneralProtectionFaultInterruptHandler(InterruptFrame* frame, u64 /* unused */)
 {
-	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: GENERAL PROTECTION FAULT, InterruptFrame");
-	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = 0x%x", frame->RSP);
-	SK_LOG_ERROR("\tFlags = 0x%x", frame->RFLAGS);
-	SK_LOG_ERROR("\tCodeSegment = 0x%x", frame->CS);
-	SK_LOG_ERROR("\tSegmentSelector = 0x%x", frame->SS);
-	SK_LOG_ERROR("\tInstruction Pointer = 0x%x", frame->RIP);
-	SK_LOG_ERROR("}");
+	PrintCommonExceptionInfo(frame, "General Protection Fault");
 
-	Hang();
+	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {
+		// Exception occured in the kernel
+		SK_LOG_ERROR("Kernel is in an unrecoverable state. Hanging...");
+		Hang();
+	} else {
+		// Exception occured in a process
+		SK_LOG_ERROR("Terminating the faulty process.");
+		DeleteProcess(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
+		ScheduleExceptionHandler();
+	}
 }
 
 __attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* frame, u64 /* unused */)
 {
-	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: DOUBLE FAULT, InterruptFrame");
-	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = 0x%x", frame->RSP);
-	SK_LOG_ERROR("\tFlags = 0x%x", frame->RFLAGS);
-	SK_LOG_ERROR("\tCodeSegment = 0x%x", frame->CS);
-	SK_LOG_ERROR("\tSegmentSelector = 0x%x", frame->SS);
-	SK_LOG_ERROR("\tInstruction Pointer = 0x%x", frame->RIP);
-	SK_LOG_ERROR("}");
+	PrintCommonExceptionInfo(frame, "Double Fault");
 
-	Hang();
+	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {
+		// Exception occured in the kernel
+		SK_LOG_ERROR("Kernel is in an unrecoverable state. Hanging...");
+		Hang();
+	} else {
+		// Exception occured in a process
+		SK_LOG_ERROR("Terminating the faulty process.");
+		DeleteProcess(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
+		ScheduleExceptionHandler();
+	}
 }
 
 typedef enum PageFaultCause : u16 {
@@ -72,15 +88,19 @@ typedef enum PageFaultCause : u16 {
 
 __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame, u64 errorCode)
 {
+	PrintCommonExceptionInfo(frame, "Page Fault");
+
 	u64 faultVirtualAddress = 0;
 	__asm__ volatile("mov %%cr2, %0" : "=r"(faultVirtualAddress));
 
 	u64 pml4Address = KernelPML4();
 
-	SK_LOG_ERROR("UNRECOVERABLE EXCEPTION OCCURED: PAGE FAULT");
-	SK_LOG_ERROR("Faulty virtual address = 0x%x", faultVirtualAddress);
-	SK_LOG_ERROR("PML4 address = 0x%x", pml4Address);
-	SK_LOG_ERROR("Error code = %u, caused by:", errorCode);
+	SK_LOG_ERROR("Memory info:");
+	SK_LOG_ERROR("Faulty virtual address: 0x%x", faultVirtualAddress);
+	SK_LOG_ERROR("PML4 address          : 0x%x", pml4Address);
+	SK_LOG_ERROR("");
+
+	SK_LOG_ERROR("Error code: %u", errorCode);
 
 	if (errorCode & PageFaultCausePresent) {
 		SK_LOG_ERROR("\tPresent");
@@ -116,16 +136,16 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 		SK_LOG_ERROR("\tSoftwareGuardExtensions");
 	}
 
-	SK_LOG_ERROR("InterruptFrame");
-	SK_LOG_ERROR("{");
-	SK_LOG_ERROR("\tStackPointer = 0x%x", frame->RSP);
-	SK_LOG_ERROR("\tFlags = 0x%x", frame->RFLAGS);
-	SK_LOG_ERROR("\tCodeSegment = 0x%x", frame->CS);
-	SK_LOG_ERROR("\tSegmentSelector = 0x%x", frame->SS);
-	SK_LOG_ERROR("\tInstruction Pointer = 0x%x", frame->RIP);
-	SK_LOG_ERROR("}");
-
-	Hang();
+	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {
+		// Exception occured in the kernel
+		SK_LOG_ERROR("Kernel is in an unrecoverable state. Hanging...");
+		Hang();
+	} else {
+		// Exception occured in a process
+		SK_LOG_ERROR("Terminating the faulty process.");
+		DeleteProcess(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
+		ScheduleExceptionHandler();
+	}
 }
 
 __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /* unused */)

@@ -122,7 +122,7 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 // 	UnusedVirtualRegion* region = allocator->List;
 // 	while (region) {
 // 		SK_LOG_DEBUG("Begin = 0x%x End = 0x%x", region->Begin, region->End);
-//
+// 
 // 		region = region->Next;
 // 	}
 // }
@@ -195,7 +195,15 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 	// TODO: Not assume that the framebuffer is perfectly 4096 bytes aligned
 	// Exclude the framebuffer
 	result = MarkVirtualMemoryUsed(&g_kernelMemoryAllocator, (VirtualAddress)g_bootInfo.Framebuffer,
-		(VirtualAddress)g_bootInfo.Framebuffer + g_bootInfo.FramebufferSize + 4096);
+		(VirtualAddress)g_bootInfo.Framebuffer + g_bootInfo.FramebufferSize);
+	if (result) {
+		return result;
+	}
+
+	// TODO: Not assume that the memory map's size is just 4096 bytes
+	// Exclude the physical memory mapping and the physical memory map right after it
+	result = MarkVirtualMemoryUsed(&g_kernelMemoryAllocator, g_bootInfo.PhysicalMemoryOffset,
+		g_bootInfo.PhysicalMemoryOffset + g_bootInfo.PhysicalMemoryMappingSize + 0x1000);
 	if (result) {
 		return result;
 	}

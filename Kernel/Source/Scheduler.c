@@ -1,5 +1,7 @@
 #include "Scheduler.h"
 
+#include "IDT.h"
+#include "Logger.h"
 #include "Memory.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
@@ -34,36 +36,63 @@ static usz GetThreadID()
 	return id++;
 }
 
-Result DeleteProcess(usz id)
+Result DeleteProcess(Scheduler* scheduler, Process* process)
 {
-	// This is the kernel itself, so let's not delete it perhaps...
-	// if (id == 0) {
-	// 	return ResultInvalidProcessID;
-	// }
+	DisableInterrupts();
 
-	// for (usz i = 1; i < 10; i++) {
-	// 	if (g_processes[i].ID != id)
-	// 		continue;
+	Result result = ResultOk;
 
-	// 	MemoryFill(g_processes + i, 0, sizeof(Process));
-	// 	g_processes[i].ID = USZ_MAX;
-	// 	g_processCount--;
-	// 	return ResultOk;
-	// }
+	for (usz i = 0; i < MAX_THREADS_PER_PROCESS; i++) {
+		if (!process->Threads[i]) {
+			continue;
+		}
 
-	return ResultInvalidProcessID;
-}
+		process->Threads[i]->Status = ThreadDead;
 
-Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entryPoint)())
-{
-	Process* process = nullptr;
-	Result result = AllocateSizedBlock(&scheduler->Processes, (void**)&process);
+		// Deallocate the process's stack
+		result = DeallocateBackedVirtualMemory(
+			&process->VirtualMemoryAllocator, process->Threads[i]->StackTop - THREAD_STACK_SIZE_BYTES, THREAD_STACK_SIZE_BYTES);
+		if (result) {
+			return result;
+		}
+
+		// Deallocate the entry point
+		result = DeallocateMMIORegion(&process->VirtualMemoryAllocator, process->Threads[i]->EntryPointPage, PAGE_4KIB_SIZE_BYTES);
+		if (result) {
+			return result;
+		}
+
+		result = DeallocateSizedBlock(&scheduler->Threads, process->Threads[i]);
+		if (result) {
+			return result;
+		}
+	}
+
+	// As long as all of the virtual memory allocator's regions have been properly freed, its backing memory can simply be deallocated.
+	result = DeallocateBackedVirtualMemory(&g_kernelMemoryAllocator, process->AllocatorBackingMemory, 102400);
 	if (result) {
 		return result;
 	}
 
-	Thread* mainThread = nullptr;
-	result = AllocateSizedBlock(&scheduler->Threads, (void**)&mainThread);
+	// Deallocate the process's PML4
+	DeallocateFrame(&g_frameAllocator, process->PML4);
+
+	result = DeallocateSizedBlock(&scheduler->Processes, process);
+	if (result) {
+		return result;
+	}
+
+	EnableInterrupts();
+
+	return result;
+}
+
+Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entryPoint)())
+{
+	DisableInterrupts();
+
+	Process* process = nullptr;
+	Result result = AllocateSizedBlock(&scheduler->Processes, (void**)&process);
 	if (result) {
 		return result;
 	}
@@ -76,18 +105,23 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 	PageTableEntry* processPML4 = PhysicalAddressAsPointer(pml4Frame);
 	InitEmptyPageTable(processPML4);
 
-	Page4KiB processAllocatorBackingMemory;
-	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, 102400, PageWriteable, &processAllocatorBackingMemory);
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, 102400, PageWriteable, &process->AllocatorBackingMemory);
 	if (result) {
 		return result;
 	}
 
-	result = InitVirtualMemoryAllocator(&process->VirtualMemoryAllocator, processAllocatorBackingMemory, 102400, pml4Frame);
+	result = InitVirtualMemoryAllocator(&process->VirtualMemoryAllocator, process->AllocatorBackingMemory, 102400, pml4Frame);
 	if (result) {
 		return result;
 	}
 
 	result = MarkVirtualMemoryUsed(&process->VirtualMemoryAllocator, 0x800000000000, U64_MAX - PAGE_4KIB_SIZE_BYTES + 1);
+	if (result) {
+		return result;
+	}
+
+	Thread* mainThread = nullptr;
+	result = AllocateSizedBlock(&scheduler->Threads, (void**)&mainThread);
 	if (result) {
 		return result;
 	}
@@ -108,8 +142,8 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 	if (result) {
 		return result;
 	}
-	mainThread->EntryPoint = entryPointPhysicalAddress;
 	mainThread->ID = GetThreadID();
+	mainThread->ParentProcess = process;
 
 	Page4KiB entryPointPage;
 	result = AllocateMMIORegion(&process->VirtualMemoryAllocator, Frame4KiBContaining(entryPointPhysicalAddress), PAGE_4KIB_SIZE_BYTES,
@@ -117,12 +151,14 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 	if (result) {
 		return result;
 	}
+	mainThread->EntryPointPage = entryPointPage;
 
 	Page4KiB stackTop;
 	result = AllocateProcessStack(process, &stackTop);
 	if (result) {
 		return result;
 	}
+	mainThread->StackTop = stackTop;
 
 	MemoryFill(&mainThread->Context, 0, sizeof(CPUContext));
 	mainThread->Context.CR3 = pml4Frame;
@@ -138,22 +174,9 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 
 	*createdProcess = process;
 
-	return ResultOk;
-}
+	EnableInterrupts();
 
-void TestProcess1()
-{
-	// __asm__ volatile("movq $0, %rax\n"
-	// 				 "syscall");
-
-	// __asm__ volatile("movq $1, %rax\n"
-	// 				 "syscall");
-
-	// __asm__ volatile("movq $0, %rax\n"
-	// 				 "syscall");
-
-	while (true)
-		;
+	return result;
 }
 
 Result InitScheduler(Scheduler* scheduler)
@@ -205,26 +228,24 @@ Result InitScheduler(Scheduler* scheduler)
 	kernelMainThread->Status = ThreadRunning;
 	kernelMainThread->Context.CR3 = kernelProcess->PML4;
 	scheduler->CurrentThread = kernelMainThread;
-	kernelMainThread->Stack = g_bootInfo.KernelStackTop;
+	kernelMainThread->StackTop = g_bootInfo.KernelStackTop;
 	kernelMainThread->ParentProcess = kernelProcess;
-
-	Process* newProcess = nullptr;
-	result = CreateProcess(scheduler, &newProcess, TestProcess1);
-	if (result) {
-		return result;
-	}
 
 	return result;
 }
 
-void Schedule(CPUContext* cpuContext)
+void ScheduleInterrupt(CPUContext* cpuContext)
 {
 	// This means only the kernel is running so we can just safely return here
-	if (g_scheduler.Threads.AllocationCount == 1) {
-		return;
-	}
+	// if (g_scheduler.Threads.AllocationCount == 1) {
+	// 	return;
+	// }
 
 	Thread* thread = g_scheduler.CurrentThread + 1;
+	// TODO: Temporary workaround for when only one process is being run
+	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {
+		g_scheduler.CurrentThread->Status = ThreadReady;
+	}
 
 	while (true) {
 		// TODO: This iteration method is only "temporary"
@@ -250,6 +271,40 @@ void Schedule(CPUContext* cpuContext)
 		oldThread->Status = ThreadReady;
 		oldThread->Context = *cpuContext;
 
+		g_scheduler.CurrentThread->Status = ThreadRunning;
+		*cpuContext = g_scheduler.CurrentThread->Context;
+
+		return;
+	}
+}
+
+void ScheduleException(CPUContext* cpuContext)
+{
+	// This means only the kernel is running so we can just safely return here
+	// if (g_scheduler.Threads.AllocationCount == 1) {
+	// 	return;
+	// }
+
+	Thread* thread = g_scheduler.CurrentThread + 1;
+
+	while (true) {
+		// TODO: This iteration method is only "temporary"
+		// and when I get around to optimising the sized block allocator I'll adjust this
+		if ((VirtualAddress)thread > g_scheduler.Threads.LastBlock) {
+			thread = (Thread*)g_scheduler.Threads.FirstBlock;
+		}
+
+		if (!GetSizedBlockStatus(&g_scheduler.Threads, (VirtualAddress)thread)) {
+			thread++;
+			continue;
+		}
+
+		if (thread->Status != ThreadReady) {
+			thread++;
+			continue;
+		}
+
+		g_scheduler.CurrentThread = thread;
 		g_scheduler.CurrentThread->Status = ThreadRunning;
 		*cpuContext = g_scheduler.CurrentThread->Context;
 

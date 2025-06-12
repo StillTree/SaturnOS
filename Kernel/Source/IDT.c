@@ -25,7 +25,7 @@ void InitIDT()
 	SetIDTEntry(14, (u64)PageFaultInterruptHandler, IDTEntryInterruptGate | IDTEntryDPL0, 2);
 
 	SetIDTEntry(33, (u64)KeyboardInterruptHandler, IDTEntryTrapGate | IDTEntryDPL0, 0);
-	SetIDTEntry(34, (u64)ScheduleInterruptHandler, IDTEntryTrapGate | IDTEntryDPL0, 7);
+	SetIDTEntry(34, (u64)ScheduleInterruptHandler, IDTEntryInterruptGate | IDTEntryDPL0, 7);
 
 	IDTRegister idtRegister = {};
 	idtRegister.Size = 0xfff;

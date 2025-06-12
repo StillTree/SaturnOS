@@ -33,7 +33,7 @@ Result VirtualAddressToPhysical(VirtualAddress address, const PageTableEntry* p4
 		return ResultSerialOutputUnavailable;
 	}
 
-	*physicalAddress = p1Table[p1Index] & ~(0xfff);
+	*physicalAddress = p1Table[p1Index] & ~(0xfff | PageNoExecute);
 	*physicalAddress |= address & PAGE_OFFSET_MASK;
 
 	return ResultOk;

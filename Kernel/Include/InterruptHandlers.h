@@ -23,3 +23,4 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame*);
 
 void ScheduleInterruptHandler();
+void ScheduleExceptionHandler();

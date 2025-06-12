@@ -163,25 +163,28 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	bootInfo->physicalMemoryMappingSize = 1073741824; // 1 GiB
-	bootInfo->physicalMemoryOffset = 0xA0000000000; // 10 TiB in hex
+	// Round the next available virtual address to the nearest 2 MiB
+	bootInfo->physicalMemoryOffset = (framebufferVirtualAddress + 0x1FFFFF) & ~0x1FFFFF;
 	// Mapping the whole (512 huge pages for now) physical memory at an offset using 2 MiB huge pages
-	const EFI_VIRTUAL_ADDRESS mappingOffset = bootInfo->physicalMemoryOffset;
+	EFI_VIRTUAL_ADDRESS mappingOffset = bootInfo->physicalMemoryOffset;
 	for (UINT64 i = 0; i < 512; i++) {
 		status = MapMemoryPage2MiB(
-			mappingOffset + 0x200000 * i, 0x200000 * i, kernelP4Table, &frameAllocator, ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_HUGE_PAGE);
+			mappingOffset, 0x200000 * i, kernelP4Table, &frameAllocator, ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_HUGE_PAGE);
 		if (EFI_ERROR(status)) {
 			goto halt;
 		}
+
+		mappingOffset += 0x200000;
 	}
 
 	// After this function call, no other frame allocations should be performed
 	UINTN kernelMemoryMapEntries = 0;
 	status = CreateMemoryMap(&frameAllocator, kernelP4Table, &kernelMemoryMapEntries, memoryMap, memoryMapSize, descriptorSize,
-		framebufferVirtualAddress); // We want the memory map to be allocated in virtual memory right after the framebuffer
+		mappingOffset); // The memory map should be allocated right after the physical memory mapping
 	if (EFI_ERROR(status)) {
 		goto halt;
 	}
-	bootInfo->memoryMapAddress = framebufferVirtualAddress;
+	bootInfo->memoryMapAddress = mappingOffset;
 	bootInfo->memoryMapEntries = kernelMemoryMapEntries;
 
 	SN_LOG_INFO(L"Performing context switch");

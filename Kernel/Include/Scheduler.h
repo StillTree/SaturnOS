@@ -8,6 +8,7 @@
 
 constexpr usz MAX_THREADS_PER_PROCESS = 64;
 constexpr usz MAX_PROCESSES = 64;
+// 100 KiB
 constexpr usz THREAD_STACK_SIZE_BYTES = 102400;
 
 // I have no clue if this is enough, but for now it should suffice I guess...
@@ -46,8 +47,8 @@ typedef struct Thread {
 	ThreadStatus Status;
 	CPUContext Context;
 	/// The first frame of this thread's stack. A process's stack for now is always 20 pages long.
-	Frame4KiB Stack;
-	PhysicalAddress EntryPoint;
+	Frame4KiB StackTop;
+	PhysicalAddress EntryPointPage;
 	struct Process* ParentProcess;
 } Thread;
 
@@ -58,6 +59,7 @@ typedef struct Process {
 	Thread* Threads[64];
 	usz ThreadCount;
 	VirtualMemoryAllocator VirtualMemoryAllocator;
+	Page4KiB AllocatorBackingMemory;
 } Process;
 
 typedef struct Scheduler {
@@ -67,6 +69,11 @@ typedef struct Scheduler {
 } Scheduler;
 
 Result InitScheduler(Scheduler* scheduler);
-void Schedule(CPUContext* cpuContext);
+
+Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entryPoint)());
+Result DeleteProcess(Scheduler* scheduler, Process* process);
+
+void ScheduleInterrupt(CPUContext* cpuContext);
+void ScheduleException(CPUContext* cpuContext);
 
 extern Scheduler g_scheduler;
