@@ -34,8 +34,6 @@ Result GetACPITableAddress(const i8* signature, PhysicalAddress* address)
 
 usz MCFGEntries(const MCFG* mcfg) { return (mcfg->Header.Length - sizeof(SDTHeader) - 8) / sizeof(MCFGEntry); }
 
-MCFGEntry* MCFGGetPCISegmentGroup(MCFG* mcfg, usz index) { return &mcfg->Entries[index]; }
-
 u8 MADTGetAPICEntry(const MADT* madt, MADTBaseEntry** pointer)
 {
 	u8* offset = (u8*)*pointer;

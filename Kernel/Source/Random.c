@@ -7,9 +7,9 @@ u64 Random()
 	usz rand = 1;
 
 	// if (!g_cpuInformation.SupportsRDRAND) {
-		return RandomRDRAND();
+	//	return RandomRDRAND();
 	// }
 
 	// TODO: Actually implement a pseudo-random algorithm
-	// return rand++;
+	return rand++;
 }

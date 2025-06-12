@@ -44,8 +44,6 @@ typedef struct __attribute__((packed)) MCFG {
 
 usz MCFGEntries(const MCFG* mcfg);
 
-MCFGEntry* MCFGGetPCISegmentGroup(MCFG* mcfg, usz index);
-
 typedef enum MADTEntryType : u8 {
 	MADTEntryLocalAPIC = 0,
 	MADTEntryIOAPIC = 1,

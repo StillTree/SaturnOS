@@ -248,7 +248,7 @@ Result ScanPCIDevices()
 	// In each PCI segment group, I map the entire bus's extended configuration spcae
 	// and if there are no devices there, I unmap it to not waste memory.
 	for (usz i = 0; i < MCFGEntries(mcfg); i++) {
-		MCFGEntry* segmentGroup = MCFGGetPCISegmentGroup(mcfg, i);
+		MCFGEntry* segmentGroup = &mcfg->Entries[i];
 
 		for (usz bus = segmentGroup->StartBusNumber; bus <= segmentGroup->EndBusNumber; bus++) {
 			Page4KiB mappedBus;

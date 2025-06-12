@@ -13,10 +13,11 @@
 #include "Storage/Drivers/AHCI.h"
 #include "Storage/Filesystems/Ext2.h"
 #include "Storage/GPT.h"
+#include "Storage/VirtualFileSystem.h"
 #include "Syscalls.h"
 
 #ifndef __x86_64__
-#error SaturnKernel requires the x86 64-bit architecture to run properly!
+#error SaturnKernel only supports the x86 64-bit architecture!
 #endif
 
 /// Initially empty.
@@ -72,6 +73,10 @@ void KernelMain(KernelBootInfo* bootInfo)
 
 	SK_LOG_INFO("Initializing the x2APIC");
 	SK_PANIC_ON_ERROR(InitAPIC(), "An unexpected error occured while trying to initialize the APIC");
+
+	SK_LOG_INFO("Initializing the virtual file system layer");
+	SK_PANIC_ON_ERROR(InitVirtualFileSystem(&g_virtualFileSystem),
+		"An unexpected error occured while trying to initialize the virtual file system layer");
 
 	SK_LOG_INFO("Scanning for available PCI devices");
 	SK_PANIC_ON_ERROR(ScanPCIDevices(), "An unexpected error occured while trying to scan for available PCI devices");

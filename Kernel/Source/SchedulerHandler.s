@@ -68,7 +68,6 @@ ScheduleInterruptHandler:
 	iretq
 
 ScheduleExceptionHandler:
-	// I have no clue if I should do 
 	sub $168, %rsp // sizeof(CPUContext)
 
 	mov %rsp, %rdi

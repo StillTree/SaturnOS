@@ -17,10 +17,15 @@ typedef double f64;
 
 typedef u64 usz;
 
+constexpr i8 I8_MAX = 0x7f;
+constexpr i16 I16_MAX = 0x7fff;
+constexpr i32 I32_MAX = 0x7fffffff;
+constexpr i64 I64_MAX = 0x7fffffffffffffff;
+
 constexpr u8 U8_MAX = 0xff;
 constexpr u16 U16_MAX = 0xffff;
 constexpr u32 U32_MAX = 0xffffffff;
-constexpr usz U64_MAX = 0xffffffffffffffff;
+constexpr u64 U64_MAX = 0xffffffffffffffff;
 
 constexpr usz USZ_MAX = U64_MAX;
 
