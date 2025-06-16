@@ -53,4 +53,3 @@ The drivers will of course have their own set of APIs and functions for use, pro
 ## Why?
 
 Well, why not? I am trying to learn low-level programming and always wanted to create myself an OS, so this is perfect :D.
-

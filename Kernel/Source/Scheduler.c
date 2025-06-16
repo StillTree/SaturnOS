@@ -1,7 +1,6 @@
 #include "Scheduler.h"
 
 #include "IDT.h"
-#include "Logger.h"
 #include "Memory.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"

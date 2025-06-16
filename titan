@@ -5,19 +5,49 @@ import argparse
 import subprocess
 import os
 import shutil
+import struct
 
-def Clean():
-    print("Removing mapped disks...")
-    shutil.rmtree("esp", ignore_errors=True)
+def CreateRamdisk(args):
+    if not args.file or len(args.file) <= 0:
+        raise ValueError("No files specified")
 
-    if os.path.exists("sata.img"):
-        os.remove("sata.img")
+    SUPERBLOCK_SIZE = 0x10
+    FILE_ENTRY_SIZE = 0x30
+    # "STFS" in little-endian, so actually "SFTS"
+    SIGNATURE = 0x53465453
 
-    print("Cleaning the bootloader...")
-    subprocess.run(["make", "clean", "-C", "Bootloader"], check=True)
+    file_entries = []
+    file_data = b''
+    current_offset = SUPERBLOCK_SIZE + (FILE_ENTRY_SIZE * len(args.file))
 
-    print("Cleaning the kernel...")
-    subprocess.run(["make", "clean", "-C", "Kernel"], check=True)
+    for path in args.file:
+        filename = os.path.basename(path).encode('utf-8')
+        if len(filename) > 32:
+            raise ValueError(f"Filename too long: {filename}")
+
+        with open(path, 'rb') as f:
+            contents = f.read()
+
+        padded_name = filename.ljust(32, b'\x00')
+        size = len(contents)
+
+        file_entries.append((padded_name, size, current_offset))
+        file_data += contents
+        current_offset += size
+
+    with open("esp/Supernova/ramdisk", 'wb') as out:
+        out.write(struct.pack('<I', SIGNATURE))
+        out.write(struct.pack('<I', 0))
+        out.write(struct.pack('<Q', len(args.file)))
+
+        for name, size, offset in file_entries:
+            out.write(name)
+            out.write(struct.pack('<Q', size))
+            out.write(struct.pack('<Q', offset))
+
+        out.write(file_data)
+
+    print(f"Created ramdisk: esp/Supernova/ramdisk, with file(s): {", ".join(args.file)}")
 
 def Compile(args):
     if not args.only_kernel:
@@ -78,8 +108,10 @@ if __name__ == "__main__":
     build = subparsers.add_parser("build", aliases=["b"], help="compiles the entire operating system")
     
     run = subparsers.add_parser("run", aliases=["r"], help="runs the operating system using QEMU")
-    
-    clean = subparsers.add_parser("clean", aliases=["c"], help="removes any generated file or directory")
+
+    ramdisk = subparsers.add_parser("ramdisk-create", aliases=["rc"], help="creates a ramdisk file with the specified files")
+
+    ramdisk.add_argument("-f", "--file", action="append", help="adds a file to the ramdisk")
 
     build.add_argument("-r", "--release", action="store_true", help="enables optimizations and doesn't include debug symbols")
     run.add_argument("-r", "--release", action="store_true", help="enables optimizations and doesn't include debug symbols")
@@ -116,5 +148,5 @@ if __name__ == "__main__":
             Compile(args)
             PrepareDiskFolders()
             Run(args)
-        case "clean":
-            Clean()
+        case "ramdisk-create":
+            CreateRamdisk(args)

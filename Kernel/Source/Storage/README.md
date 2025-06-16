@@ -25,7 +25,7 @@ Memory layout starting from the beginning of the ramdisk:
 
 | Offset (B) | Size (B) | Field Name | Description                          |
 |------------|----------|------------|--------------------------------------|
-| `0x00`     | 4        | Signature  | Always "STFS" - `0x53544653`         |
+| `0x00`     | 4        | Signature  | Always "STFS" - `0x53465453`         |
 | `0x04`     | 4        | Zeroed     | Always zeroes                        |
 | `0x08`     | 8        | File count | Total number of files in the ramdisk |
 
@@ -36,6 +36,6 @@ Layout of each entry:
 
 | Offset (B) | Size (B) | Field Name     | Description                                               |
 |------------|----------|----------------|-----------------------------------------------------------|
-| `0x00`     | 32       | File name      | The name of the file, null-terminated.                    |
+| `0x00`     | 32       | File name      | The name of the file, null-padded.                        |
 | `0x20`     | 8        | File size      | The size of the file's contents.                          |
 | `0x28`     | 8        | Content offset | Offset of the file's contents from the ramdisk beginning. |
