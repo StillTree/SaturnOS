@@ -1,196 +1,120 @@
-#!/bin/bash
+#!/usr/bin/env python3
 
-QEMU_BINARY="qemu-system-x86_64"
-RELEASE=false
-BUILD_KERNEL=true
-BUILD_BOOTLOADER=true
-ENABLE_KVM=""
-REMOTE_GDB=""
-ACTION=""
-OVMF_CODE_LOCATION="/opt/OVMF/OVMF_CODE.fd"
-OVMF_VARS_LOCATION="/opt/OVMF/OVMF_VARS.fd"
-MODE_BOOTLOADER="-O0 -g -DSN_DEBUG"
-MODE_KERNEL="-O0 -g -DSK_DEBUG"
+import sys
+import argparse
+import subprocess
+import os
+import shutil
 
-function PrintUsage()
-{
-	echo "SaturnOS's build script."
-	echo
-	echo "Usage: $0 [command] [options]"
-	echo
-	echo "Commands:"
-	echo "	build, b    Compiles the entire operating system"
-	echo "	run, r      Runs the operating system using QEMU"
-	echo "	clean, c    Removes the target directories and disk folders"
-	echo
-	echo "Options:"
-	echo "	-r, --release               Enables optimizations and doesn't include debug symbols"
-	echo "	--only-kernel               Invokes the Makefile only in the kernel's folder"
-	echo "	--only-bootloader           Invokes the Makefile only in the bootloader's folder"
-	echo "	--with-qemu <binary>        Uses the given binary instead of the default qemu-system-x86_64"
-	echo "	--with-ovmf-code <path>     Uses the given OVMF code binary instead of the default /opt/OVMF/OVMF_CODE.fd"
-	echo "	--with-ovmf-vars <path>     Uses the given OVMF vars binary instead of the default /opt/OVMF/OVMF_VARS.fd"
-	echo "	--enable-kvm                Enables KVM in QEMU"
-	echo "	--remote-gdb                Enables remote QEMU GDB debugging"
-	echo "	-h, --help                  Prints help information"
-}
+def Clean():
+    print("Removing mapped disks...")
+    shutil.rmtree("esp", ignore_errors=True)
 
-if [[ $# -le 0 ]]; then
-	PrintUsage
-	exit 0
-fi
+    if os.path.exists("sata.img"):
+        os.remove("sata.img")
 
-while [[ $# -gt 0 ]]; do
-	case $1 in
-		build|b)
-			ACTION="build"
-			shift
-			;;
-		run|r)
-			ACTION="run"
-			shift
-			;;
-		clean|c)
-			ACTION="clean"
-			shift
-			;;
-		-r|--release)
-			MODE_BOOTLOADER="-O2 -DSN_RELEASE"
-			MODE_KERNEL="-O2 -DSK_RELEASE"
-			shift
-			;;
-		--only-kernel)
-			BUILD_BOOTLOADER=false
-			shift
-			;;
-		--only-bootloader)
-			BUILD_KERNEL=false
-			shift
-			;;
-		--with-qemu)
-			QEMU_BINARY=$2
-			shift 2
-			;;
-		--enable-kvm)
-			ENABLE_KVM="-enable-kvm"
-			shift
-			;;
-		--remote-gdb)
-			REMOTE_GDB="-s -S"
-			shift
-			;;
-		--with-ovmf-code)
-			OVMF_CODE_LOCATION=$2
-			shift 2
-			;;
-		--with-ovmf-vars)
-			OVMF_VARS_LOCATION=$2
-			shift 2
-			;;
-		-h|--help)
-			PrintUsage
-			exit
-			;;
-		*)
-			echo "Unknown option: $1"
-			PrintUsage
-			exit 1
-			;;
-	esac
-done
+    print("Cleaning the bootloader...")
+    subprocess.run(["make", "clean", "-C", "Bootloader"], check=True)
 
-if [[ -z "$ACTION" ]]; then
-	echo "Error: missing command"
-	exit 1
-fi
+    print("Cleaning the kernel...")
+    subprocess.run(["make", "clean", "-C", "Kernel"], check=True)
 
-if [[ -n "$ENABLE_KVM" ]]; then
-	ARCH=$(uname -m)
-	if [[ "$OSTYPE" != "linux-gnu"* ]] && [[ "$ARCH" != "x86_64" ]]; then
-		echo "Error: KVM unsupported on current OS"
-		exit 1
-	fi
-fi
+def Compile(args):
+    if not args.only_kernel:
+        print("Compiling the bootloader...")
+        subprocess.run(["make", "-C", "Bootloader", f"MODE={"-O2 -DSN_RELEASE" if args.release else "-O0 -g -DSN_DEBUG"}"], check=True)
 
-function PrepareDiskFolders()
-{
-	echo "Preparing mapped disks..."
+    if not args.only_bootloader:
+        print("Compiling the kernel...")
+        subprocess.run(["make", "-C", "Kernel", f"MODE={"-O2 -DSK_RELEASE" if args.release else "-O0 -g -DSK_DEBUG"}"], check=True)
 
-	mkdir -p esp/efi/boot/
-	mkdir -p esp/Supernova/
-	if [ ! -f "sata.img" ]; then
-		dd if=/dev/zero of=sata.img bs=1M count=1024
-	fi
+def PrepareDiskFolders():
+    print("Preparing mappe disks...")
 
-	cp Bootloader/Output/bootx64.efi esp/efi/boot/
-	cp Kernel/Output/Kernel.elf esp/Supernova/
-}
+    os.makedirs("esp/efi/boot", exist_ok=True)
+    os.makedirs("esp/Supernova", exist_ok=True)
 
-function Compile()
-{
-	if [[ "$BUILD_BOOTLOADER" == "true" ]]; then
-		echo "Compiling the bootloader..."
-		make -C Bootloader MODE="$MODE_BOOTLOADER"
-		if [ $? -ne 0 ]; then
-			exit 1
-		fi
-	fi
+    if not os.path.exists("sata.img"):
+        subprocess.run(["dd", "if=/dev/zero", "of=sata.img", "bs=1M", "count=1024"], check=True)
 
-	if [[ "$BUILD_KERNEL" == "true" ]]; then
-		echo "Compiling the kernel..."
-		make -C Kernel MODE="$MODE_KERNEL"
-		if [ $? -ne 0 ]; then
-			exit 1
-		fi
-	fi
-}
+    shutil.copy("Bootloader/Output/bootx64.efi", "esp/efi/boot/")
+    shutil.copy("Kernel/Output/Kernel.elf", "esp/Supernova/")
 
-function Run()
-{
-	echo "Starting QEMU..."
-	$QEMU_BINARY \
-		$ENABLE_KVM \
-		$REMOTE_GDB \
-		-machine q35 \
-		-serial stdio \
-		-drive if=pflash,format=raw,readonly=on,file=$OVMF_CODE_LOCATION \
-		-drive if=pflash,format=raw,readonly=on,file=$OVMF_VARS_LOCATION \
-		-drive format=raw,file=fat:rw:esp \
-		-drive format=raw,if=none,id=sata,file=sata.img \
-		-device ahci,id=ahci \
-		-device ide-hd,drive=sata,bus=ahci.0
-}
+def Run(args):
+    command = [
+        args.with_qemu,
+        "-drive",
+        f"if=pflash,format=raw,readonly=on,file={args.with_ovmf_code}",
+        "-drive",
+        f"if=pflash,format=raw,readonly=on,file={args.with_ovmf_vars}",
+        "-machine",
+        "q35",
+        "-serial",
+        "stdio",
+        "-drive",
+        "format=raw,file=fat:rw:esp",
+        "-drive",
+        "format=raw,if=none,id=sata,file=sata.img",
+        "-device",
+        "ahci,id=ahci",
+        "-device",
+        "ide-hd,drive=sata,bus=ahci.0"
+    ]
 
-function Clean()
-{
-	echo "Removing mapped disks..."
-	rm -rf esp
-	rm sata.img
+    if args.remote_gdb:
+        command += ["-s", "-S"]
 
-	echo "Cleaning the bootloader..."
-	make clean -C Bootloader
-	if [ $? -ne 0 ]; then
-		exit 1
-	fi
+    if args.enable_kvm:
+        command += ["-enable-kvm"]
 
-	echo "Cleaning the kernel..."
-	make clean -C Kernel
-	if [ $? -ne 0 ]; then
-		exit 1
-	fi
-}
+    print("Starting QEMU...")
+    subprocess.run(command)
 
-case $ACTION in
-	build)
-		Compile
-		PrepareDiskFolders
-		;;
-	run)
-		Compile
-		PrepareDiskFolders
-		Run
-		;;
-	clean)
-		Clean
-		;;
-esac
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog=sys.argv[0], description="SaturnOS's utility build script.")
+
+    subparsers = parser.add_subparsers(dest="command", title="Commands")
+
+    build = subparsers.add_parser("build", aliases=["b"], help="compiles the entire operating system")
+    
+    run = subparsers.add_parser("run", aliases=["r"], help="runs the operating system using QEMU")
+    
+    clean = subparsers.add_parser("clean", aliases=["c"], help="removes any generated file or directory")
+
+    build.add_argument("-r", "--release", action="store_true", help="enables optimizations and doesn't include debug symbols")
+    run.add_argument("-r", "--release", action="store_true", help="enables optimizations and doesn't include debug symbols")
+
+    build.add_argument("--only-kernel", action="store_true", help="invokes the Makefile only in the kernel's folder")
+    run.add_argument("--only-kernel", action="store_true", help="invokes the Makefile only in the kernel's folder")
+
+    build.add_argument("--only-bootloader", action="store_true", help="invokes the Makefile only in the bootloader's folder")
+    run.add_argument("--only-bootloader", action="store_true", help="invokes the Makefile only in the bootloader's folder")
+    
+    run.add_argument("--with-qemu", default="qemu-system-x86_64", metavar="<binary>",
+                     help="uses the given binary instead of the default qemu-system-x86_64")
+
+    run.add_argument("--with-ovmf-code", metavar="<path>", default="/opt/OVMF/OVMF_CODE.fd",
+                               help="uses the given OVMF code binary instead of the default /opt/OVMF/OVMF_CODE.fd")
+
+    run.add_argument("--with-ovmf-vars", metavar="<path>", default="/opt/OVMF/OVMF_VARS.fd",
+                               help="uses the given OVMF vars binary instead of the default /opt/OVMF/OVMF_VARS.fd")
+
+    run.add_argument("--enable-kvm", action="store_true", help="enables KVM in QEMU")
+    run.add_argument("--remote-gdb", action="store_true", help="enables remote QEMU GDB debugging")
+
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    match args.command:
+        case "build":
+            Compile(args)
+            PrepareDiskFolders()
+        case "run":
+            Compile(args)
+            PrepareDiskFolders()
+            Run(args)
+        case "clean":
+            Clean()
