@@ -7,6 +7,8 @@ import os
 import shutil
 import struct
 
+SCRIPT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+
 def CreateRamdisk(args):
     if not args.file or len(args.file) <= 0:
         raise ValueError("No files specified")
@@ -19,6 +21,7 @@ def CreateRamdisk(args):
     file_entries = []
     file_data = b''
     current_offset = SUPERBLOCK_SIZE + (FILE_ENTRY_SIZE * len(args.file))
+    ramdisk_path = os.path.join(SCRIPT_DIRECTORY, "esp/Supernova/Ramdisk")
 
     for path in args.file:
         filename = os.path.basename(path).encode('utf-8')
@@ -35,7 +38,7 @@ def CreateRamdisk(args):
         file_data += contents
         current_offset += size
 
-    with open("esp/Supernova/ramdisk", 'wb') as out:
+    with open(ramdisk_path, 'wb') as out:
         out.write(struct.pack('<I', SIGNATURE))
         out.write(struct.pack('<I', 0))
         out.write(struct.pack('<Q', len(args.file)))
@@ -47,30 +50,44 @@ def CreateRamdisk(args):
 
         out.write(file_data)
 
-    print(f"Created ramdisk: esp/Supernova/ramdisk, with file(s): {", ".join(args.file)}")
+    print(f"Created ramdisk: {ramdisk_path}, with file(s): {", ".join(args.file)}")
 
 def Compile(args):
+    kernel_path = os.path.join(SCRIPT_DIRECTORY, "Kernel/")
+    bootloader_path = os.path.join(SCRIPT_DIRECTORY, "Bootloader/")
+
     if not args.only_kernel:
         print("Compiling the bootloader...")
-        subprocess.run(["make", "-C", "Bootloader", f"MODE={"-O2 -DSN_RELEASE" if args.release else "-O0 -g -DSN_DEBUG"}"], check=True)
+        subprocess.run(["make", "-C", bootloader_path, f"MODE={"-O2 -DSN_RELEASE" if args.release else "-O0 -g -DSN_DEBUG"}"], check=True)
 
     if not args.only_bootloader:
         print("Compiling the kernel...")
-        subprocess.run(["make", "-C", "Kernel", f"MODE={"-O2 -DSK_RELEASE" if args.release else "-O0 -g -DSK_DEBUG"}"], check=True)
+        subprocess.run(["make", "-C", kernel_path, f"MODE={"-O2 -DSK_RELEASE" if args.release else "-O0 -g -DSK_DEBUG"}"], check=True)
 
 def PrepareDiskFolders():
-    print("Preparing mappe disks...")
+    print("Preparing mapped disks...")
 
-    os.makedirs("esp/efi/boot", exist_ok=True)
-    os.makedirs("esp/Supernova", exist_ok=True)
+    kernel_path = os.path.join(SCRIPT_DIRECTORY, "Kernel/Output/Kernel.elf")
+    bootloader_path = os.path.join(SCRIPT_DIRECTORY, "Bootloader/Output/bootx64.efi")
 
-    if not os.path.exists("sata.img"):
-        subprocess.run(["dd", "if=/dev/zero", "of=sata.img", "bs=1M", "count=1024"], check=True)
+    esp_efi_boot_path = os.path.join(SCRIPT_DIRECTORY, "esp/efi/boot/")
+    esp_supernova_path= os.path.join(SCRIPT_DIRECTORY, "esp/Supernova/")
 
-    shutil.copy("Bootloader/Output/bootx64.efi", "esp/efi/boot/")
-    shutil.copy("Kernel/Output/Kernel.elf", "esp/Supernova/")
+    sata_img_path = os.path.join(SCRIPT_DIRECTORY, "Sata.img")
+
+    os.makedirs(esp_efi_boot_path, exist_ok=True)
+    os.makedirs(esp_supernova_path, exist_ok=True)
+
+    if not os.path.exists(sata_img_path):
+        subprocess.run(["dd", "if=/dev/zero", f"of={sata_img_path}", "bs=1M", "count=1024"], check=True)
+
+    shutil.copy(bootloader_path, esp_efi_boot_path)
+    shutil.copy(kernel_path, esp_supernova_path)
 
 def Run(args):
+    sata_img_path = os.path.join(SCRIPT_DIRECTORY, "Sata.img")
+    esp_path = os.path.join(SCRIPT_DIRECTORY, "esp/")
+
     command = [
         args.with_qemu,
         "-drive",
@@ -82,9 +99,9 @@ def Run(args):
         "-serial",
         "stdio",
         "-drive",
-        "format=raw,file=fat:rw:esp",
+        f"format=raw,file=fat:rw:{esp_path}",
         "-drive",
-        "format=raw,if=none,id=sata,file=sata.img",
+        f"format=raw,if=none,id=sata,file={sata_img_path}",
         "-device",
         "ahci,id=ahci",
         "-device",

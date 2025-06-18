@@ -19,6 +19,8 @@ typedef struct KernelBootInfo {
 	UINTN kernelAddress;
 	UINTN kernelSize;
 	EFI_VIRTUAL_ADDRESS contextSwitchFunctionPage;
+	EFI_VIRTUAL_ADDRESS ramdiskAddress;
+	UINTN ramdiskSizeBytes;
 } KernelBootInfo;
 
 /// Loads the kernel ELF64 executable into memory and maps it to the provided P4 table. After this function call the kernel file's memory
@@ -27,4 +29,4 @@ typedef struct KernelBootInfo {
 ///
 /// Note: The whole kernel file must already be in memory before calling this function.
 EFI_STATUS LoadKernel(UINT8* loadedFile, FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDRESS p4TableAddress,
-	EFI_VIRTUAL_ADDRESS* entryPoint, EFI_VIRTUAL_ADDRESS* nextUsableMemoryFrame);
+	EFI_VIRTUAL_ADDRESS* entryPoint, EFI_VIRTUAL_ADDRESS* nextUsableVirtualPage);

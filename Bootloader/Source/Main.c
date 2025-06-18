@@ -5,6 +5,7 @@
 #include "Logger.h"
 #include "Memory.h"
 #include "MemoryMap.h"
+#include "Ramdisk.h"
 #include "Uefi.h"
 
 EFI_GUID gEfiGraphicsOutputProtocolGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
@@ -33,7 +34,14 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	UINT8* kernelFile = NULL;
-	status = ReadFile(systemTable, rootVolume, L"Supernova\\Kernel.elf", (VOID**)&kernelFile);
+	status = ReadFile(systemTable, rootVolume, L"Supernova\\Kernel.elf", (VOID**)&kernelFile, NULL);
+	if (EFI_ERROR(status)) {
+		goto halt;
+	}
+
+	UINT8* ramdiskFile = NULL;
+	UINTN ramdiskFileSizeBytes = 0;
+	status = ReadFile(systemTable, rootVolume, L"Supernova\\Ramdisk", (VOID**)&ramdiskFile, &ramdiskFileSizeBytes);
 	if (EFI_ERROR(status)) {
 		goto halt;
 	}
@@ -78,6 +86,12 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	EFI_VIRTUAL_ADDRESS nextUsableVirtualPage;
 	EFI_VIRTUAL_ADDRESS kernelEntryPoint;
 	status = LoadKernel(kernelFile, &frameAllocator, kernelP4Table, &kernelEntryPoint, &nextUsableVirtualPage);
+	if (EFI_ERROR(status)) {
+		goto halt;
+	}
+
+	EFI_VIRTUAL_ADDRESS ramdiskAddress = nextUsableVirtualPage;
+	status = LoadRamdisk(ramdiskFile, ramdiskFileSizeBytes, &frameAllocator, kernelP4Table, &nextUsableVirtualPage);
 	if (EFI_ERROR(status)) {
 		goto halt;
 	}
@@ -133,6 +147,8 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	KernelBootInfo* bootInfo = (KernelBootInfo*)bootInfoPhysicalAddress;
+	bootInfo->ramdiskAddress = ramdiskAddress;
+	bootInfo->ramdiskSizeBytes = ramdiskFileSizeBytes;
 	bootInfo->contextSwitchFunctionPage = PhysFrameContainingAddress(contextSwitchFnAddress);
 	bootInfo->kernelAddress = 0xffffffff80010000;
 	bootInfo->kernelSize = nextUsableVirtualPage + 4096 - bootInfo->kernelAddress;

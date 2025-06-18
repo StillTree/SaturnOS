@@ -12,9 +12,15 @@ typedef struct VirtualFileSystem {
 	u32 UsedMountLetters;
 } VirtualFileSystem;
 
+typedef enum VFSMountCapabilities {
+	VFSMountReadable = 1,
+	VFSMountWriteable = 2
+} VFSMountCapabilities;
+
 typedef struct Mountpoint {
 	i8 MountLetter;
 	void* Driver;
+	VFSMountCapabilities Capabilities;
 } Mountpoint;
 
 Result InitVirtualFileSystem(VirtualFileSystem* fileSystem);
