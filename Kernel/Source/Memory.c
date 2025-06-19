@@ -31,3 +31,13 @@ bool MemoryCompare(const void* ptr1, const void* ptr2, usz size)
 
 	return true;
 }
+
+usz StringSize(const i8* string)
+{
+	usz i = 0;
+	while (string[i]) {
+		i++;
+	}
+
+	return i;
+}

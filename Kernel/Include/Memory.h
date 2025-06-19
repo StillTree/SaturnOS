@@ -13,8 +13,10 @@ typedef struct MemoryMapEntry {
 void MemoryFill(void* ptr, u8 value, usz size);
 /// C's memcpy but without a shitty name.
 void MemoryCopy(void* source, void* destination, usz size);
-/// C's memcmp but without a shitty name.
+/// Returns `true` if the memory regions are the same and `false` when they're not.
 bool MemoryCompare(const void* ptr1, const void* ptr2, usz size);
+/// Returns the size of the given null-terminated string.
+usz StringSize(const i8* string);
 
 /// Invalidates the whole TLB cache by reloading the CR3 register.
 inline void FlushTLB()

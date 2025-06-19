@@ -59,7 +59,7 @@ typedef struct KernelBootInfo {
 	u64 KernelAddress;
 	usz KernelSize;
 	u64 ContextSwitchFunctionPage;
-	u64 RamdiskAddress;
+	void* Ramdisk;
 	usz RamdiskSizeBytes;
 } KernelBootInfo;
 
