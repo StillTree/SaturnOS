@@ -60,6 +60,8 @@ typedef struct Process {
 	usz ThreadCount;
 	VirtualMemoryAllocator VirtualMemoryAllocator;
 	Page4KiB AllocatorBackingMemory;
+	/// A list of files opened by the process.
+	SizedBlockAllocator FileDescriptors;
 } Process;
 
 typedef struct Scheduler {

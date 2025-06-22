@@ -8,7 +8,7 @@ VirtualFileSystem g_virtualFileSystem;
 
 Result InitVirtualFileSystem(VirtualFileSystem* fileSystem)
 {
-	usz mountpointPoolSize = Page4KiBNext(sizeof(Mountpoint) * 26);
+	usz mountpointPoolSize = Page4KiBNext(sizeof(Mountpoint) * MAX_MOUNTPOINTS);
 	Page4KiB mountpointPool;
 	Result result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, mountpointPoolSize, PageWriteable, &mountpointPool);
 	if (result) {
@@ -20,9 +20,68 @@ Result InitVirtualFileSystem(VirtualFileSystem* fileSystem)
 		return result;
 	}
 
+	usz openedFilesPoolSize = Page4KiBNext(sizeof(OpenedFile) * MAX_OPENED_FILES);
+	Page4KiB openedFilesPool;
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, openedFilesPoolSize, PageWriteable, &openedFilesPool);
+	if (result) {
+		return result;
+	}
+
+	result = InitSizedBlockAllocator(&fileSystem->OpenedFiles, openedFilesPool, openedFilesPoolSize, sizeof(OpenedFile));
+	if (result) {
+		return result;
+	}
+
 	fileSystem->UsedMountLetters = 0;
 
 	return result;
+}
+
+Result CreateMountpoint(VirtualFileSystem* fileSystem, i8 mountLetter, MountpointCapabilities capabilities, MountpointFunctions functions)
+{
+	Result result = ResultOk;
+
+	if (mountLetter < 65 || mountLetter > 90) {
+		result = GetFirstUnusedMountLetter(fileSystem, &mountLetter);
+		if (result) {
+			return result;
+		}
+	} else if (GetMountLetterStatus(fileSystem, mountLetter)) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	result = SetMountLetterStatus(fileSystem, mountLetter, true);
+	if (result) {
+		return result;
+	}
+
+	Mountpoint* mountpoint;
+	result = SizedBlockAllocate(&fileSystem->Mountpoints, (void**)&mountpoint);
+	if (result) {
+		return result;
+	}
+
+	mountpoint->MountLetter = mountLetter;
+	mountpoint->Capabilities = capabilities;
+	mountpoint->Functions = functions;
+
+	return result;
+}
+
+Result DeleteMountpoint(VirtualFileSystem* fileSystem, i8 mountLetter)
+{
+	if (mountLetter < 65 || mountLetter > 90 || !GetMountLetterStatus(fileSystem, mountLetter)) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	Result result = SetMountLetterStatus(fileSystem, mountLetter, false);
+	if (result) {
+		return result;
+	}
+
+
+
+	return ResultOk;
 }
 
 Result SetMountLetterStatus(VirtualFileSystem* fileSystem, i8 mountLetter, bool reserved)

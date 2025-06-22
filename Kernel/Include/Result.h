@@ -27,4 +27,5 @@ typedef enum Result : u8 {
 	ResultInvalidProcessID,
 	ResultInvalidPageAlignment,
 	ResultInvalidFrameAlignment,
+	ResultEndOfIteration
 } Result;

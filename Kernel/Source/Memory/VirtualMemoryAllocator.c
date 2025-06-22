@@ -220,7 +220,7 @@ Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddr
 		return result;
 	}
 
-	result = AllocateSizedBlock(&allocator->ListBackingStorage, (void**)&allocator->List);
+	result = SizedBlockAllocate(&allocator->ListBackingStorage, (void**)&allocator->List);
 	if (result) {
 		return result;
 	}
@@ -375,7 +375,7 @@ static Result RemoveRegion(VirtualMemoryAllocator* allocator, UnusedVirtualRegio
 		region->Next->Previous = region->Previous;
 	}
 
-	Result result = DeallocateSizedBlock(&allocator->ListBackingStorage, region);
+	Result result = SizedBlockDeallocate(&allocator->ListBackingStorage, region);
 	if (result) {
 		return result;
 	}
@@ -386,7 +386,7 @@ static Result RemoveRegion(VirtualMemoryAllocator* allocator, UnusedVirtualRegio
 static Result AddRegion(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end)
 {
 	UnusedVirtualRegion* region = nullptr;
-	Result result = AllocateSizedBlock(&allocator->ListBackingStorage, (void**)&region);
+	Result result = SizedBlockAllocate(&allocator->ListBackingStorage, (void**)&region);
 	if (result) {
 		return result;
 	}

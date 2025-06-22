@@ -6,10 +6,11 @@
 #include "Memory/Page.h"
 #include "Memory/PageTable.h"
 #include "Result.h"
+#include "Storage/VirtualFileSystem.h"
 
 Scheduler g_scheduler;
 
-static Result AllocateProcessStack(Process* process, Page4KiB* stackTop)
+static Result AllocateThreadStack(Process* process, Page4KiB* stackTop)
 {
 	Page4KiB stackBottom;
 	Result result = AllocateBackedVirtualMemory(
@@ -61,7 +62,7 @@ Result DeleteProcess(Scheduler* scheduler, Process* process)
 			return result;
 		}
 
-		result = DeallocateSizedBlock(&scheduler->Threads, process->Threads[i]);
+		result = SizedBlockDeallocate(&scheduler->Threads, process->Threads[i]);
 		if (result) {
 			return result;
 		}
@@ -76,7 +77,7 @@ Result DeleteProcess(Scheduler* scheduler, Process* process)
 	// Deallocate the process's PML4
 	DeallocateFrame(&g_frameAllocator, process->PML4);
 
-	result = DeallocateSizedBlock(&scheduler->Processes, process);
+	result = SizedBlockDeallocate(&scheduler->Processes, process);
 	if (result) {
 		return result;
 	}
@@ -91,7 +92,20 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 	DisableInterrupts();
 
 	Process* process = nullptr;
-	Result result = AllocateSizedBlock(&scheduler->Processes, (void**)&process);
+	Result result = SizedBlockAllocate(&scheduler->Processes, (void**)&process);
+	if (result) {
+		return result;
+	}
+
+	usz fileDescriptorsPoolSize = Page4KiBNext(sizeof(ProcessFileDescriptor) * 64);
+	Page4KiB fileDescriptorsPool;
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, fileDescriptorsPoolSize, PageWriteable, &fileDescriptorsPool);
+	if (result) {
+		return result;
+	}
+
+	result
+		= InitSizedBlockAllocator(&process->FileDescriptors, fileDescriptorsPool, fileDescriptorsPoolSize, sizeof(ProcessFileDescriptor));
 	if (result) {
 		return result;
 	}
@@ -120,7 +134,7 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 	}
 
 	Thread* mainThread = nullptr;
-	result = AllocateSizedBlock(&scheduler->Threads, (void**)&mainThread);
+	result = SizedBlockAllocate(&scheduler->Threads, (void**)&mainThread);
 	if (result) {
 		return result;
 	}
@@ -153,7 +167,7 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 	mainThread->EntryPointPage = entryPointPage;
 
 	Page4KiB stackTop;
-	result = AllocateProcessStack(process, &stackTop);
+	result = AllocateThreadStack(process, &stackTop);
 	if (result) {
 		return result;
 	}
@@ -205,7 +219,7 @@ Result InitScheduler(Scheduler* scheduler)
 	}
 
 	Process* kernelProcess = nullptr;
-	result = AllocateSizedBlock(&scheduler->Processes, (void**)&kernelProcess);
+	result = SizedBlockAllocate(&scheduler->Processes, (void**)&kernelProcess);
 	if (result) {
 		return result;
 	}
@@ -217,7 +231,7 @@ Result InitScheduler(Scheduler* scheduler)
 	}
 
 	Thread* kernelMainThread = nullptr;
-	result = AllocateSizedBlock(&scheduler->Threads, (void**)&kernelMainThread);
+	result = SizedBlockAllocate(&scheduler->Threads, (void**)&kernelMainThread);
 	if (result) {
 		return result;
 	}
@@ -240,32 +254,21 @@ void ScheduleInterrupt(CPUContext* cpuContext)
 	// 	return;
 	// }
 
-	Thread* thread = g_scheduler.CurrentThread + 1;
+	Thread* threadIterator = g_scheduler.CurrentThread + 1;
 	// TODO: Temporary workaround for when only one process is being run
 	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {
 		g_scheduler.CurrentThread->Status = ThreadReady;
 	}
 
-	while (true) {
-		// TODO: This iteration method is only "temporary"
-		// and when I get around to optimising the sized block allocator I'll adjust this
-		if ((VirtualAddress)thread > g_scheduler.Threads.LastBlock) {
-			thread = (Thread*)g_scheduler.Threads.FirstBlock;
-		}
-
-		if (!GetSizedBlockStatus(&g_scheduler.Threads, (VirtualAddress)thread)) {
-			thread++;
-			continue;
-		}
-
-		if (thread->Status != ThreadReady) {
-			thread++;
+	while (!SizedBlockCircularIterate(&g_scheduler.Threads, (void**)&threadIterator)) {
+		if (threadIterator->Status != ThreadReady) {
+			++threadIterator;
 			continue;
 		}
 
 		Thread* oldThread = g_scheduler.CurrentThread;
 
-		g_scheduler.CurrentThread = thread;
+		g_scheduler.CurrentThread = threadIterator;
 
 		oldThread->Status = ThreadReady;
 		oldThread->Context = *cpuContext;
@@ -284,26 +287,15 @@ void ScheduleException(CPUContext* cpuContext)
 	// 	return;
 	// }
 
-	Thread* thread = g_scheduler.CurrentThread + 1;
+	Thread* threadIterator = g_scheduler.CurrentThread + 1;
 
-	while (true) {
-		// TODO: This iteration method is only "temporary"
-		// and when I get around to optimising the sized block allocator I'll adjust this
-		if ((VirtualAddress)thread > g_scheduler.Threads.LastBlock) {
-			thread = (Thread*)g_scheduler.Threads.FirstBlock;
-		}
-
-		if (!GetSizedBlockStatus(&g_scheduler.Threads, (VirtualAddress)thread)) {
-			thread++;
+	while (!SizedBlockCircularIterate(&g_scheduler.Threads, (void**)&threadIterator)) {
+		if (threadIterator->Status != ThreadReady) {
+			++threadIterator;
 			continue;
 		}
 
-		if (thread->Status != ThreadReady) {
-			thread++;
-			continue;
-		}
-
-		g_scheduler.CurrentThread = thread;
+		g_scheduler.CurrentThread = threadIterator;
 		g_scheduler.CurrentThread->Status = ThreadRunning;
 		*cpuContext = g_scheduler.CurrentThread->Context;
 

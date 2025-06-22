@@ -3,11 +3,10 @@
 #include "Logger.h"
 #include "Memory.h"
 
-static void SetBlockStatus(SizedBlockAllocator* blockAllocator, VirtualAddress block, bool used)
+static void SizedBlockSetStatus(SizedBlockAllocator* blockAllocator, usz index, bool used)
 {
-	const usz blockIndex = (block - blockAllocator->FirstBlock) / blockAllocator->BlockSizeBytes;
-	const usz mapIndex = (blockIndex) / 8;
-	const usz bitIndex = blockIndex % 8;
+	const usz mapIndex = (index) / 64;
+	const usz bitIndex = index % 64;
 
 	if (used) {
 		blockAllocator->BlockBitmap[mapIndex] |= (1 << bitIndex);
@@ -16,68 +15,122 @@ static void SetBlockStatus(SizedBlockAllocator* blockAllocator, VirtualAddress b
 	}
 }
 
+/// Returns `true` for allocated blocks and `false` for the unallocated ones.
+static bool SizedBlockGetStatus(SizedBlockAllocator* blockAllocator, usz index)
+{
+	const usz mapIndex = (index) / 64;
+	const usz bitIndex = index % 64;
+
+	return ((blockAllocator->BlockBitmap[mapIndex] >> bitIndex) & 1) == 1;
+}
+
+static inline void* SizedBlockGetAddress(SizedBlockAllocator* blockAllocator, usz index)
+{
+	return (void*)(blockAllocator->FirstBlock + (blockAllocator->BlockSizeBytes * index));
+}
+
+static inline usz SizedBlockGetIndex(SizedBlockAllocator* blockAllocator, void* address)
+{
+	return ((VirtualAddress)address - blockAllocator->FirstBlock) / blockAllocator->BlockSizeBytes;
+}
+
 Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, VirtualAddress poolStart, usz poolSizeBytes, usz blockSizeBytes)
 {
-	// TODO: Checks for correctness
-	// TODO: Optimize using the last-allocated method
-	// TODO: Use u64 (native word size) for the bitmap
 	// TODO: Use more efficient bitscanning (compiler intrinsics)
-	// TODO: Maybe some iterator function or something
-	// TODO: Bruh... just rewrite that and optimise next time
 	blockAllocator->BlockSizeBytes = blockSizeBytes;
 	blockAllocator->PoolSizeBytes = poolSizeBytes;
 
 	const usz totalBlockCapacity = poolSizeBytes / blockSizeBytes;
-	const usz bitmapSizeBytes = (totalBlockCapacity + 7) / 8;
-	const usz blocksTakenUp = (bitmapSizeBytes + blockSizeBytes - 1) / blockSizeBytes;
-	blockAllocator->BlockBitmap = (u8*)poolStart;
+	const usz bitmapWordCount = (totalBlockCapacity + 63) / 64;
+	const usz blocksTakenUp = (bitmapWordCount * 8 + blockSizeBytes - 1) / blockSizeBytes;
+
+	blockAllocator->BlockBitmap = (u64*)poolStart;
+	// The allocator expects the blocks to be correctly padded for alignment,
+	// if they're not, some bad things are probably gonna happen
 	blockAllocator->FirstBlock = poolStart + blocksTakenUp * blockSizeBytes;
 	blockAllocator->LastBlock = poolStart + poolSizeBytes - blockSizeBytes;
+	blockAllocator->MaxAllocations = totalBlockCapacity - blocksTakenUp;
 	blockAllocator->AllocationCount = 0;
+	blockAllocator->NextToAllocate = 0;
 
-	MemoryFill(blockAllocator->BlockBitmap, 0, bitmapSizeBytes);
+	MemoryFill(blockAllocator->BlockBitmap, 0, bitmapWordCount * 8);
 
 	return ResultOk;
 }
 
-bool GetSizedBlockStatus(SizedBlockAllocator* blockAllocator, VirtualAddress block)
+Result SizedBlockAllocate(SizedBlockAllocator* blockAllocator, void** block)
 {
-	const usz blockIndex = (block - blockAllocator->FirstBlock) / blockAllocator->BlockSizeBytes;
-	const usz mapIndex = (blockIndex) / 8;
-	const usz bitIndex = blockIndex % 8;
-
-	return ((blockAllocator->BlockBitmap[mapIndex] & (1 << bitIndex)) >> bitIndex) == 1;
-}
-
-Result AllocateSizedBlock(SizedBlockAllocator* blockAllocator, void** block)
-{
-	for (VirtualAddress checkedBlock = blockAllocator->FirstBlock; checkedBlock <= blockAllocator->LastBlock;
-		checkedBlock += blockAllocator->BlockSizeBytes) {
-		if (GetSizedBlockStatus(blockAllocator, checkedBlock)) {
+	for (usz i = blockAllocator->NextToAllocate; i < blockAllocator->MaxAllocations; ++i) {
+		if (SizedBlockGetStatus(blockAllocator, i)) {
 			continue;
 		}
 
-		SetBlockStatus(blockAllocator, checkedBlock, true);
-		*block = (void*)checkedBlock;
+		SizedBlockSetStatus(blockAllocator, i, true);
 		blockAllocator->AllocationCount++;
+		blockAllocator->NextToAllocate = i + 1;
+		*block = SizedBlockGetAddress(blockAllocator, i);
 		return ResultOk;
 	}
 
 	return ResultOutOfMemory;
 }
 
-Result DeallocateSizedBlock(SizedBlockAllocator* blockAllocator, void* block)
+Result SizedBlockDeallocate(SizedBlockAllocator* blockAllocator, void* block)
 {
-	bool allocated = GetSizedBlockStatus(blockAllocator, (VirtualAddress)block);
+	VirtualAddress blockAddress = (VirtualAddress)block;
+	if (blockAddress < blockAllocator->FirstBlock || blockAddress > blockAllocator->LastBlock) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	usz index = SizedBlockGetIndex(blockAllocator, block);
+	bool allocated = SizedBlockGetStatus(blockAllocator, index);
 
 	if (!allocated) {
 		SK_LOG_WARN("An attempt was made to deallocate an unallocated memory block");
 		return ResultSerialOutputUnavailable;
 	}
 
-	SetBlockStatus(blockAllocator, (VirtualAddress)block, false);
+	SizedBlockSetStatus(blockAllocator, index, false);
 
 	blockAllocator->AllocationCount--;
+	blockAllocator->NextToAllocate = 0;
 
 	return ResultOk;
+}
+
+Result SizedBlockIterate(SizedBlockAllocator* blockAllocator, void** sizedBlockIterator)
+{
+	for (usz i = SizedBlockGetIndex(blockAllocator, *sizedBlockIterator); i < blockAllocator->MaxAllocations; ++i) {
+		if (!SizedBlockGetStatus(blockAllocator, i)) {
+			continue;
+		}
+
+		*sizedBlockIterator = SizedBlockGetAddress(blockAllocator, i);
+		return ResultOk;
+	}
+
+	return ResultEndOfIteration;
+}
+
+Result SizedBlockCircularIterate(SizedBlockAllocator* blockAllocator, void** sizedBlockIterator)
+{
+	if (blockAllocator->AllocationCount == 0) {
+		return ResultEndOfIteration;
+	}
+
+	usz i = SizedBlockGetIndex(blockAllocator, *sizedBlockIterator);
+	while (true) {
+		if (i >= blockAllocator->MaxAllocations) {
+			i = 0;
+			continue;
+		}
+
+		if (!SizedBlockGetStatus(blockAllocator, i)) {
+			++i;
+			continue;
+		}
+
+		*sizedBlockIterator = SizedBlockGetAddress(blockAllocator, i);
+		return ResultOk;
+	}
 }
