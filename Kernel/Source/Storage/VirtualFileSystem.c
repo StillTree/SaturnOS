@@ -37,11 +37,11 @@ Result InitVirtualFileSystem(VirtualFileSystem* fileSystem)
 	return result;
 }
 
-Result CreateMountpoint(VirtualFileSystem* fileSystem, i8 mountLetter, MountpointCapabilities capabilities, MountpointFunctions functions)
+Result MountpointCreate(VirtualFileSystem* fileSystem, i8 mountLetter, MountpointCapabilities capabilities, MountpointFunctions functions)
 {
 	Result result = ResultOk;
 
-	if (mountLetter < 65 || mountLetter > 90) {
+	if (mountLetter < 'A' || mountLetter > 'Z') {
 		result = GetFirstUnusedMountLetter(fileSystem, &mountLetter);
 		if (result) {
 			return result;
@@ -68,29 +68,54 @@ Result CreateMountpoint(VirtualFileSystem* fileSystem, i8 mountLetter, Mountpoin
 	return result;
 }
 
-Result DeleteMountpoint(VirtualFileSystem* fileSystem, i8 mountLetter)
+Result MountpointDelete(VirtualFileSystem* fileSystem, i8 mountLetter)
 {
-	if (mountLetter < 65 || mountLetter > 90 || !GetMountLetterStatus(fileSystem, mountLetter)) {
+	if (mountLetter < 'A' || mountLetter > 'Z' || !GetMountLetterStatus(fileSystem, mountLetter)) {
 		return ResultSerialOutputUnavailable;
 	}
 
-	Result result = SetMountLetterStatus(fileSystem, mountLetter, false);
+	Mountpoint* mountpoint;
+	Result result = MountpointGetFromLetter(fileSystem, mountLetter, &mountpoint);
 	if (result) {
 		return result;
 	}
 
+	result = SizedBlockDeallocate(&fileSystem->Mountpoints, mountpoint);
+	if (result) {
+		return result;
+	}
 
+	result = SetMountLetterStatus(fileSystem, mountLetter, false);
+	if (result) {
+		return result;
+	}
 
-	return ResultOk;
+	return result;
+}
+
+Result MountpointGetFromLetter(VirtualFileSystem* fileSystem, i8 mountLetter, Mountpoint** mountpoint)
+{
+	Mountpoint* mountpointIterator = nullptr;
+
+	while (!SizedBlockIterate(&fileSystem->Mountpoints, (void**)&mountpointIterator)) {
+		if (mountpointIterator->MountLetter != mountLetter) {
+			continue;
+		}
+
+		*mountpoint = mountpointIterator;
+		return ResultOk;
+	}
+
+	return ResultSerialOutputUnavailable;
 }
 
 Result SetMountLetterStatus(VirtualFileSystem* fileSystem, i8 mountLetter, bool reserved)
 {
-	if (mountLetter < 65 || mountLetter > 90) {
+	if (mountLetter < 'A' || mountLetter > 'Z') {
 		return ResultSerialOutputUnavailable;
 	}
 
-	const usz bit = mountLetter - 65;
+	const usz bit = mountLetter - 'A';
 
 	if (reserved) {
 		fileSystem->UsedMountLetters |= 1 << bit;
@@ -103,11 +128,11 @@ Result SetMountLetterStatus(VirtualFileSystem* fileSystem, i8 mountLetter, bool 
 
 bool GetMountLetterStatus(VirtualFileSystem* fileSystem, i8 mountLetter)
 {
-	if (mountLetter < 65 || mountLetter > 90) {
+	if (mountLetter < 'A' || mountLetter > 'Z') {
 		return true;
 	}
 
-	const usz bit = mountLetter - 65;
+	const usz bit = mountLetter - 'A';
 
 	return ((fileSystem->UsedMountLetters >> bit) & 1) == 1;
 }

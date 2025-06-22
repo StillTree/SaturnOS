@@ -1,6 +1,5 @@
 #include "Scheduler.h"
 
-#include "IDT.h"
 #include "Memory.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
@@ -38,8 +37,6 @@ static usz GetThreadID()
 
 Result DeleteProcess(Scheduler* scheduler, Process* process)
 {
-	DisableInterrupts();
-
 	Result result = ResultOk;
 
 	for (usz i = 0; i < MAX_THREADS_PER_PROCESS; i++) {
@@ -82,15 +79,11 @@ Result DeleteProcess(Scheduler* scheduler, Process* process)
 		return result;
 	}
 
-	EnableInterrupts();
-
 	return result;
 }
 
 Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entryPoint)())
 {
-	DisableInterrupts();
-
 	Process* process = nullptr;
 	Result result = SizedBlockAllocate(&scheduler->Processes, (void**)&process);
 	if (result) {
@@ -187,8 +180,6 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 
 	*createdProcess = process;
 
-	EnableInterrupts();
-
 	return result;
 }
 
@@ -254,7 +245,7 @@ void ScheduleInterrupt(CPUContext* cpuContext)
 	// 	return;
 	// }
 
-	Thread* threadIterator = g_scheduler.CurrentThread + 1;
+	Thread* threadIterator = g_scheduler.CurrentThread;
 	// TODO: Temporary workaround for when only one process is being run
 	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {
 		g_scheduler.CurrentThread->Status = ThreadReady;
@@ -262,7 +253,6 @@ void ScheduleInterrupt(CPUContext* cpuContext)
 
 	while (!SizedBlockCircularIterate(&g_scheduler.Threads, (void**)&threadIterator)) {
 		if (threadIterator->Status != ThreadReady) {
-			++threadIterator;
 			continue;
 		}
 
@@ -287,11 +277,10 @@ void ScheduleException(CPUContext* cpuContext)
 	// 	return;
 	// }
 
-	Thread* threadIterator = g_scheduler.CurrentThread + 1;
+	Thread* threadIterator = g_scheduler.CurrentThread;
 
 	while (!SizedBlockCircularIterate(&g_scheduler.Threads, (void**)&threadIterator)) {
 		if (threadIterator->Status != ThreadReady) {
-			++threadIterator;
 			continue;
 		}
 

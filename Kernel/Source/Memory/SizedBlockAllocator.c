@@ -100,6 +100,13 @@ Result SizedBlockDeallocate(SizedBlockAllocator* blockAllocator, void* block)
 
 Result SizedBlockIterate(SizedBlockAllocator* blockAllocator, void** sizedBlockIterator)
 {
+	// TODO: Make this prettier
+	if (*sizedBlockIterator) {
+		*sizedBlockIterator = (void*)((VirtualAddress)*sizedBlockIterator + blockAllocator->BlockSizeBytes);
+	} else {
+		*sizedBlockIterator = (void*)blockAllocator->FirstBlock;
+	}
+
 	for (usz i = SizedBlockGetIndex(blockAllocator, *sizedBlockIterator); i < blockAllocator->MaxAllocations; ++i) {
 		if (!SizedBlockGetStatus(blockAllocator, i)) {
 			continue;
@@ -116,6 +123,13 @@ Result SizedBlockCircularIterate(SizedBlockAllocator* blockAllocator, void** siz
 {
 	if (blockAllocator->AllocationCount == 0) {
 		return ResultEndOfIteration;
+	}
+
+	// TODO: Make this prettier
+	if (*sizedBlockIterator) {
+		*sizedBlockIterator = (void*)((VirtualAddress)*sizedBlockIterator + blockAllocator->BlockSizeBytes);
+	} else {
+		*sizedBlockIterator = (void*)blockAllocator->FirstBlock;
 	}
 
 	usz i = SizedBlockGetIndex(blockAllocator, *sizedBlockIterator);

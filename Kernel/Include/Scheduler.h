@@ -72,7 +72,9 @@ typedef struct Scheduler {
 
 Result InitScheduler(Scheduler* scheduler);
 
+/// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entryPoint)());
+/// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 Result DeleteProcess(Scheduler* scheduler, Process* process);
 
 void ScheduleInterrupt(CPUContext* cpuContext);
