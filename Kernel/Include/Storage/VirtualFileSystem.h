@@ -14,10 +14,13 @@ typedef struct VirtualFileSystem {
 	u32 UsedMountLetters;
 } VirtualFileSystem;
 
-typedef enum MountpointCapabilities { MountpointReadable = 1, MountpointWriteable = 2 } MountpointCapabilities;
+/// These mode numbers correspond to those of `OpenedFileMode`.
+typedef enum MountpointCapabilities : u8 { MountpointReadable = 1, MountpointWriteable = 2 } MountpointCapabilities;
 
 typedef struct MountpointFunctions {
-	void (*ReadFile)(const i8* relativeFileName, void* buffer);
+	Result (*FileOpen)(const i8* relativeFileName, void** fileSystemSpecific);
+	Result (*FileRead)(void* fileSystemSpecific, usz fileOffset, usz countBytes, void* buffer);
+	Result (*FileClose)(void* fileSystemSpecific);
 } MountpointFunctions;
 
 typedef struct Mountpoint {
@@ -30,12 +33,16 @@ typedef struct Mountpoint {
 typedef struct OpenedFile {
 	Mountpoint* Mountpoint;
 	usz References;
+	void* FileSystemSpecific;
 } OpenedFile;
 
 typedef struct ProcessFileDescriptor {
 	OpenedFile* OpenedFile;
 	usz OffsetBytes;
 } ProcessFileDescriptor;
+
+/// These mode numbers correspond to those of `MountpointCapabilities`.
+typedef enum OpenedFileMode : u8 { OpenFileRead = 1, OpenFileWrite = 2, OpenFileExclusive = 3 } OpenedFileMode;
 
 Result InitVirtualFileSystem(VirtualFileSystem* fileSystem);
 Result GetFirstUnusedMountLetter(VirtualFileSystem* fileSystem, i8* mountLetter);
@@ -47,5 +54,10 @@ bool GetMountLetterStatus(VirtualFileSystem* fileSystem, i8 mountLetter);
 Result MountpointCreate(VirtualFileSystem* fileSystem, i8 mountLetter, MountpointCapabilities capabilities, MountpointFunctions functions);
 Result MountpointDelete(VirtualFileSystem* fileSystem, i8 mountLetter);
 Result MountpointGetFromLetter(VirtualFileSystem* fileSystem, i8 mountLetter, Mountpoint** mountpoint);
+
+/// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
+Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mode, ProcessFileDescriptor** fileDescriptor);
+Result FileRead(ProcessFileDescriptor* fileDescriptor, usz fileOffset, usz countBytes, void* buffer);
+Result FileClose(VirtualFileSystem* fileSystem, ProcessFileDescriptor* fileDescriptor);
 
 extern VirtualFileSystem g_virtualFileSystem;

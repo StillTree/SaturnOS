@@ -3,6 +3,7 @@
 #include "Memory/Page.h"
 #include "Memory/PageTable.h"
 #include "Memory/VirtualMemoryAllocator.h"
+#include "Scheduler.h"
 
 VirtualFileSystem g_virtualFileSystem;
 
@@ -149,4 +150,108 @@ Result GetFirstUnusedMountLetter(VirtualFileSystem* fileSystem, i8* mountLetter)
 	}
 
 	return ResultSerialOutputUnavailable;
+}
+
+Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mode, ProcessFileDescriptor** fileDescriptor)
+{
+	// TODO: Make this not shit
+	if (!path || path[0] < 'A' || path[0] > 'Z' || path[1] != ':' || path[2] != '/') {
+		return ResultSerialOutputUnavailable;
+	}
+
+	Mountpoint* mountpoint = nullptr;
+	Result result = MountpointGetFromLetter(fileSystem, path[0], &mountpoint);
+	if (result) {
+		return result;
+	}
+
+	if (mode & OpenFileWrite && !(mountpoint->Capabilities & MountpointWriteable)) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	if (mode & OpenFileRead && !(mountpoint->Capabilities & MountpointReadable)) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	// TODO: Check if the file is already opened and compare with flags and do something appropriate
+
+	OpenedFile* openedFile = nullptr;
+	result = SizedBlockAllocate(&fileSystem->OpenedFiles, (void**)&openedFile);
+	if (result) {
+		return result;
+	}
+
+	result = SizedBlockAllocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, (void**)fileDescriptor);
+	if (result) {
+		return result;
+	}
+
+	(*fileDescriptor)->OpenedFile = openedFile;
+	(*fileDescriptor)->OffsetBytes = 0;
+
+	openedFile->Mountpoint = mountpoint;
+	openedFile->References = 1;
+
+	// TODO: In the future add an `OpenedFileMode` that will instead create that file in the case that it doesn't exist
+	result = mountpoint->Functions.FileOpen(path + 2, &openedFile->FileSystemSpecific);
+	if (result) {
+		SizedBlockDeallocate(&fileSystem->OpenedFiles, openedFile);
+		SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, *fileDescriptor);
+		return result;
+	}
+
+	return result;
+}
+
+Result FileRead(ProcessFileDescriptor* fileDescriptor, usz fileOffset, usz countBytes, void* buffer)
+{
+	if (!fileDescriptor) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	Mountpoint* mountpoint = fileDescriptor->OpenedFile->Mountpoint;
+
+	Result result = mountpoint->Functions.FileRead(fileDescriptor->OpenedFile->FileSystemSpecific, fileOffset, countBytes, buffer);
+	if (result) {
+		return result;
+	}
+
+	return result;
+}
+
+Result FileClose(VirtualFileSystem* fileSystem, ProcessFileDescriptor* fileDescriptor)
+{
+	if (!fileDescriptor) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	Result result = ResultOk;
+
+	if (fileDescriptor->OpenedFile->References <= 1) {
+		// This descriptor is the only one referencing this file, deallocate everything
+		result = fileDescriptor->OpenedFile->Mountpoint->Functions.FileClose(fileDescriptor->OpenedFile->FileSystemSpecific);
+		if (result) {
+			return result;
+		}
+
+		result = SizedBlockDeallocate(&fileSystem->OpenedFiles, fileDescriptor->OpenedFile);
+		if (result) {
+			return result;
+		}
+
+		result = SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
+		if (result) {
+			return result;
+		}
+	} else {
+		// There are other processes referencing this file, deallocate only current process's file descriptor
+		--fileDescriptor->OpenedFile->References;
+
+		result = SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
+		if (result) {
+			return result;
+		}
+	}
+
+	return result;
 }

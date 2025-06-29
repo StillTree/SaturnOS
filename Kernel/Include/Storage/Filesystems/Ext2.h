@@ -4,7 +4,7 @@
 #include "Memory/Frame.h"
 #include "Result.h"
 
-typedef struct Superblock {
+typedef struct Ext2Superblock {
 	u32 InodeCount;
 	u32 BlockCount;
 	u32 SuperuserReservedBlockCount;
@@ -48,9 +48,9 @@ typedef struct Superblock {
 	u32 JoutnalDevice;
 	u32 OrphanInodeListHead;
 	u8 Reserved2[787];
-} Superblock;
+} Ext2Superblock;
 
-typedef struct BlockGroupDescriptor {
+typedef struct Ext2BlockGroupDescriptor {
 	u32 BlockUsageBitmapBAddress;
 	u32 InodeUsageBitmapBAddress;
 	u32 InodeTableBAddress;
@@ -58,9 +58,9 @@ typedef struct BlockGroupDescriptor {
 	u16 UnallocatedInodeCount;
 	u16 DirectoryCount;
 	u8 Reserved[12];
-} BlockGroupDescriptor;
+} Ext2BlockGroupDescriptor;
 
-typedef enum InodeTypeAndPermissions : u16 {
+typedef enum Ext2INodeTypeAndPermissions : u16 {
 	InodePermissionOtherExecute = 0x1,
 	InodePermissionOtherWrite = 0x2,
 	InodePermissionOtherRead = 0x4,
@@ -80,10 +80,10 @@ typedef enum InodeTypeAndPermissions : u16 {
 	InodeTypeRegularFile = 0x8000,
 	InodeTypeSymlink = 0xa000,
 	InodeTypeUnixSocket = 0xc000,
-} InodeTypeAndPermissions;
+} Ext2INodeTypeAndPermissions;
 
-typedef struct Inode {
-	InodeTypeAndPermissions TypeAndPermissions;
+typedef struct Ext2INode {
+	Ext2INodeTypeAndPermissions TypeAndPermissions;
 	u16 UserID;
 	u32 SizeBytesLow;
 	u32 LastAccessTime;
@@ -105,9 +105,9 @@ typedef struct Inode {
 	u32 FragmentBlockAddress;
 	u8 OSSpecific2[12];
 	u8 Reserved[128];
-} Inode;
+} Ext2INode;
 
-typedef enum DirectoryEntryType : u8 {
+typedef enum Ext2DirectoryEntryType : u8 {
 	DirectoryEntryTypeUnknown,
 	DirectoryEntryTypeRegularFile,
 	DirectoryEntryTypeDirectory,
@@ -116,28 +116,28 @@ typedef enum DirectoryEntryType : u8 {
 	DirectoryEntryTypeFIFO,
 	DirectoryEntryTypeSocket,
 	DirectoryEntryTypeSymlink
-} DirectoryEntryType;
+} Ext2DirectoryEntryType;
 
-typedef struct DirectoryEntry {
+typedef struct Ext2DirectoryEntry {
 	u32 Inode;
 	u16 Size;
 	u8 NameLengthLow;
-	DirectoryEntryType Type;
+	Ext2DirectoryEntryType Type;
 	i8 Name[];
-} DirectoryEntry;
+} Ext2DirectoryEntry;
 
 typedef struct Ext2Driver {
 	u32 BlockGroupCount;
 	u32 BlockSizeBytes;
 
-	Superblock* Superblock;
-	BlockGroupDescriptor* BlockGroupDescriptorTable;
+	Ext2Superblock* Superblock;
+	Ext2BlockGroupDescriptor* BlockGroupDescriptorTable;
 
-	Inode* RootInode;
-	DirectoryEntry* RootInodeEntries;
+	Ext2INode* RootInode;
+	Ext2DirectoryEntry* RootInodeEntries;
 } Ext2Driver;
 
-Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTableFrame, Inode** inodePointer);
+Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTableFrame, Ext2INode** inodePointer);
 
 Result InitExt2();
 

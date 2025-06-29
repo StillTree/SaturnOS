@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Core.h"
+#include "Memory/SizedBlockAllocator.h"
 #include "Result.h"
 
 typedef struct STFSFileListEntry {
@@ -16,4 +17,13 @@ typedef struct STFSSuperblock {
 	STFSFileListEntry Files[];
 } STFSSuperblock;
 
-Result ReadFileSTFS(const i8* fileName, void* buffer);
+typedef struct STFSDriver {
+	SizedBlockAllocator INodeTable;
+} STFSDriver;
+
+Result InitSTFS();
+Result STFSFileOpen(const i8* fileName, void** fileSystemSpecific);
+Result STFSFileRead(void* fileSystemSpecific, usz fileOffset, usz countBytes, void* buffer);
+Result STFSFileClose(void* fileSystemSpecific);
+
+extern STFSDriver g_stfsDriver;

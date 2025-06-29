@@ -7,7 +7,7 @@
 
 Ext2Driver g_ext2Driver;
 
-static Result GetInode(Ext2Driver* ext2, u32 inode, Frame4KiB inodeTableFrame, Inode** inodePointer)
+static Result GetInode(Ext2Driver* ext2, u32 inode, Frame4KiB inodeTableFrame, Ext2INode** inodePointer)
 {
 	u32 rootGroup = (inode - 1) / ext2->Superblock->InodesPerGroup;
 	u32 tableIndex = (inode - 1) % ext2->Superblock->InodesPerGroup;
@@ -18,13 +18,13 @@ static Result GetInode(Ext2Driver* ext2, u32 inode, Frame4KiB inodeTableFrame, I
 	if (result) {
 		return result;
 	}
-	Inode* inodeTable = PhysicalAddressAsPointer(inodeTableFrame);
+	Ext2INode* inodeTable = PhysicalAddressAsPointer(inodeTableFrame);
 
 	*inodePointer = inodeTable + (tableIndex % 2);
 	return ResultOk;
 }
 
-Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTableFrame, Inode** inodePointer)
+Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTableFrame, Ext2INode** inodePointer)
 {
 	if (filePath[0] != '/')
 		return ResultInvalidPath;
@@ -34,7 +34,7 @@ Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTab
 	// Exclusive
 	usz end = 1;
 
-	Inode* currentInode = ext2->RootInode;
+	Ext2INode* currentInode = ext2->RootInode;
 
 	Frame4KiB directoryEntriesFrame;
 	Result result = AllocateFrame(&g_frameAllocator, &directoryEntriesFrame);
@@ -61,13 +61,13 @@ Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTab
 
 		// Read directory entries
 		u8* inodeEntries = (u8*)PhysicalAddressAsPointer(directoryEntriesFrame);
-		DirectoryEntry* entry = (DirectoryEntry*)inodeEntries;
+		Ext2DirectoryEntry* entry = (Ext2DirectoryEntry*)inodeEntries;
 		bool found = false;
 		while (entry->Inode != 0) {
 			// If the length of the name or the name itself differs, continue
 			if (end - start != entry->NameLengthLow || !MemoryCompare(filePath + start, entry->Name, end - start)) {
 				inodeEntries += entry->Size;
-				entry = (DirectoryEntry*)inodeEntries;
+				entry = (Ext2DirectoryEntry*)inodeEntries;
 				continue;
 			}
 
