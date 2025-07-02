@@ -19,34 +19,34 @@ def CreateRamdisk(args):
     SIGNATURE = 0x53465453
 
     file_entries = []
-    file_data = b''
+    file_data = b""
     current_offset = SUPERBLOCK_SIZE + (FILE_ENTRY_SIZE * len(args.file))
     ramdisk_path = os.path.join(SCRIPT_DIRECTORY, "esp/Supernova/Ramdisk")
 
     for path in args.file:
-        filename = os.path.basename(path).encode('utf-8')
-        if len(filename) > 32:
+        filename = ("/" + os.path.basename(path)).encode("utf-8")
+        if len(filename) > 31:
             raise ValueError(f"Filename too long: {filename}")
 
-        with open(path, 'rb') as f:
+        with open(path, "rb") as f:
             contents = f.read()
 
-        padded_name = filename.ljust(32, b'\x00')
+        padded_name = filename.ljust(32, b"\x00")
         size = len(contents)
 
         file_entries.append((padded_name, size, current_offset))
         file_data += contents
         current_offset += size
 
-    with open(ramdisk_path, 'wb') as out:
-        out.write(struct.pack('<I', SIGNATURE))
-        out.write(struct.pack('<I', 0))
-        out.write(struct.pack('<Q', len(args.file)))
+    with open(ramdisk_path, "wb") as out:
+        out.write(struct.pack("<I", SIGNATURE))
+        out.write(struct.pack("<I", 0))
+        out.write(struct.pack("<Q", len(args.file)))
 
         for name, size, offset in file_entries:
             out.write(name)
-            out.write(struct.pack('<Q', size))
-            out.write(struct.pack('<Q', offset))
+            out.write(struct.pack("<Q", size))
+            out.write(struct.pack("<Q", offset))
 
         out.write(file_data)
 

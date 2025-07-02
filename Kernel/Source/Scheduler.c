@@ -90,7 +90,7 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 		return result;
 	}
 
-	usz fileDescriptorsPoolSize = Page4KiBNext(sizeof(ProcessFileDescriptor) * 64);
+	usz fileDescriptorsPoolSize = Page4KiBNext(sizeof(ProcessFileDescriptor) * MAX_FILE_DESCRIPTORS);
 	Page4KiB fileDescriptorsPool;
 	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, fileDescriptorsPoolSize, PageWriteable, &fileDescriptorsPool);
 	if (result) {
@@ -234,6 +234,19 @@ Result InitScheduler(Scheduler* scheduler)
 	scheduler->CurrentThread = kernelMainThread;
 	kernelMainThread->StackTop = g_bootInfo.KernelStackTop;
 	kernelMainThread->ParentProcess = kernelProcess;
+
+	usz fileDescriptorsPoolSize = Page4KiBNext(sizeof(ProcessFileDescriptor) * MAX_FILE_DESCRIPTORS);
+	Page4KiB fileDescriptorsPool;
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, fileDescriptorsPoolSize, PageWriteable, &fileDescriptorsPool);
+	if (result) {
+		return result;
+	}
+
+	result = InitSizedBlockAllocator(
+		&kernelProcess->FileDescriptors, fileDescriptorsPool, fileDescriptorsPoolSize, sizeof(ProcessFileDescriptor));
+	if (result) {
+		return result;
+	}
 
 	return result;
 }

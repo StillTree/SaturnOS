@@ -15,23 +15,12 @@ static void SizedBlockSetStatus(SizedBlockAllocator* blockAllocator, usz index, 
 	}
 }
 
-/// Returns `true` for allocated blocks and `false` for the unallocated ones.
-static bool SizedBlockGetStatus(SizedBlockAllocator* blockAllocator, usz index)
+bool SizedBlockGetStatus(SizedBlockAllocator* blockAllocator, usz index)
 {
 	const usz mapIndex = (index) / 64;
 	const usz bitIndex = index % 64;
 
 	return ((blockAllocator->BlockBitmap[mapIndex] >> bitIndex) & 1) == 1;
-}
-
-static inline void* SizedBlockGetAddress(SizedBlockAllocator* blockAllocator, usz index)
-{
-	return (void*)(blockAllocator->FirstBlock + (blockAllocator->BlockSizeBytes * index));
-}
-
-static inline usz SizedBlockGetIndex(SizedBlockAllocator* blockAllocator, void* address)
-{
-	return ((VirtualAddress)address - blockAllocator->FirstBlock) / blockAllocator->BlockSizeBytes;
 }
 
 Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, VirtualAddress poolStart, usz poolSizeBytes, usz blockSizeBytes)

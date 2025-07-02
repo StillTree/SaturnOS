@@ -50,7 +50,7 @@ u8 MADTGetAPICEntry(const MADT* madt, MADTBaseEntry** pointer)
 
 Result InitXSDT()
 {
-	XSDT* xsdt = PhysicalAddressAsPointer(g_bootInfo.XSDTAddress);
+	XSDT* xsdt = PhysicalAddressAsPointer(g_bootInfo.XSDTPhysicalAddress);
 
 	if (!SDTIsChecksumValid((SDTHeader*)xsdt)) {
 		return ResultXSDTCorrupted;

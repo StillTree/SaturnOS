@@ -12,6 +12,7 @@
 #include "Scheduler.h"
 #include "Storage/Drivers/AHCI.h"
 #include "Storage/Filesystems/Ext2.h"
+#include "Storage/Filesystems/STFS.h"
 #include "Storage/GPT.h"
 #include "Storage/VirtualFileSystem.h"
 #include "Syscalls.h"
@@ -77,6 +78,9 @@ void KernelMain(KernelBootInfo* bootInfo)
 	SK_LOG_INFO("Initializing the virtual file system layer");
 	SK_PANIC_ON_ERROR(InitVirtualFileSystem(&g_virtualFileSystem),
 		"An unexpected error occured while trying to initialize the virtual file system layer");
+
+	SK_LOG_INFO("Initializing the STFS ramdisk builtin driver");
+	SK_PANIC_ON_ERROR(InitSTFS(), "An unexpected error occured while trying to initialize the STFS ramdisk builtin driver");
 
 	SK_LOG_INFO("Scanning for available PCI devices");
 	SK_PANIC_ON_ERROR(ScanPCIDevices(), "An unexpected error occured while trying to scan for available PCI devices");

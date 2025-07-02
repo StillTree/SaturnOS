@@ -14,12 +14,17 @@ typedef struct VirtualFileSystem {
 	u32 UsedMountLetters;
 } VirtualFileSystem;
 
+typedef struct OpenedFileInformation {
+	usz Size;
+} OpenedFileInformation;
+
 /// These mode numbers correspond to those of `OpenedFileMode`.
 typedef enum MountpointCapabilities : u8 { MountpointReadable = 1, MountpointWriteable = 2 } MountpointCapabilities;
 
 typedef struct MountpointFunctions {
 	Result (*FileOpen)(const i8* relativeFileName, void** fileSystemSpecific);
 	Result (*FileRead)(void* fileSystemSpecific, usz fileOffset, usz countBytes, void* buffer);
+	Result (*FileInformation)(void* fileSystemSpecific, OpenedFileInformation* fileInformation);
 	Result (*FileClose)(void* fileSystemSpecific);
 } MountpointFunctions;
 
@@ -33,6 +38,7 @@ typedef struct Mountpoint {
 typedef struct OpenedFile {
 	Mountpoint* Mountpoint;
 	usz References;
+	OpenedFileInformation CachedInformation;
 	void* FileSystemSpecific;
 } OpenedFile;
 
@@ -57,7 +63,8 @@ Result MountpointGetFromLetter(VirtualFileSystem* fileSystem, i8 mountLetter, Mo
 
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mode, ProcessFileDescriptor** fileDescriptor);
-Result FileRead(ProcessFileDescriptor* fileDescriptor, usz fileOffset, usz countBytes, void* buffer);
+Result FileRead(ProcessFileDescriptor* fileDescriptor, usz countBytes, void* buffer);
+Result FileInformation(ProcessFileDescriptor* fileDescriptor, OpenedFileInformation* fileInformation);
 Result FileClose(VirtualFileSystem* fileSystem, ProcessFileDescriptor* fileDescriptor);
 
 extern VirtualFileSystem g_virtualFileSystem;

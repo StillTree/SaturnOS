@@ -7,7 +7,7 @@ STFSDriver g_stfsDriver;
 
 Result InitSTFS()
 {
-	usz inodeTablePoolSize = Page4KiBNext(sizeof(STFSFileListEntry) * 512);
+	usz inodeTablePoolSize = Page4KiBNext(sizeof(STFSFileListEntry) * STFS_MAX_OPENED_INODES);
 
 	Page4KiB inodeTablePool;
 	Result result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, inodeTablePoolSize, PageWriteable, &inodeTablePool);
@@ -48,6 +48,10 @@ Result STFSFileOpen(const i8* fileName, void** fileSystemSpecific)
 
 Result STFSFileRead(void* fileSystemSpecific, usz fileOffset, usz countBytes, void* buffer)
 {
+	if (countBytes <= 0) {
+		return ResultOk;
+	}
+
 	// TODO: Sanity checks
 	STFSSuperblock* superblock = g_bootInfo.Ramdisk;
 	STFSFileListEntry* fileListEntry = fileSystemSpecific;
@@ -64,6 +68,15 @@ Result STFSFileRead(void* fileSystemSpecific, usz fileOffset, usz countBytes, vo
 	return ResultNotFound;
 }
 
+Result STFSFileInformation(void* fileSystemSpecific, OpenedFileInformation* fileInformation)
+{
+	STFSFileListEntry* fileListEntry = fileSystemSpecific;
+
+	fileInformation->Size = fileListEntry->FileSize;
+
+	return ResultOk;
+}
+
 Result STFSFileClose(void* fileSystemSpecific)
 {
 	STFSSuperblock* superblock = g_bootInfo.Ramdisk;
@@ -74,12 +87,7 @@ Result STFSFileClose(void* fileSystemSpecific)
 			continue;
 		}
 
-		Result result = SizedBlockDeallocate(&g_stfsDriver.INodeTable, fileSystemSpecific);
-		if (result) {
-			return result;
-		}
-
-		return ResultOk;
+		return SizedBlockDeallocate(&g_stfsDriver.INodeTable, fileSystemSpecific);
 	}
 
 	return ResultNotFound;

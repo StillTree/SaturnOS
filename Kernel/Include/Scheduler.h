@@ -8,6 +8,7 @@
 
 constexpr usz MAX_THREADS_PER_PROCESS = 64;
 constexpr usz MAX_PROCESSES = 64;
+constexpr usz MAX_FILE_DESCRIPTORS = 64;
 // 100 KiB
 constexpr usz THREAD_STACK_SIZE_BYTES = 102400;
 

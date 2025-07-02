@@ -200,21 +200,64 @@ Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mo
 		return result;
 	}
 
+	result = mountpoint->Functions.FileInformation(openedFile->FileSystemSpecific, &openedFile->CachedInformation);
+	if (result) {
+		mountpoint->Functions.FileClose(openedFile->FileSystemSpecific);
+		SizedBlockDeallocate(&fileSystem->OpenedFiles, openedFile);
+		SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, *fileDescriptor);
+		return result;
+	}
+
 	return result;
 }
 
-Result FileRead(ProcessFileDescriptor* fileDescriptor, usz fileOffset, usz countBytes, void* buffer)
+Result FileRead(ProcessFileDescriptor* fileDescriptor, usz countBytes, void* buffer)
 {
 	if (!fileDescriptor) {
 		return ResultSerialOutputUnavailable;
 	}
 
+	usz fileDescriptorIndex = SizedBlockGetIndex(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
+	if (!SizedBlockGetStatus(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptorIndex)) {
+		return ResultSerialOutputUnavailable;
+	}
+
 	Mountpoint* mountpoint = fileDescriptor->OpenedFile->Mountpoint;
 
-	Result result = mountpoint->Functions.FileRead(fileDescriptor->OpenedFile->FileSystemSpecific, fileOffset, countBytes, buffer);
+	if (countBytes + fileDescriptor->OffsetBytes > fileDescriptor->OpenedFile->CachedInformation.Size) {
+		countBytes = fileDescriptor->OpenedFile->CachedInformation.Size - fileDescriptor->OffsetBytes;
+	}
+
+	Result result
+		= mountpoint->Functions.FileRead(fileDescriptor->OpenedFile->FileSystemSpecific, fileDescriptor->OffsetBytes, countBytes, buffer);
 	if (result) {
 		return result;
 	}
+
+	fileDescriptor->OffsetBytes += countBytes;
+
+	return result;
+}
+
+Result FileInformation(ProcessFileDescriptor* fileDescriptor, OpenedFileInformation* fileInformation)
+{
+	if (!fileDescriptor) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	usz fileDescriptorIndex = SizedBlockGetIndex(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
+	if (!SizedBlockGetStatus(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptorIndex)) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	Mountpoint* mountpoint = fileDescriptor->OpenedFile->Mountpoint;
+
+	Result result = mountpoint->Functions.FileInformation(fileDescriptor->OpenedFile->FileSystemSpecific, fileInformation);
+	if (result) {
+		return result;
+	}
+
+	fileDescriptor->OpenedFile->CachedInformation = *fileInformation;
 
 	return result;
 }
