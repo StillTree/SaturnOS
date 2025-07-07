@@ -73,6 +73,7 @@ Result STFSFileInformation(void* fileSystemSpecific, OpenedFileInformation* file
 	STFSFileListEntry* fileListEntry = fileSystemSpecific;
 
 	fileInformation->Size = fileListEntry->FileSize;
+	fileInformation->ID = fileListEntry->FileID;
 
 	return ResultOk;
 }
@@ -88,6 +89,22 @@ Result STFSFileClose(void* fileSystemSpecific)
 		}
 
 		return SizedBlockDeallocate(&g_stfsDriver.INodeTable, fileSystemSpecific);
+	}
+
+	return ResultNotFound;
+}
+
+Result STFSFileLookupID(const i8* fileName, u64* id)
+{
+	STFSSuperblock* superblock = g_bootInfo.Ramdisk;
+
+	for (usz i = 0; i < superblock->FileCount; ++i) {
+		if (!MemoryCompare(fileName, superblock->Files[i].FileName, StringSize(fileName))) {
+			continue;
+		}
+
+		*id = superblock->Files[i].FileID;
+		return ResultOk;
 	}
 
 	return ResultNotFound;

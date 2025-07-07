@@ -107,7 +107,7 @@ Result MountpointGetFromLetter(VirtualFileSystem* fileSystem, i8 mountLetter, Mo
 		return ResultOk;
 	}
 
-	return ResultSerialOutputUnavailable;
+	return ResultNotFound;
 }
 
 Result SetMountLetterStatus(VirtualFileSystem* fileSystem, i8 mountLetter, bool reserved)
@@ -152,6 +152,22 @@ Result GetFirstUnusedMountLetter(VirtualFileSystem* fileSystem, i8* mountLetter)
 	return ResultSerialOutputUnavailable;
 }
 
+static Result GetMatchingFile(VirtualFileSystem* fileSystem, Mountpoint* mountpoint, u64 id, OpenedFile** openedFile)
+{
+	OpenedFile* openedFileIterator = nullptr;
+
+	while (!SizedBlockIterate(&fileSystem->OpenedFiles, (void**)&openedFileIterator)) {
+		if (openedFileIterator->Mountpoint != mountpoint || openedFileIterator->CachedInformation.ID != id) {
+			continue;
+		}
+
+		*openedFile = openedFileIterator;
+		return ResultOk;
+	}
+
+	return ResultNotFound;
+}
+
 Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mode, ProcessFileDescriptor** fileDescriptor)
 {
 	// TODO: Make this not shit
@@ -173,39 +189,57 @@ Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mo
 		return ResultSerialOutputUnavailable;
 	}
 
-	// TODO: Check if the file is already opened and compare with flags and do something appropriate
-
-	OpenedFile* openedFile = nullptr;
-	result = SizedBlockAllocate(&fileSystem->OpenedFiles, (void**)&openedFile);
+	u64 fileID;
+	result = mountpoint->Functions.FileLookupID(path + 2, &fileID);
 	if (result) {
 		return result;
 	}
 
+	bool matchingFileFound = true;
+	OpenedFile* openedFile = nullptr;
+	result = GetMatchingFile(fileSystem, mountpoint, fileID, &openedFile);
+	if (result) {
+		// The file is not opened by any other process, let's allocate a new opened file
+		result = SizedBlockAllocate(&fileSystem->OpenedFiles, (void**)&openedFile);
+		if (result) {
+			return result;
+		}
+
+		openedFile->Mountpoint = mountpoint;
+		openedFile->References = 0;
+		matchingFileFound = false;
+	}
+
 	result = SizedBlockAllocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, (void**)fileDescriptor);
 	if (result) {
-		return result;
+		goto DeallocateOpenedFile;
 	}
 
 	(*fileDescriptor)->OpenedFile = openedFile;
 	(*fileDescriptor)->OffsetBytes = 0;
 
-	openedFile->Mountpoint = mountpoint;
-	openedFile->References = 1;
+	++openedFile->References;
 
 	// TODO: In the future add an `OpenedFileMode` that will instead create that file in the case that it doesn't exist
 	result = mountpoint->Functions.FileOpen(path + 2, &openedFile->FileSystemSpecific);
 	if (result) {
-		SizedBlockDeallocate(&fileSystem->OpenedFiles, openedFile);
-		SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, *fileDescriptor);
-		return result;
+		goto DeallocateFileDescriptor;
 	}
 
 	result = mountpoint->Functions.FileInformation(openedFile->FileSystemSpecific, &openedFile->CachedInformation);
 	if (result) {
-		mountpoint->Functions.FileClose(openedFile->FileSystemSpecific);
+		goto CloseFile;
+	}
+
+	return result;
+
+CloseFile:
+	mountpoint->Functions.FileClose(openedFile->FileSystemSpecific);
+DeallocateFileDescriptor:
+	SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, *fileDescriptor);
+DeallocateOpenedFile:
+	if (!matchingFileFound) {
 		SizedBlockDeallocate(&fileSystem->OpenedFiles, openedFile);
-		SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, *fileDescriptor);
-		return result;
 	}
 
 	return result;
@@ -260,6 +294,18 @@ Result FileInformation(ProcessFileDescriptor* fileDescriptor, OpenedFileInformat
 	fileDescriptor->OpenedFile->CachedInformation = *fileInformation;
 
 	return result;
+}
+
+Result FileSetOffset(ProcessFileDescriptor* fileDescriptor, usz offset)
+{
+	// TODO: Remove later when adding writing to files
+	if (offset >= fileDescriptor->OpenedFile->CachedInformation.Size) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	fileDescriptor->OffsetBytes = offset;
+
+	return ResultOk;
 }
 
 Result FileClose(VirtualFileSystem* fileSystem, ProcessFileDescriptor* fileDescriptor)

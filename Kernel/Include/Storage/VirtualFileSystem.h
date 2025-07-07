@@ -16,6 +16,7 @@ typedef struct VirtualFileSystem {
 
 typedef struct OpenedFileInformation {
 	usz Size;
+	u64 ID;
 } OpenedFileInformation;
 
 /// These mode numbers correspond to those of `OpenedFileMode`.
@@ -26,6 +27,7 @@ typedef struct MountpointFunctions {
 	Result (*FileRead)(void* fileSystemSpecific, usz fileOffset, usz countBytes, void* buffer);
 	Result (*FileInformation)(void* fileSystemSpecific, OpenedFileInformation* fileInformation);
 	Result (*FileClose)(void* fileSystemSpecific);
+	Result (*FileLookupID)(const i8* relativeFileName, u64* id);
 } MountpointFunctions;
 
 typedef struct Mountpoint {
@@ -61,10 +63,12 @@ Result MountpointCreate(VirtualFileSystem* fileSystem, i8 mountLetter, Mountpoin
 Result MountpointDelete(VirtualFileSystem* fileSystem, i8 mountLetter);
 Result MountpointGetFromLetter(VirtualFileSystem* fileSystem, i8 mountLetter, Mountpoint** mountpoint);
 
-/// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
+/// These functions should be called only when the interrupt flag is cleared. It can be set afterwards.
+
 Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mode, ProcessFileDescriptor** fileDescriptor);
 Result FileRead(ProcessFileDescriptor* fileDescriptor, usz countBytes, void* buffer);
 Result FileInformation(ProcessFileDescriptor* fileDescriptor, OpenedFileInformation* fileInformation);
+Result FileSetOffset(ProcessFileDescriptor* fileDescriptor, usz offset);
 Result FileClose(VirtualFileSystem* fileSystem, ProcessFileDescriptor* fileDescriptor);
 
 extern VirtualFileSystem g_virtualFileSystem;

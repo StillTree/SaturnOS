@@ -11,6 +11,7 @@ typedef struct STFSFileListEntry {
 	i8 FileName[32];
 	usz FileSize;
 	u64 FileContentOffset;
+	u64 FileID;
 } STFSFileListEntry;
 
 typedef struct STFSSuperblock {
@@ -29,5 +30,6 @@ Result STFSFileOpen(const i8* fileName, void** fileSystemSpecific);
 Result STFSFileRead(void* fileSystemSpecific, usz fileOffset, usz countBytes, void* buffer);
 Result STFSFileInformation(void* fileSystemSpecific, OpenedFileInformation* fileInformation);
 Result STFSFileClose(void* fileSystemSpecific);
+Result STFSFileLookupID(const i8* fileName, u64* id);
 
 extern STFSDriver g_stfsDriver;

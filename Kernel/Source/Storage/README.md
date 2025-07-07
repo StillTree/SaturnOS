@@ -39,6 +39,7 @@ Layout of each entry:
 | `0x00`     | 32       | File name      | The name of the file, null-padded.                        |
 | `0x20`     | 8        | File size      | The size of the file's contents.                          |
 | `0x28`     | 8        | Content offset | Offset of the file's contents from the ramdisk beginning. |
+| `0x30`     | 8        | File ID        | A unique identifier for this file.                        |
 
 ## VFS
 
