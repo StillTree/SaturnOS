@@ -21,7 +21,7 @@ def CreateRamdisk(args):
     file_entries = []
     file_data = b""
     current_offset = SUPERBLOCK_SIZE + (FILE_ENTRY_SIZE * len(args.file))
-    ramdisk_path = os.path.join(SCRIPT_DIRECTORY, "esp/Supernova/Ramdisk")
+    ramdisk_path = os.path.join(SCRIPT_DIRECTORY, "ESP/Supernova/Ramdisk")
     file_id = 0
 
     for path in args.file:
@@ -73,8 +73,8 @@ def PrepareDiskFolders():
     kernel_path = os.path.join(SCRIPT_DIRECTORY, "Kernel/Output/Kernel.elf")
     bootloader_path = os.path.join(SCRIPT_DIRECTORY, "Bootloader/Output/bootx64.efi")
 
-    esp_efi_boot_path = os.path.join(SCRIPT_DIRECTORY, "esp/efi/boot/")
-    esp_supernova_path= os.path.join(SCRIPT_DIRECTORY, "esp/Supernova/")
+    esp_efi_boot_path = os.path.join(SCRIPT_DIRECTORY, "ESP/efi/boot/")
+    esp_supernova_path= os.path.join(SCRIPT_DIRECTORY, "ESP/Supernova/")
 
     sata_img_path = os.path.join(SCRIPT_DIRECTORY, "Sata.img")
 
@@ -89,7 +89,7 @@ def PrepareDiskFolders():
 
 def Run(args):
     sata_img_path = os.path.join(SCRIPT_DIRECTORY, "Sata.img")
-    esp_path = os.path.join(SCRIPT_DIRECTORY, "esp/")
+    esp_path = os.path.join(SCRIPT_DIRECTORY, "ESP/")
 
     command = [
         args.with_qemu,

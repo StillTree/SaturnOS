@@ -1,0 +1,6 @@
+BasedOnStyle: WebKit
+
+UseTab: Always
+TabWidth: 4
+ColumnLimit: 140
+LineEnding: LF

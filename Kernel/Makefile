@@ -1,15 +1,19 @@
-TARGET_DIR = Output
-SRC_DIR    = Source
-INC_DIR    = Include
-TARGET     = $(TARGET_DIR)/Kernel.elf
+TARGET_DIR  = Output
+SRC_DIR     = Source
+INC_DIR     = Include
+SYSROOT_DIR = ../SystemRoot
+LIB_DIR     = $(SYSROOT_DIR)/Library/Kernel
+TARGET      = $(TARGET_DIR)/Kernel.elf
+COMPILER_RT = $(LIB_DIR)/libCompilerRT.a
 
-CC = x86_64-elf-gcc
-AS = x86_64-elf-as
-LD = x86_64-elf-ld
+CC = clang
+AS = clang
+LD = ld.lld
 
 MODE ?= -O0 -g -DSK_DEBUG
 
 CCFLAGS = \
+	--sysroot=$(SYSROOT_DIR) \
 	-I $(INC_DIR) \
 	-std=c23 \
 	-mno-red-zone \
@@ -19,6 +23,7 @@ CCFLAGS = \
 	-mno-sse2 \
 	-ffreestanding \
 	-nostdlib \
+	-nostdlibinc \
 	-Wall \
 	-Wextra \
 	-Wpedantic
@@ -27,10 +32,12 @@ INTERRUPT_CCFLAGS = \
 	-mgeneral-regs-only
 
 LDFLAGS = \
+	--sysroot=$(SYSROOT_DIR) \
 	-T linker.ld \
 	-static \
 	-z max-page-size=0x1000 \
-	-nostdlib
+	-nostdlib \
+	$(COMPILER_RT)
 
 C_FILES           = $(shell find $(SRC_DIR) -name '*.c')
 INTERRUPT_C_FILES = $(SRC_DIR)/InterruptHandlers.c
@@ -55,7 +62,7 @@ $(TARGET_DIR)/%.o: $(SRC_DIR)/%.c | $(TARGET_DIR)
 
 $(TARGET_DIR)/%.o: $(SRC_DIR)/%.s | $(TARGET_DIR)
 	@mkdir -p $(dir $@)
-	$(AS) $< -o $@
+	$(AS) -c $< -o $@
 
 $(TARGET): $(OBJ_FILES)
 	$(LD) $(LDFLAGS) $^ -o $@

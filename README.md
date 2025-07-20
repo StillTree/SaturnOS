@@ -2,7 +2,7 @@
 
 This is a repository (monorepo?) for storing all necessary components for runnning my own hobby operating system.
 
-> Compiled and tested using GCC, other compilers will most definitely require some minor code changes.
+> Compiled and tested using Clang, other compilers will most definitely require some minor code changes.
 
 ## Structure
 
@@ -21,34 +21,28 @@ Currently there are 3 main components:
 -   The bootloader - `Supernova`
 -   The utility build script - `Titan`
 
+## Custom toolchain
+
+I use a completely custom OS-specific Clang toolchain. All of the instructions on correctly building all of its parts
+can be found [here](ToolChain/README.md).
+
 ## Roadmap
 
 More like plans for the future but yes :D
 
-Up to now I have added a lot of stuff into the kernel which made everything a total mess. These are changes
-(written down primarily for myself so I don't forget them ;D)that I plan to implement in the coming *units of time*
-(I have no clue how long that will take):
+- do some shit: elf loading, a build chain, syscalls, loading programs, etc.
+- adding more ext2 support into the monolith
 
--   Firstly, a scheduler to support multiple processes
--   A robust IPC system to be used primarily by th drivers
--   Next, breaking down the kernel into a hybrid design (drivers running as standalone processes and some other changes too, most likely)
--   Then, a VFS layer to support mounting different file systems and so on...
--   A rudamentary RAM Disk system in which the most necessary drivers will be placed
--   Using EDK II to build the bootloader (so as to not mess with my custom "UEFI headers")
+- improve the scheduler, maybe rewrite for ipc in mind
+- a robust ipc system inspired by the zircon/fuchsia message passing
+- move stuff out of the kernel into separate processes
+- do some more synchronisation so everything is safe
+- eventually the only syscalls left will be the ones for message passing, everything else will be done by the message passing,
+e.g. to read a file a process would need to send a message to the vfs process and the vfs process will then respond
 
-### The driver design
-
-I want it to somewhat resemble how macOS does these but in my, greatly simplified, way.
-
-Each driver will be running as a separate process (in user space) with its own address space and so on.
-When the kernel detects a device it checks if any drivers are available for that specific device type
-(it will match these based on their system paths which will have a separate folder and etc. for a device type in PCI for example).
-Then it will load the driver (the driver is stored as an elf executable with some special metadata) and initialize everything needed.
-After that the kernel can communicate with the driver to use its functionality.
-
-The communicating part will probably be handled by some sort of IPC or other similar system.
-
-The drivers will of course have their own set of APIs and functions for use, provided by the kernel.
+These are vague plans for me split into two "phases". Phase one: fun shit - just implement stuff and gain knowledge and experience.
+Phase two: my IPC dream - I don't know if that can be calld a microkernel, but that is my dream kernel vision, a micro-vision perhaps :D,
+that will take a lot of time and planning but I will eventually move towards that goal, slowly but steadily.
 
 ## Why?
 

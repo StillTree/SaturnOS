@@ -4,6 +4,7 @@
 #include "Memory/PageTable.h"
 #include "Memory/VirtualMemoryAllocator.h"
 #include "Scheduler.h"
+#include "Storage/Filesystems/STFS.h"
 
 VirtualFileSystem g_virtualFileSystem;
 
@@ -35,10 +36,21 @@ Result InitVirtualFileSystem(VirtualFileSystem* fileSystem)
 
 	fileSystem->UsedMountLetters = 0;
 
+	MountpointFunctions stfsFunctions = { .FileOpen = STFSFileOpen,
+		.FileRead = STFSFileRead,
+		.FileLookupID = STFSFileLookupID,
+		.FileInformation = STFSFileInformation,
+		.FileClose = STFSFileClose };
+	result = MountpointCreate(fileSystem, 'X', MountpointReadable, &stfsFunctions);
+	if (result) {
+		return result;
+	}
+
 	return result;
 }
 
-Result MountpointCreate(VirtualFileSystem* fileSystem, i8 mountLetter, MountpointCapabilities capabilities, MountpointFunctions functions)
+Result MountpointCreate(
+	VirtualFileSystem* fileSystem, i8 mountLetter, MountpointCapabilities capabilities, const MountpointFunctions* functions)
 {
 	Result result = ResultOk;
 
@@ -64,7 +76,7 @@ Result MountpointCreate(VirtualFileSystem* fileSystem, i8 mountLetter, Mountpoin
 
 	mountpoint->MountLetter = mountLetter;
 	mountpoint->Capabilities = capabilities;
-	mountpoint->Functions = functions;
+	mountpoint->Functions = *functions;
 
 	return result;
 }

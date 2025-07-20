@@ -8,6 +8,11 @@ void MemoryFill(void* ptr, u8 value, usz size)
 	}
 }
 
+void memcpy(void* destination, void* source, usz size)
+{
+	MemoryCopy(source, destination, size);
+}
+
 void MemoryCopy(void* source, void* destination, usz size)
 {
 	u8* src = source;

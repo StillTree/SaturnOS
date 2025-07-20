@@ -211,8 +211,8 @@ static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus, Page4KiB mapp
 
 			SK_LOG_DEBUG("Detected PCI Device: device = %u, function = %u, VendorID = %x, DeviceID = %x, ClassCode = %x, "
 						 "Subclass = %x, ProgIF = %x",
-				device, function, configSpace->VendorID, configSpace->DeviceID, configSpace->ClassCode, configSpace->Subclass,
-				configSpace->ProgIF);
+				(u64)device, (u64)function, (u64)configSpace->VendorID, (u64)configSpace->DeviceID, (u64)configSpace->ClassCode,
+				(u64)configSpace->Subclass, (u64)configSpace->ProgIF);
 
 			// The function is a temporary thing, later I plan on supporting multiple devices of course
 			if (configSpace->ClassCode == 0x1 && configSpace->Subclass == 0x6 && configSpace->ProgIF == 0x1 && function == 0) {

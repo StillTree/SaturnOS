@@ -60,7 +60,7 @@ void InitGDT()
 	gdtDescriptor.Size = sizeof(GDT) - 1;
 
 	__asm__ volatile("lgdt %0" : : "m"(gdtDescriptor));
-	__asm__ volatile("ltr %0" : : "r"(0x28));
+	__asm__ volatile("ltr %0" : : "r"((u16)0x28));
 
 	FlushGDT();
 }

@@ -59,7 +59,8 @@ Result SetMountLetterStatus(VirtualFileSystem* fileSystem, i8 mountLetter, bool 
 bool GetMountLetterStatus(VirtualFileSystem* fileSystem, i8 mountLetter);
 
 /// If `mountLetter` is 0, the first available letter will be chosen automatically.
-Result MountpointCreate(VirtualFileSystem* fileSystem, i8 mountLetter, MountpointCapabilities capabilities, MountpointFunctions functions);
+Result MountpointCreate(
+	VirtualFileSystem* fileSystem, i8 mountLetter, MountpointCapabilities capabilities, const MountpointFunctions* functions);
 Result MountpointDelete(VirtualFileSystem* fileSystem, i8 mountLetter);
 Result MountpointGetFromLetter(VirtualFileSystem* fileSystem, i8 mountLetter, Mountpoint** mountpoint);
 
