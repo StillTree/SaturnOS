@@ -9,6 +9,35 @@ import struct
 
 SCRIPT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
 
+def CreateSysroot(args):
+    system_root_path = os.path.join(SCRIPT_DIRECTORY, "SystemRoot/")
+    kernel_library_path = os.path.join(system_root_path, "Library/Kernel/")
+    userspace_library_path = os.path.join(system_root_path, "Library/")
+    userspace_include_path = os.path.join(system_root_path, "Include/")
+
+    libsaturn_path = os.path.join(SCRIPT_DIRECTORY, "LibSaturn/Output/LibSaturn.a")
+    libsaturn_include_path = os.path.join(SCRIPT_DIRECTORY, "LibSaturn/Include/")
+
+    os.makedirs(kernel_library_path, exist_ok=True)
+    os.makedirs(userspace_library_path, exist_ok=True)
+
+    shutil.copy(libsaturn_path, userspace_library_path)
+    shutil.copytree(libsaturn_include_path, userspace_include_path, dirs_exist_ok=True)
+
+    if args.userspace_compiler_rt is not None:
+        if args.userspace_compiler_rt.endswith(".a") and os.path.isfile(args.userspace_compiler_rt):
+            shutil.copy(args.userspace_compiler_rt, os.path.join(userspace_library_path, "libCompilerRT.a"))
+        else:
+            raise ValueError(f"The file provided is no a valid archive: {args.userspace_compiler_rt}")
+
+    if args.kernel_compiler_rt is not None:
+        if args.kernel_compiler_rt.endswith(".a") and os.path.isfile(args.kernel_compiler_rt):
+            shutil.copy(args.kernel_compiler_rt, os.path.join(kernel_library_path, "libCompilerRT.a"))
+        else:
+            raise ValueError(f"The file provided is no a valid archive: {args.kernel_compiler_rt}")
+
+    print("Created the system root")
+
 def CreateRamdisk(args):
     if not args.file or len(args.file) <= 0:
         raise ValueError("No files specified")
@@ -55,17 +84,21 @@ def CreateRamdisk(args):
 
     print(f"Created ramdisk: {ramdisk_path}, with file(s): {", ".join(args.file)}")
 
-def Compile(args):
+def Compile(component, args):
     kernel_path = os.path.join(SCRIPT_DIRECTORY, "Kernel/")
     bootloader_path = os.path.join(SCRIPT_DIRECTORY, "Bootloader/")
+    libsaturn_path = os.path.join(SCRIPT_DIRECTORY, "LibSaturn/")
 
-    if not args.only_kernel:
-        print("Compiling the bootloader...")
-        subprocess.run(["make", "-C", bootloader_path, f"MODE={"-O2 -DSN_RELEASE" if args.release else "-O0 -g -DSN_DEBUG"}"], check=True)
-
-    if not args.only_bootloader:
-        print("Compiling the kernel...")
-        subprocess.run(["make", "-C", kernel_path, f"MODE={"-O2 -DSK_RELEASE" if args.release else "-O0 -g -DSK_DEBUG"}"], check=True)
+    match component:
+        case "kernel":
+            print("Compiling the kernel...")
+            subprocess.run(["make", "-C", kernel_path, f"MODE={"-O2 -DSK_RELEASE" if args.release else "-O0 -g -DSK_DEBUG"}"], check=True)
+        case "bootloader":
+            print("Compiling the bootloader...")
+            subprocess.run(["make", "-C", bootloader_path, f"MODE={"-O2 -DSN_RELEASE" if args.release else "-O0 -g -DSN_DEBUG"}"], check=True)
+        case "libsaturn":
+            print("Compiling LibSaturn...")
+            subprocess.run(["make", "-C", libsaturn_path, f"MODE={"-O2 -DLS_RELEASE" if args.release else "-O0 -g -DLS_DEBUG"}"], check=True)
 
 def PrepareDiskFolders():
     print("Preparing mapped disks...")
@@ -81,7 +114,7 @@ def PrepareDiskFolders():
     os.makedirs(esp_efi_boot_path, exist_ok=True)
     os.makedirs(esp_supernova_path, exist_ok=True)
 
-    if not os.path.exists(sata_img_path):
+    if not os.path.isfile(sata_img_path):
         subprocess.run(["dd", "if=/dev/zero", f"of={sata_img_path}", "bs=1M", "count=1024"], check=True)
 
     shutil.copy(bootloader_path, esp_efi_boot_path)
@@ -123,36 +156,45 @@ def Run(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog=sys.argv[0], description="SaturnOS's utility build script.")
 
-    subparsers = parser.add_subparsers(dest="command", title="Commands")
+    subparsers = parser.add_subparsers(dest="command", title="Commands", required=True)
 
-    build = subparsers.add_parser("build", aliases=["b"], help="compiles the entire operating system")
+    build = subparsers.add_parser("build", aliases=["b"], help="compiles components of the operating system")
+    build.set_defaults(command="build")
+    build_subparsers = build.add_subparsers(dest="subcommand", title="Subcommands", required=True)
+
+    kernel = build_subparsers.add_parser("kernel", help="builds just the kernel")
+    kernel.add_argument("-r", "--release", action="store_true", help="enables optimizations and doesn't include debug symbols")
+
+    bootloader = build_subparsers.add_parser("bootloader", help="builds just the bootloader")
+    bootloader.add_argument("-r", "--release", action="store_true", help="enables optimizations and doesn't include debug symbols")
+
+    libsaturn = build_subparsers.add_parser("libsaturn", help="builds just LibSaturn")
+    libsaturn.add_argument("-r", "--release", action="store_true", help="enables optimizations and doesn't include debug symbols")
     
     run = subparsers.add_parser("run", aliases=["r"], help="runs the operating system using QEMU")
-
-    ramdisk = subparsers.add_parser("ramdisk-create", aliases=["rc"], help="creates a ramdisk file with the specified files")
-
-    ramdisk.add_argument("-f", "--file", action="append", help="adds a file to the ramdisk")
-
-    build.add_argument("-r", "--release", action="store_true", help="enables optimizations and doesn't include debug symbols")
+    run.set_defaults(command="run")
     run.add_argument("-r", "--release", action="store_true", help="enables optimizations and doesn't include debug symbols")
-
-    build.add_argument("--only-kernel", action="store_true", help="invokes the Makefile only in the kernel's folder")
-    run.add_argument("--only-kernel", action="store_true", help="invokes the Makefile only in the kernel's folder")
-
-    build.add_argument("--only-bootloader", action="store_true", help="invokes the Makefile only in the bootloader's folder")
-    run.add_argument("--only-bootloader", action="store_true", help="invokes the Makefile only in the bootloader's folder")
-    
     run.add_argument("--with-qemu", default="qemu-system-x86_64", metavar="<binary>",
                      help="uses the given binary instead of the default qemu-system-x86_64")
-
     run.add_argument("--with-ovmf-code", metavar="<path>", default="/opt/OVMF/OVMF_CODE.fd",
-                               help="uses the given OVMF code binary instead of the default /opt/OVMF/OVMF_CODE.fd")
-
+                     help="uses the given OVMF code binary instead of the default /opt/OVMF/OVMF_CODE.fd")
     run.add_argument("--with-ovmf-vars", metavar="<path>", default="/opt/OVMF/OVMF_VARS.fd",
-                               help="uses the given OVMF vars binary instead of the default /opt/OVMF/OVMF_VARS.fd")
-
+                     help="uses the given OVMF vars binary instead of the default /opt/OVMF/OVMF_VARS.fd")
     run.add_argument("--enable-kvm", action="store_true", help="enables KVM in QEMU")
     run.add_argument("--remote-gdb", action="store_true", help="enables remote QEMU GDB debugging")
+
+    create = subparsers.add_parser("create", aliases=["c"], help="creates the helper necessary parts of SaturnOS")
+    create.set_defaults(command="create")
+    create_subparsers = create.add_subparsers(dest="subcommand", title="Subcommands", required=True)
+
+    ramdisk = create_subparsers.add_parser("ramdisk", help="creates the ramdisk file")
+    ramdisk.add_argument("-f", "--file", action="append", help="adds a file to the ramdisk")
+
+    system_root = create_subparsers.add_parser("sysroot", help="assembles the system root folder")
+    system_root.add_argument("-u", "--userspace-compiler-rt", metavar="<path>", help="path to the userspace Compiler RT archive")
+    system_root.add_argument("-k", "--kernel-compiler-rt", metavar="<path>", help="path to the kernel Compiler RT archive")
+    system_root.add_argument("-r", "--release", action="store_true",
+                           help="enables optimizations for LibSaturn and doesn't include debug symbols")
 
     if len(sys.argv) == 1:
         parser.print_help(sys.stderr)
@@ -162,11 +204,13 @@ if __name__ == "__main__":
 
     match args.command:
         case "build":
-            Compile(args)
-            PrepareDiskFolders()
+            Compile(args.subcommand, args)
         case "run":
-            Compile(args)
-            PrepareDiskFolders()
             Run(args)
-        case "ramdisk-create":
-            CreateRamdisk(args)
+        case "create":
+            match args.subcommand:
+                case "ramdisk":
+                    CreateRamdisk(args)
+                case "sysroot":
+                    Compile("libsaturn", args)
+                    CreateSysroot(args)
