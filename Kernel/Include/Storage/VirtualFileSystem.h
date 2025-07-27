@@ -4,6 +4,8 @@
 #include "Memory/SizedBlockAllocator.h"
 #include "Result.h"
 
+// TODO: Change whole design to labels instead of letters
+
 constexpr usz MAX_MOUNTPOINTS = 32;
 constexpr usz MAX_OPENED_FILES = 64;
 
@@ -66,10 +68,10 @@ Result MountpointGetFromLetter(VirtualFileSystem* fileSystem, i8 mountLetter, Mo
 
 /// These functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 
-Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mode, ProcessFileDescriptor** fileDescriptor);
-Result FileRead(ProcessFileDescriptor* fileDescriptor, usz countBytes, void* buffer);
-Result FileInformation(ProcessFileDescriptor* fileDescriptor, OpenedFileInformation* fileInformation);
-Result FileSetOffset(ProcessFileDescriptor* fileDescriptor, usz offset);
-Result FileClose(VirtualFileSystem* fileSystem, ProcessFileDescriptor* fileDescriptor);
+Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mode, usz* fileDescriptor);
+Result FileRead(usz fileDescriptor, usz countBytes, void* buffer);
+Result FileInformation(usz fileDescriptor, OpenedFileInformation* fileInformation);
+Result FileSetOffset(usz fileDescriptor, usz offset);
+Result FileClose(VirtualFileSystem* fileSystem, usz fileDescriptor);
 
 extern VirtualFileSystem g_virtualFileSystem;

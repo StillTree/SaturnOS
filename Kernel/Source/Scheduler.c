@@ -11,6 +11,7 @@ Scheduler g_scheduler;
 
 static Result AllocateThreadStack(Process* process, Page4KiB* stackTop)
 {
+	// TODO: Add random stack offset support (subtract a random number between 0 and 4096 from the stack top and align it to 16 bytes)
 	Page4KiB stackBottom;
 	Result result = AllocateBackedVirtualMemory(
 		&process->VirtualMemoryAllocator, THREAD_STACK_SIZE_BYTES, PageWriteable | PageUserAccessible | PageNoExecute, &stackBottom);

@@ -180,7 +180,7 @@ static Result GetMatchingFile(VirtualFileSystem* fileSystem, Mountpoint* mountpo
 	return ResultNotFound;
 }
 
-Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mode, ProcessFileDescriptor** fileDescriptor)
+Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mode, usz* fileDescriptor)
 {
 	// TODO: Make this not shit
 	if (!path || path[0] < 'A' || path[0] > 'Z' || path[1] != ':' || path[2] != '/') {
@@ -222,13 +222,14 @@ Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mo
 		matchingFileFound = false;
 	}
 
-	result = SizedBlockAllocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, (void**)fileDescriptor);
+	ProcessFileDescriptor* descriptor;
+	result = SizedBlockAllocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, (void**)&descriptor);
 	if (result) {
 		goto DeallocateOpenedFile;
 	}
 
-	(*fileDescriptor)->OpenedFile = openedFile;
-	(*fileDescriptor)->OffsetBytes = 0;
+	descriptor->OpenedFile = openedFile;
+	descriptor->OffsetBytes = 0;
 
 	++openedFile->References;
 
@@ -243,12 +244,13 @@ Result FileOpen(VirtualFileSystem* fileSystem, const i8* path, OpenedFileMode mo
 		goto CloseFile;
 	}
 
+	*fileDescriptor = SizedBlockGetIndex(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, descriptor);
 	return result;
 
 CloseFile:
 	mountpoint->Functions.FileClose(openedFile->FileSystemSpecific);
 DeallocateFileDescriptor:
-	SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, *fileDescriptor);
+	SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, descriptor);
 DeallocateOpenedFile:
 	if (!matchingFileFound) {
 		SizedBlockDeallocate(&fileSystem->OpenedFiles, openedFile);
@@ -257,98 +259,99 @@ DeallocateOpenedFile:
 	return result;
 }
 
-Result FileRead(ProcessFileDescriptor* fileDescriptor, usz countBytes, void* buffer)
+Result FileRead(usz fileDescriptor, usz countBytes, void* buffer)
 {
-	if (!fileDescriptor) {
+	if (!SizedBlockGetStatus(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor)) {
 		return ResultSerialOutputUnavailable;
 	}
 
-	usz fileDescriptorIndex = SizedBlockGetIndex(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
-	if (!SizedBlockGetStatus(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptorIndex)) {
-		return ResultSerialOutputUnavailable;
+	ProcessFileDescriptor* descriptor = SizedBlockGetAddress(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
+
+	Mountpoint* mountpoint = descriptor->OpenedFile->Mountpoint;
+
+	if (countBytes + descriptor->OffsetBytes > descriptor->OpenedFile->CachedInformation.Size) {
+		countBytes = descriptor->OpenedFile->CachedInformation.Size - descriptor->OffsetBytes;
 	}
 
-	Mountpoint* mountpoint = fileDescriptor->OpenedFile->Mountpoint;
-
-	if (countBytes + fileDescriptor->OffsetBytes > fileDescriptor->OpenedFile->CachedInformation.Size) {
-		countBytes = fileDescriptor->OpenedFile->CachedInformation.Size - fileDescriptor->OffsetBytes;
-	}
-
-	Result result
-		= mountpoint->Functions.FileRead(fileDescriptor->OpenedFile->FileSystemSpecific, fileDescriptor->OffsetBytes, countBytes, buffer);
+	Result result = mountpoint->Functions.FileRead(descriptor->OpenedFile->FileSystemSpecific, descriptor->OffsetBytes, countBytes, buffer);
 	if (result) {
 		return result;
 	}
 
-	fileDescriptor->OffsetBytes += countBytes;
+	descriptor->OffsetBytes += countBytes;
 
 	return result;
 }
 
-Result FileInformation(ProcessFileDescriptor* fileDescriptor, OpenedFileInformation* fileInformation)
+Result FileInformation(usz fileDescriptor, OpenedFileInformation* fileInformation)
 {
-	if (!fileDescriptor) {
+	if (!SizedBlockGetStatus(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor)) {
 		return ResultSerialOutputUnavailable;
 	}
 
-	usz fileDescriptorIndex = SizedBlockGetIndex(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
-	if (!SizedBlockGetStatus(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptorIndex)) {
-		return ResultSerialOutputUnavailable;
-	}
+	ProcessFileDescriptor* descriptor = SizedBlockGetAddress(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
 
-	Mountpoint* mountpoint = fileDescriptor->OpenedFile->Mountpoint;
+	Mountpoint* mountpoint = descriptor->OpenedFile->Mountpoint;
 
-	Result result = mountpoint->Functions.FileInformation(fileDescriptor->OpenedFile->FileSystemSpecific, fileInformation);
+	Result result = mountpoint->Functions.FileInformation(descriptor->OpenedFile->FileSystemSpecific, fileInformation);
 	if (result) {
 		return result;
 	}
 
-	fileDescriptor->OpenedFile->CachedInformation = *fileInformation;
+	descriptor->OpenedFile->CachedInformation = *fileInformation;
 
 	return result;
 }
 
-Result FileSetOffset(ProcessFileDescriptor* fileDescriptor, usz offset)
+Result FileSetOffset(usz fileDescriptor, usz offset)
 {
+	if (!SizedBlockGetStatus(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor)) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	ProcessFileDescriptor* descriptor = SizedBlockGetAddress(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
+
 	// TODO: Remove later when adding writing to files
-	if (offset >= fileDescriptor->OpenedFile->CachedInformation.Size) {
+	if (offset >= descriptor->OpenedFile->CachedInformation.Size) {
 		return ResultSerialOutputUnavailable;
 	}
 
-	fileDescriptor->OffsetBytes = offset;
+	descriptor->OffsetBytes = offset;
 
 	return ResultOk;
 }
 
-Result FileClose(VirtualFileSystem* fileSystem, ProcessFileDescriptor* fileDescriptor)
+Result FileClose(VirtualFileSystem* fileSystem, usz fileDescriptor)
 {
-	if (!fileDescriptor) {
+	if (!SizedBlockGetStatus(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor)) {
 		return ResultSerialOutputUnavailable;
 	}
 
+	ProcessFileDescriptor* descriptor = SizedBlockGetAddress(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
+
 	Result result = ResultOk;
 
-	if (fileDescriptor->OpenedFile->References <= 1) {
+	if (descriptor->OpenedFile->References <= 1) {
 		// This descriptor is the only one referencing this file, deallocate everything
-		result = fileDescriptor->OpenedFile->Mountpoint->Functions.FileClose(fileDescriptor->OpenedFile->FileSystemSpecific);
+		result = descriptor->OpenedFile->Mountpoint->Functions.FileClose(descriptor->OpenedFile->FileSystemSpecific);
 		if (result) {
 			return result;
 		}
 
-		result = SizedBlockDeallocate(&fileSystem->OpenedFiles, fileDescriptor->OpenedFile);
+		result = SizedBlockDeallocate(&fileSystem->OpenedFiles, descriptor->OpenedFile);
 		if (result) {
 			return result;
 		}
 
-		result = SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
+		result = SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, descriptor);
 		if (result) {
 			return result;
 		}
 	} else {
 		// There are other processes referencing this file, deallocate only current process's file descriptor
-		--fileDescriptor->OpenedFile->References;
+		--descriptor->OpenedFile->References;
 
-		result = SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, fileDescriptor);
+		result = SizedBlockDeallocate(&g_scheduler.CurrentThread->ParentProcess->FileDescriptors, descriptor);
 		if (result) {
 			return result;
 		}
