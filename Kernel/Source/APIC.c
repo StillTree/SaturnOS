@@ -86,7 +86,7 @@ void IOAPICSetRedirectionEntry(u8 irq, u64 entry)
 Result InitAPIC()
 {
 	if (!g_cpuInformation.SupportsX2APIC) {
-		SK_LOG_DEBUG("x2APIC not supported, falling back to xAPIC");
+		Log(SK_LOG_DEBUG "x2APIC not supported, falling back to xAPIC");
 
 		// Enabled the xAPIC (or just APIC, I guess)
 		u64 apicBase = ReadMSR(MSR_APIC_BASE);
@@ -181,7 +181,7 @@ void InitAPICTimer()
 	OutputU8(0x40, 0);
 	OutputU8(0x40, 0);
 
-	SK_LOG_DEBUG("LAPIC Timer frequency: %u MHz", g_apic.LAPICTimerFrequency / 1000000);
+	Log(SK_LOG_DEBUG "LAPIC Timer frequency: %u MHz", g_apic.LAPICTimerFrequency / 1000000);
 
 	LAPICWriteRegister(LAPIC_LVT_TIMER_REGISTER, ((1 << 17) & ~(1 << 18)) | 34);
 	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, g_apic.LAPICTimerFrequency / 100);

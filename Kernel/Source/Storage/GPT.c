@@ -53,7 +53,7 @@ Result DetectGPTPartitions()
 		if (GUIDEmpty(gptEntries[i].PartitionGUID))
 			continue;
 
-		SK_LOG_DEBUG("Detected usable GPT partition: StartLBA = %u, EndLBA = %u, Attributes = %x, Name = \"%w\", GUID = %g",
+		Log(SK_LOG_DEBUG "Detected usable GPT partition: StartLBA = %u, EndLBA = %u, Attributes = %x, Name = \"%w\", GUID = %g",
 			gptEntries[i].StartLBA, gptEntries[i].EndLBA, gptEntries[i].Attributes, gptEntries[i].Name, gptEntries[i].PartitionGUID);
 	}
 

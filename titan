@@ -121,6 +121,11 @@ def PrepareDiskFolders():
     shutil.copy(kernel_path, esp_supernova_path)
 
 def Run(args):
+    Compile("kernel", args)
+    Compile("bootloader", args)
+    Compile("libsaturn", args)
+    PrepareDiskFolders()
+
     sata_img_path = os.path.join(SCRIPT_DIRECTORY, "Sata.img")
     esp_path = os.path.join(SCRIPT_DIRECTORY, "ESP/")
 

@@ -83,7 +83,7 @@ Result SizedBlockDeallocate(SizedBlockAllocator* blockAllocator, void* block)
 	bool allocated = SizedBlockGetStatus(blockAllocator, index);
 
 	if (!allocated) {
-		SK_LOG_WARN("An attempt was made to deallocate an unallocated memory block");
+		Log(SK_LOG_WARN "An attempt was made to deallocate an unallocated memory block");
 		return ResultSerialOutputUnavailable;
 	}
 

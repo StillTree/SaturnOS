@@ -16,7 +16,7 @@ Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, Pa
 		Frame4KiB newP3;
 		Result result = AllocateFrame(&g_frameAllocator, &newP3);
 		if (result) {
-			SK_LOG_ERROR("An unexpected error occured while trying to allocate a memory frame");
+			Log(SK_LOG_ERROR "An unexpected error occured while trying to allocate a memory frame");
 			return result;
 		}
 
@@ -37,7 +37,7 @@ Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, Pa
 		Frame4KiB newP2;
 		Result result = AllocateFrame(&g_frameAllocator, &newP2);
 		if (result) {
-			SK_LOG_ERROR("An unexpected error occured while trying to allocate a memory frame");
+			Log(SK_LOG_ERROR "An unexpected error occured while trying to allocate a memory frame");
 			return result;
 		}
 
@@ -58,7 +58,7 @@ Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, Pa
 		Frame4KiB newP1;
 		Result result = AllocateFrame(&g_frameAllocator, &newP1);
 		if (result) {
-			SK_LOG_ERROR("An unexpected error occured while trying to allocate a memory frame");
+			Log(SK_LOG_ERROR "An unexpected error occured while trying to allocate a memory frame");
 			return result;
 		}
 
@@ -76,7 +76,7 @@ Result Page4KiBMapTo(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, Pa
 
 	// If we are trying to map an existing page, something went really wrong...
 	if (p1Table[p1Index] & PagePresent) {
-		SK_LOG_WARN("An attempt was made to map an existing page table entry");
+		Log(SK_LOG_WARN "An attempt was made to map an existing page table entry");
 		return ResultPageAlreadyMapped;
 	}
 
@@ -92,7 +92,7 @@ Result Page4KiBUnmap(Page4KiB page)
 
 	// If there is no Level 3 table at the expected level 4's index, this virtual address is not mapped.
 	if (!(p4Table[p4Index] & PagePresent)) {
-		SK_LOG_WARN("An attempt was made to unmap an already unmapped page");
+		Log(SK_LOG_WARN "An attempt was made to unmap an already unmapped page");
 		return ResultPageAlreadyUnmapped;
 	}
 
@@ -101,7 +101,7 @@ Result Page4KiBUnmap(Page4KiB page)
 
 	// If there is no Level 2 table at the expected level 3's index, this virtual address is not mapped.
 	if (!(p3Table[p3Index] & PagePresent)) {
-		SK_LOG_WARN("An attempt was made to unmap an already unmapped page");
+		Log(SK_LOG_WARN "An attempt was made to unmap an already unmapped page");
 		return ResultPageAlreadyUnmapped;
 	}
 
@@ -110,7 +110,7 @@ Result Page4KiBUnmap(Page4KiB page)
 
 	// If there is no Level 1 table at the expected level 2's index, this virtual address is not mapped.
 	if (!(p2Table[p2Index] & PagePresent)) {
-		SK_LOG_WARN("An attempt was made to unmap an already unmapped page");
+		Log(SK_LOG_WARN "An attempt was made to unmap an already unmapped page");
 		return ResultPageAlreadyUnmapped;
 	}
 
@@ -119,7 +119,7 @@ Result Page4KiBUnmap(Page4KiB page)
 
 	// If there is no entry at the expected level 1's index, this virtual address is not mapped.
 	if (!(p1Table[p1Index] & PagePresent)) {
-		SK_LOG_WARN("An attempt was made to unmap an already unmapped page");
+		Log(SK_LOG_WARN "An attempt was made to unmap an already unmapped page");
 		return ResultPageAlreadyUnmapped;
 	}
 

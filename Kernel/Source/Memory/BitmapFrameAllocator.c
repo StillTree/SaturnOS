@@ -38,7 +38,7 @@ Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapE
 	const usz neededFrames = ((((lastFrame / 4096) + 7) / 8) + FRAME_4KIB_SIZE_BYTES - 1) / FRAME_4KIB_SIZE_BYTES;
 
 	if (neededFrames >= ((memoryMap[0].PhysicalEnd + 1 - memoryMap[0].PhysicalStart) / FRAME_4KIB_SIZE_BYTES)) {
-		SK_LOG_ERROR("There is not enough contiguous physical frames to allocate the frame bitmap");
+		Log(SK_LOG_ERROR "There is not enough contiguous physical frames to allocate the frame bitmap");
 		return ResultNotEnoughMemoryFrames;
 	}
 
@@ -137,7 +137,7 @@ void DeallocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB frame)
 	bool allocated = GetFrameStatus(frameAllocator, frame);
 
 	if (!allocated) {
-		SK_LOG_WARN("An attempt was made to deallocate an unallocated memory frame");
+		Log(SK_LOG_WARN "An attempt was made to deallocate an unallocated memory frame");
 	}
 
 	SetFrameStatus(frameAllocator, frame, false);

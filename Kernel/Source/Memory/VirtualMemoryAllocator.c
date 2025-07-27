@@ -85,8 +85,8 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 	}
 
 	if (regionCount == 0) {
-		SK_LOG_WARN(
-			"Could not find any remaining unused virtual memory regions of suitable size for 0x%x bytes, too much memory usage", size);
+		Log(SK_LOG_WARN "Could not find any remaining unused virtual memory regions of suitable size for 0x%x bytes, too much memory usage",
+			size);
 		return ResultOutOfMemory;
 	}
 
@@ -122,7 +122,7 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 // 	UnusedVirtualRegion* region = allocator->List;
 // 	while (region) {
 // 		SK_LOG_DEBUG("Begin = 0x%x End = 0x%x", region->Begin, region->End);
-// 
+//
 // 		region = region->Next;
 // 	}
 // }
