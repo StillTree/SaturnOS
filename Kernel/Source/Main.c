@@ -33,14 +33,14 @@ void KernelMain(KernelBootInfo* bootInfo)
 	// so this function doesn't throw but just warns when the serial output device is not available
 	LoggerInit(true, true, &g_bootInfo, 0x3f8);
 
-	Log(SK_LOG_INFO "Initializing the SaturnOS Kernel\n");
+	LogLine(SK_LOG_INFO "Initializing the SaturnOS Kernel\n");
 
-	Log(SK_LOG_INFO "SaturnOS Copyright (C) 2025 StillTree (Alexander Debowski)");
-	Log(SK_LOG_INFO "This program comes with ABSOLUTELY NO WARRANTY; for details type ``.");
-	Log(SK_LOG_INFO "This is free software, and you are welcome to redistribute it");
-	Log(SK_LOG_INFO "under certain conditions; type `` for details.\n");
+	LogLine(SK_LOG_INFO "SaturnOS Copyright (C) 2025 StillTree (Alexander Debowski)");
+	LogLine(SK_LOG_INFO "This program comes with ABSOLUTELY NO WARRANTY; for details type ``.");
+	LogLine(SK_LOG_INFO "This is free software, and you are welcome to redistribute it");
+	LogLine(SK_LOG_INFO "under certain conditions; type `` for details.\n");
 
-	Log(SK_LOG_INFO "Saving the CPUID processor information");
+	LogLine(SK_LOG_INFO "Saving the CPUID processor information");
 	SK_PANIC_ON_ERROR(CPUIDSaveInfo(&g_cpuInformation), "Could not read the CPUID information");
 
 	DisableInterrupts();
@@ -48,41 +48,41 @@ void KernelMain(KernelBootInfo* bootInfo)
 	// Doing that here, to not run into issues with unmasked interrupts or other bullshit later
 	DisablePIC();
 
-	Log(SK_LOG_INFO "Initializing the GDT");
+	LogLine(SK_LOG_INFO "Initializing the GDT");
 	InitGDT();
-	Log(SK_LOG_INFO "Initializing the IDT");
+	LogLine(SK_LOG_INFO "Initializing the IDT");
 	InitIDT();
 
 	EnableInterrupts();
 
-	Log(SK_LOG_INFO "Initializing the bitmap frame allocator");
+	LogLine(SK_LOG_INFO "Initializing the bitmap frame allocator");
 	SK_PANIC_ON_ERROR(BitmapFrameAllocatorInit(&g_frameAllocator, (MemoryMapEntry*)g_bootInfo.MemoryMap, g_bootInfo.MemoryMapEntries),
 		"Could not initialize the frame allocator");
 
-	Log(SK_LOG_DEBUG "Mapped Physical memory offset: 0x%x", g_bootInfo.PhysicalMemoryOffset);
+	LogLine(SK_LOG_DEBUG "Mapped Physical memory offset: 0x%x", g_bootInfo.PhysicalMemoryOffset);
 
-	Log(SK_LOG_INFO "Initializing the virtual memory allocator");
+	LogLine(SK_LOG_INFO "Initializing the virtual memory allocator");
 	SK_PANIC_ON_ERROR(InitKernelVirtualMemory(2, 0xffffff0000000000, 102400),
 		"An unexpected error occured while trying to initialize the virtual memory allocator");
 
-	Log(SK_LOG_INFO "Parsing the ACPI structures");
+	LogLine(SK_LOG_INFO "Parsing the ACPI structures");
 	SK_PANIC_ON_ERROR(InitXSDT(), "An unexpected error occured while trying to parse ACPI structures");
 
-	Log(SK_LOG_INFO "Initializing the scheduler");
+	LogLine(SK_LOG_INFO "Initializing the scheduler");
 	InitSyscalls();
 	InitScheduler(&g_scheduler);
 
-	Log(SK_LOG_INFO "Initializing the x2APIC");
+	LogLine(SK_LOG_INFO "Initializing the x2APIC");
 	SK_PANIC_ON_ERROR(InitAPIC(), "An unexpected error occured while trying to initialize the APIC");
 
-	Log(SK_LOG_INFO "Initializing the virtual file system layer");
+	LogLine(SK_LOG_INFO "Initializing the virtual file system layer");
 	SK_PANIC_ON_ERROR(InitVirtualFileSystem(&g_virtualFileSystem),
 		"An unexpected error occured while trying to initialize the virtual file system layer");
 
-	Log(SK_LOG_INFO "Initializing the STFS ramdisk builtin driver");
+	LogLine(SK_LOG_INFO "Initializing the STFS ramdisk builtin driver");
 	SK_PANIC_ON_ERROR(InitSTFS(), "An unexpected error occured while trying to initialize the STFS ramdisk builtin driver");
 
-	Log(SK_LOG_INFO "Scanning for available PCI devices");
+	LogLine(SK_LOG_INFO "Scanning for available PCI devices");
 	SK_PANIC_ON_ERROR(ScanPCIDevices(), "An unexpected error occured while trying to scan for available PCI devices");
 
 	SK_PANIC_ON_ERROR(InitAHCI(), "An unexpected error occured while trying to initialize the AHCI driver");

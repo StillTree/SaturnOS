@@ -24,6 +24,8 @@ typedef struct VirtualMemoryAllocator {
 Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, Page4KiB listBeginning, usz listSize, Frame4KiB pml4);
 /// Allocates the given amount of physical memory and maps it to a randomly chosen virtual memory region.
 Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, PageTableEntryFlags flags, Page4KiB* allocatedPage);
+/// Allocates the given amount of physical memory and maps it to the specified virtual address.
+Result AllocateBackedVirtualMemoryAtAddress(VirtualMemoryAllocator* allocator, usz size, PageTableEntryFlags flags, Page4KiB pageBegin);
 /// Deallocates the given amount of physical memory and unmaps it from its corresponding virtual memory region.
 Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, Page4KiB allocatedPage, usz size);
 /// Maps the given amount of physical memory to a randomly chosen virtual memory region.
@@ -34,6 +36,9 @@ Result DeallocateMMIORegion(VirtualMemoryAllocator* allocator, Page4KiB begin, u
 Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end);
 /// Just marks the given virtual memory region as unused, where `begin` is inclusive and `end` exclusive.
 Result MarkVirtualMemoryUnused(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end);
+/// Unmaps the given memory region in the source allocator and maps it in the destination one.
+Result ReallocateVirtualMemory(VirtualMemoryAllocator* allocatorSource, VirtualMemoryAllocator* allocatorDestination, usz size,
+	PageTableEntryFlags flags, Page4KiB pageSource, Page4KiB pageDestination);
 
 /// Populates the given number of the top kernel PML4's entries and initializes the memory manager.
 Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, usz backingMemorySize);

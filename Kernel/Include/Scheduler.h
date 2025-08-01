@@ -36,6 +36,7 @@ typedef struct CPUContext {
 } CPUContext;
 
 typedef enum ThreadStatus : u8 {
+	ThreadStartingUp = 1,
 	ThreadReady,
 	ThreadRunning,
 	ThreadDead,
@@ -49,7 +50,6 @@ typedef struct Thread {
 	CPUContext Context;
 	/// The first frame of this thread's stack. A process's stack for now is always 20 pages long.
 	Frame4KiB StackTop;
-	PhysicalAddress EntryPointPage;
 	struct Process* ParentProcess;
 } Thread;
 
@@ -58,6 +58,7 @@ typedef struct Process {
 	Frame4KiB PML4;
 	/// Maximum of 64 threads per process.
 	Thread* Threads[64];
+	Thread* MainThread;
 	usz ThreadCount;
 	VirtualMemoryAllocator VirtualMemoryAllocator;
 	Page4KiB AllocatorBackingMemory;
@@ -74,9 +75,11 @@ typedef struct Scheduler {
 Result InitScheduler(Scheduler* scheduler);
 
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
-Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entryPoint)());
+Result ProcessCreate(Scheduler* scheduler, Process** createdProcess);
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
-Result DeleteProcess(Scheduler* scheduler, Process* process);
+Result ProcessRemove(Scheduler* scheduler, Process* process);
+/// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
+void ThreadLaunch(Thread* thread);
 
 void ScheduleInterrupt(CPUContext* cpuContext);
 void ScheduleException(CPUContext* cpuContext);

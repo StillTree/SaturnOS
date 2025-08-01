@@ -12,6 +12,7 @@ typedef struct Logger {
 } Logger;
 
 void LoggerInit(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo* bootInfo, u16 serialConsolePort);
+void LogLine(const i8* format, ...);
 void Log(const i8* format, ...);
 
 #define SK_LOG_DEBUG "[DEBUG]: "

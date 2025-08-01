@@ -26,7 +26,7 @@ void LoggerInit(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootIn
 	if (serialConsoleEnabled) {
 		Result result = SerialConsoleInit(&g_mainLogger.SerialConsole, serialConsolePort);
 		if (result) {
-			Log(SK_LOG_WARN "The serial output device at port 0x3f8 is not functioning correctly");
+			LogLine(SK_LOG_WARN "The serial output device at port 0x3f8 is not functioning correctly");
 			g_mainLogger.SerialConsoleEnabled = false;
 		}
 	}
@@ -272,11 +272,8 @@ static void LogResult(Logger* logger, Result result)
 	}
 }
 
-void Log(const i8* format, ...)
+static void LogVaList(const i8* format, va_list args)
 {
-	va_list args;
-	va_start(args, format);
-
 	while (*format != '\0') {
 		if (*format == '%') {
 			format++;
@@ -351,7 +348,21 @@ void Log(const i8* format, ...)
 
 		format++;
 	}
+}
 
+void Log(const i8* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	LogVaList(format, args);
+	va_end(args);
+}
+
+void LogLine(const i8* format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	LogVaList(format, args);
 	va_end(args);
 
 	if (g_mainLogger.FramebufferEnabled)

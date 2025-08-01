@@ -36,7 +36,7 @@ static usz GetThreadID()
 	return id++;
 }
 
-Result DeleteProcess(Scheduler* scheduler, Process* process)
+Result ProcessRemove(Scheduler* scheduler, Process* process)
 {
 	Result result = ResultOk;
 
@@ -55,10 +55,10 @@ Result DeleteProcess(Scheduler* scheduler, Process* process)
 		}
 
 		// Deallocate the entry point
-		result = DeallocateMMIORegion(&process->VirtualMemoryAllocator, process->Threads[i]->EntryPointPage, PAGE_4KIB_SIZE_BYTES);
-		if (result) {
-			return result;
-		}
+		// result = DeallocateMMIORegion(&process->VirtualMemoryAllocator, process->Threads[i]->EntryPointPage, PAGE_4KIB_SIZE_BYTES);
+		// if (result) {
+		// 	return result;
+		// }
 
 		result = SizedBlockDeallocate(&scheduler->Threads, process->Threads[i]);
 		if (result) {
@@ -83,7 +83,7 @@ Result DeleteProcess(Scheduler* scheduler, Process* process)
 	return result;
 }
 
-Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entryPoint)())
+Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 {
 	Process* process = nullptr;
 	Result result = SizedBlockAllocate(&scheduler->Processes, (void**)&process);
@@ -139,26 +139,14 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 		process->Threads[i] = nullptr;
 	}
 	process->Threads[0] = mainThread;
+	process->MainThread = mainThread;
 
 	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
 	processPML4[510] = kernelPML4[510] & ~PageUserAccessible;
 	processPML4[511] = kernelPML4[511] & ~PageUserAccessible;
 
-	PhysicalAddress entryPointPhysicalAddress;
-	result = VirtualAddressToPhysical((VirtualAddress)entryPoint, kernelPML4, &entryPointPhysicalAddress);
-	if (result) {
-		return result;
-	}
 	mainThread->ID = GetThreadID();
 	mainThread->ParentProcess = process;
-
-	Page4KiB entryPointPage;
-	result = AllocateMMIORegion(&process->VirtualMemoryAllocator, Frame4KiBContaining(entryPointPhysicalAddress), PAGE_4KIB_SIZE_BYTES,
-		PageUserAccessible, &entryPointPage);
-	if (result) {
-		return result;
-	}
-	mainThread->EntryPointPage = entryPointPage;
 
 	Page4KiB stackTop;
 	result = AllocateThreadStack(process, &stackTop);
@@ -169,19 +157,22 @@ Result CreateProcess(Scheduler* scheduler, Process** createdProcess, void (*entr
 
 	MemoryFill(&mainThread->Context, 0, sizeof(CPUContext));
 	mainThread->Context.CR3 = pml4Frame;
-	mainThread->Context.InterruptFrame.RIP = entryPointPage + VirtualAddressPageOffset((VirtualAddress)entryPoint);
 	mainThread->Context.InterruptFrame.RSP = stackTop;
 	mainThread->Context.RBP = 0;
 	mainThread->Context.InterruptFrame.RFLAGS = 0x202;
 
 	mainThread->Context.InterruptFrame.CS = 0x23;
 	mainThread->Context.InterruptFrame.SS = 0x1b;
-
-	mainThread->Status = ThreadReady;
+	mainThread->Status = ThreadStartingUp;
 
 	*createdProcess = process;
 
 	return result;
+}
+
+void ThreadLaunch(Thread* thread)
+{
+	thread->Status = ThreadReady;
 }
 
 Result InitScheduler(Scheduler* scheduler)

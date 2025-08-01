@@ -9,13 +9,13 @@ VirtualAddress g_syscallFunctions[2] = { (VirtualAddress)TestSyscall1, (VirtualA
 
 Result TestSyscall1()
 {
-	Log(SK_LOG_DEBUG "Syscall 1");
+	LogLine(SK_LOG_DEBUG "Syscall 1");
 	return ResultOk;
 }
 
 Result TestSyscall2()
 {
-	Log(SK_LOG_DEBUG "Syscall 2");
+	LogLine(SK_LOG_DEBUG "Syscall 2");
 	return ResultOk;
 }
 

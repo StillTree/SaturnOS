@@ -88,7 +88,7 @@ Result PCIDeviceMapBars(PCIDevice* device)
 
 			device->MostUsefulBAR = mappedBar;
 
-			Log(SK_LOG_DEBUG "Mapped 32-bit BAR with virtual address: 0x%x and size: 0x%x", mappedBar, size);
+			LogLine(SK_LOG_DEBUG "Mapped 32-bit BAR with virtual address: 0x%x and size: 0x%x", mappedBar, size);
 
 			continue;
 		}
@@ -120,7 +120,7 @@ Result PCIDeviceMapBars(PCIDevice* device)
 
 		device->MostUsefulBAR = mappedBar;
 
-		Log(SK_LOG_DEBUG "Mapped 64-bit BAR with virtual address: 0x%x and size: 0x%x", address, size);
+		LogLine(SK_LOG_DEBUG "Mapped 64-bit BAR with virtual address: 0x%x and size: 0x%x", address, size);
 	}
 
 	return ResultOk;
@@ -209,7 +209,7 @@ static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus, Page4KiB mapp
 			if (configSpace->VendorID == 0xffff)
 				continue;
 
-			Log(SK_LOG_DEBUG "Detected PCI Device: device = %u, function = %u, VendorID = %x, DeviceID = %x, ClassCode = %x, "
+			LogLine(SK_LOG_DEBUG "Detected PCI Device: device = %u, function = %u, VendorID = %x, DeviceID = %x, ClassCode = %x, "
 						 "Subclass = %x, ProgIF = %x",
 				(u64)device, (u64)function, (u64)configSpace->VendorID, (u64)configSpace->DeviceID, (u64)configSpace->ClassCode,
 				(u64)configSpace->Subclass, (u64)configSpace->ProgIF);

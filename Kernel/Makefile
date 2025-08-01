@@ -1,6 +1,7 @@
 TARGET_DIR  = Output
 SRC_DIR     = Source
 INC_DIR     = Include
+LIB_INC_DIR = Library/Include
 SYSROOT_DIR = ../SystemRoot
 LIB_DIR     = $(SYSROOT_DIR)/Library/Kernel
 TARGET      = $(TARGET_DIR)/Kernel.elf
@@ -15,6 +16,7 @@ MODE ?= -O0 -g -DSK_DEBUG
 CCFLAGS = \
 	--sysroot=$(SYSROOT_DIR) \
 	-I $(INC_DIR) \
+	-I $(LIB_INC_DIR) \
 	-std=c23 \
 	-mno-red-zone \
 	-mno-mmx \
