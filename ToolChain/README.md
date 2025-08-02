@@ -34,16 +34,16 @@ cmake --build .
 ```
 
 Actually building the entire project is going to take **hours**, so feel free to add the `-j <job_count>` parameter,
-where `<job_count>` is the number of parallel jobs to run. In my experience 8 should be completely fine,
+where `<job_count>` is the number of parallel jobs to run. In my experience 8 should take the build time down to about half an hour,
 although this can vary between CPUs.
 
 
 ```sh
-sudo cmake -DCMAKE_INSTALL_PREFIX=prefix/to/chose -P cmake_install.cmake
+sudo cmake -DCMAKE_INSTALL_PREFIX=prefix/to/choose -P cmake_install.cmake
 ```
 
-Replacing `prefix/to/chose` with the directory where the built toolchain will reside.
-This should be adde to your path before the next steps.
+Replacing `prefix/to/choose` with the directory where the built toolchain will reside.
+This should be added to your path before the next steps.
 
 ### Compiler RT for the userspace
 
@@ -85,9 +85,8 @@ If necessary, the number of jobs can also be provided here, as instructed earlie
 
 ### Compiler RT for the kernel
 
-Contrary to the userspace the kernel is built without the red zone, which is why the Compiler RT it will use,
-also needs to be built without it. Navigate to another separate and empty directory, outside of LLVM's source tree,
-and run the following commands:
+Contrary to the userspace the kernel is built without the red zone, which is why its Compiler RT also needs to be built without it.
+Navigate to another separate and empty directory, outside of LLVM's source tree, and run the following commands:
 
 ```sh
 cmake \
