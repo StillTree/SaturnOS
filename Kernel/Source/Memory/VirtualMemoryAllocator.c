@@ -521,6 +521,8 @@ Result ReallocateVirtualMemory(VirtualMemoryAllocator* allocatorSource, VirtualM
 		if (result) {
 			return result;
 		}
+
+		FlushPage(pageSrc);
 	}
 
 	return MarkVirtualMemoryUnused(allocatorSource, source, source + size);

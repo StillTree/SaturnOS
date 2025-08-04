@@ -97,7 +97,6 @@ Result SizedBlockDeallocate(SizedBlockAllocator* blockAllocator, void* block)
 
 Result SizedBlockIterate(SizedBlockAllocator* blockAllocator, void** sizedBlockIterator)
 {
-	// TODO: Make this prettier
 	if (*sizedBlockIterator) {
 		*sizedBlockIterator = (void*)((VirtualAddress)*sizedBlockIterator + blockAllocator->BlockSizeBytes);
 	} else {
