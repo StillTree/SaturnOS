@@ -13,7 +13,7 @@ VirtualMemoryAllocator g_kernelMemoryAllocator = {};
 
 static Result GetContainingRegion(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end, UnusedVirtualRegion** containingRegion)
 {
-	if ((begin & 0xfff) != 0 || (end & 0xfff) != 0) {
+	if (!Page4KiBIsAligned(begin) || !Page4KiBIsAligned(end)) {
 		return ResultInvalidPageAlignment;
 	}
 
@@ -32,7 +32,7 @@ static Result GetContainingRegion(VirtualMemoryAllocator* allocator, Page4KiB be
 
 static Result GetBorderingBegin(VirtualMemoryAllocator* allocator, Page4KiB begin, UnusedVirtualRegion** borderingRegion)
 {
-	if ((begin & 0xfff) != 0) {
+	if (!Page4KiBIsAligned(begin)) {
 		return ResultInvalidPageAlignment;
 	}
 
@@ -51,7 +51,7 @@ static Result GetBorderingBegin(VirtualMemoryAllocator* allocator, Page4KiB begi
 
 static Result GetBorderingEnd(VirtualMemoryAllocator* allocator, Page4KiB end, UnusedVirtualRegion** borderingRegion)
 {
-	if ((end & 0xfff) != 0) {
+	if (!Page4KiBIsAligned(end)) {
 		return ResultInvalidPageAlignment;
 	}
 
@@ -70,7 +70,7 @@ static Result GetBorderingEnd(VirtualMemoryAllocator* allocator, Page4KiB end, U
 
 static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4KiB* randomPage)
 {
-	if ((size & 0xfff) != 0) {
+	if (!Page4KiBIsAligned(size)) {
 		return ResultInvalidPageAlignment;
 	}
 
@@ -216,8 +216,6 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 
 Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, void* listBeginning, usz listSize, Frame4KiB pml4)
 {
-	allocator->PML4 = pml4;
-
 	Result result = InitSizedBlockAllocator(&allocator->ListBackingStorage, listBeginning, listSize, sizeof(UnusedVirtualRegion));
 	if (result) {
 		return result;
@@ -235,13 +233,14 @@ Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, void* listB
 	allocator->List->End = U64_MAX - PAGE_4KIB_SIZE_BYTES + 1;
 	allocator->List->Next = nullptr;
 	allocator->List->Previous = nullptr;
+	allocator->PML4 = pml4;
 
 	return result;
 }
 
 Result AllocateBackedVirtualMemoryAtAddress(VirtualMemoryAllocator* allocator, usz size, PageTableEntryFlags flags, Page4KiB pageBegin)
 {
-	if ((size & 0xfff) != 0 || (pageBegin & 0xfff) != 0) {
+	if (!Page4KiBIsAligned(size) || !Page4KiBIsAligned(pageBegin)) {
 		return ResultInvalidPageAlignment;
 	}
 
@@ -269,7 +268,7 @@ Result AllocateBackedVirtualMemoryAtAddress(VirtualMemoryAllocator* allocator, u
 
 Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, PageTableEntryFlags flags, void** allocatedPage)
 {
-	if ((size & 0xfff) != 0) {
+	if (!Page4KiBIsAligned(size)) {
 		return ResultInvalidPageAlignment;
 	}
 
@@ -306,7 +305,7 @@ Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, void* al
 {
 	Page4KiB allocatedPage = (Page4KiB)allocatedMemory;
 
-	if ((allocatedPage & 0xfff) != 0 || (size & 0xfff) != 0) {
+	if (!Page4KiBIsAligned(allocatedPage) || !Page4KiBIsAligned(size)) {
 		return ResultInvalidPageAlignment;
 	}
 
@@ -336,9 +335,9 @@ Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, void* al
 	return result;
 }
 
-Result AllocateMMIORegion(VirtualMemoryAllocator* allocator, Frame4KiB begin, usz size, PageTableEntryFlags flags, Page4KiB* mmioBegin)
+Result AllocateMMIORegion(VirtualMemoryAllocator* allocator, Frame4KiB begin, usz size, PageTableEntryFlags flags, void** mmioBegin)
 {
-	if ((begin & 0xfff) != 0 || (size & 0xfff) != 0) {
+	if (!Page4KiBIsAligned(begin) || !Page4KiBIsAligned(size)) {
 		return ResultInvalidPageAlignment;
 	}
 
@@ -364,23 +363,25 @@ Result AllocateMMIORegion(VirtualMemoryAllocator* allocator, Frame4KiB begin, us
 		frame += PAGE_4KIB_SIZE_BYTES;
 	}
 
-	*mmioBegin = pageBegin;
+	*mmioBegin = (void*)pageBegin;
 	return result;
 }
 
-Result DeallocateMMIORegion(VirtualMemoryAllocator* allocator, Page4KiB begin, usz size)
+Result DeallocateMMIORegion(VirtualMemoryAllocator* allocator, void* mmioBegin, usz size)
 {
-	if ((begin & 0xfff) != 0 || (size & 0xfff) != 0) {
+	Page4KiB mmioPage = (Page4KiB)mmioBegin;
+
+	if (!Page4KiBIsAligned(mmioPage) || !Page4KiBIsAligned(size)) {
 		return ResultInvalidPageAlignment;
 	}
 
-	const Page4KiB endPage = begin + size;
-	Result result = MarkVirtualMemoryUnused(allocator, begin, endPage);
+	const Page4KiB endPage = mmioPage + size;
+	Result result = MarkVirtualMemoryUnused(allocator, mmioPage, endPage);
 	if (result) {
 		return result;
 	}
 
-	for (Page4KiB page = begin; page < endPage; page += PAGE_4KIB_SIZE_BYTES) {
+	for (Page4KiB page = mmioPage; page < endPage; page += PAGE_4KIB_SIZE_BYTES) {
 		result = Page4KiBUnmap(PhysicalAddressAsPointer(allocator->PML4), page);
 		if (result) {
 			return result;
@@ -497,7 +498,7 @@ Result MarkVirtualMemoryUnused(VirtualMemoryAllocator* allocator, Page4KiB begin
 Result ReallocateVirtualMemory(VirtualMemoryAllocator* allocatorSource, VirtualMemoryAllocator* allocatorDestination, usz size,
 	PageTableEntryFlags flags, Page4KiB source, Page4KiB destination)
 {
-	if ((size & 0xfff) != 0) {
+	if (!Page4KiBIsAligned(size)) {
 		return ResultInvalidPageAlignment;
 	}
 

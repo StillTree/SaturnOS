@@ -9,7 +9,7 @@ static void SizedBlockSetStatus(SizedBlockAllocator* blockAllocator, usz index, 
 		return;
 	}
 
-	const usz mapIndex = (index) / 64;
+	const usz mapIndex = index / 64;
 	const usz bitIndex = index % 64;
 
 	if (used) {
@@ -25,7 +25,7 @@ bool SizedBlockGetStatus(SizedBlockAllocator* blockAllocator, usz index)
 		return false;
 	}
 
-	const usz mapIndex = (index) / 64;
+	const usz mapIndex = index / 64;
 	const usz bitIndex = index % 64;
 
 	return ((blockAllocator->BlockBitmap[mapIndex] >> bitIndex) & 1) == 1;

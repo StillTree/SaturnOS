@@ -11,6 +11,7 @@ Checks: |
   -readability-magic-numbers,
   -readability-braces-around-statements,
   -readability-function-cognitive-complexity,
+  -readability-implicit-bool-conversion,
 CheckOptions:
   - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE

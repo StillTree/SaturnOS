@@ -5,7 +5,6 @@
 #include "InOut.h"
 #include "Logger.h"
 #include "MSR.h"
-#include "Memory/Page.h"
 #include "Memory/VirtualMemoryAllocator.h"
 
 void DisablePIC()
@@ -93,16 +92,14 @@ Result InitAPIC()
 		apicBase |= (1 << 11);
 		WriteMSR(MSR_APIC_BASE, apicBase);
 
-		Frame4KiB xapicFrame = apicBase & ~0xfff;
+		Frame4KiB xapicFrame = Frame4KiBContaining(apicBase);
 		g_apic.X2APICMode = false;
 
-		Page4KiB xapicAddress;
-		Result result = AllocateMMIORegion(&g_kernelMemoryAllocator, xapicFrame, 0x1000, PageWriteable | PageNoCache, &xapicAddress);
+		Result result
+			= AllocateMMIORegion(&g_kernelMemoryAllocator, xapicFrame, 0x1000, PageWriteable | PageNoCache, (void**)&g_apic.XAPICAddress);
 		if (result) {
 			return result;
 		}
-
-		g_apic.XAPICAddress = (u32*)xapicAddress;
 	} else {
 		// Enables the x2APIC
 		u64 apicBase = ReadMSR(MSR_APIC_BASE);
@@ -121,13 +118,14 @@ Result InitAPIC()
 		return result;
 	}
 
-	Page4KiB ioapicAddress;
-	result = AllocateMMIORegion(&g_kernelMemoryAllocator, ioapicBase & ~0xfff, 0x1000, PageWriteable | PageNoCache, &ioapicAddress);
+	void* ioapicAddress;
+	result = AllocateMMIORegion(
+		&g_kernelMemoryAllocator, Frame4KiBContaining(ioapicBase), 0x1000, PageWriteable | PageNoCache, &ioapicAddress);
 	if (result) {
 		return result;
 	}
 
-	g_apic.IOAPICAddress = (u32*)(ioapicAddress + (ioapicBase & 0xfff));
+	g_apic.IOAPICAddress = (u32*)((u8*)ioapicAddress + (ioapicBase & 0xfff));
 
 	InitAPICTimer();
 

@@ -29,9 +29,9 @@ Result AllocateBackedVirtualMemoryAtAddress(VirtualMemoryAllocator* allocator, u
 /// Deallocates the given amount of physical memory and unmaps it from its corresponding virtual memory region.
 Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, void* allocatedMemory, usz size);
 /// Maps the given amount of physical memory to a randomly chosen virtual memory region.
-Result AllocateMMIORegion(VirtualMemoryAllocator* allocator, Frame4KiB begin, usz size, PageTableEntryFlags flags, Page4KiB* mmioBegin);
+Result AllocateMMIORegion(VirtualMemoryAllocator* allocator, Frame4KiB begin, usz size, PageTableEntryFlags flags, void** mmioBegin);
 /// Deallocates the given amount of virtual memory.
-Result DeallocateMMIORegion(VirtualMemoryAllocator* allocator, Page4KiB begin, usz size);
+Result DeallocateMMIORegion(VirtualMemoryAllocator* allocator, void* mmioBegin, usz size);
 /// Just marks the given virtual memory region as used, where `begin` is inclusive and `end` exclusive.
 Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end);
 /// Just marks the given virtual memory region as unused, where `begin` is inclusive and `end` exclusive.

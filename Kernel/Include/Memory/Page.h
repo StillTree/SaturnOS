@@ -11,8 +11,9 @@ typedef u64 Page4KiB;
 
 constexpr u64 PAGE_4KIB_SIZE_BYTES = 4096;
 
-static inline Page4KiB Page4KiBContaining(VirtualAddress address) { return address & ~0xfff; }
-static inline Page4KiB Page4KiBNext(VirtualAddress address) { return (address + PAGE_4KIB_SIZE_BYTES - 1) & ~0xfff; }
+static inline Page4KiB Page4KiBContaining(VirtualAddress address) { return __builtin_align_down(address, PAGE_4KIB_SIZE_BYTES); }
+static inline Page4KiB Page4KiBNext(VirtualAddress address) { return __builtin_align_up(address, PAGE_4KIB_SIZE_BYTES); }
+static inline bool Page4KiBIsAligned(VirtualAddress address) { return __builtin_is_aligned(address, PAGE_4KIB_SIZE_BYTES); }
 
 /// Maps this virtual memory page to the given physical memory frame, using the global frame allocator if needed.
 /// Does not flush the TLB.

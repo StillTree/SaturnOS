@@ -4,7 +4,6 @@
 #include "APIC.h"
 #include "Logger.h"
 #include "Memory/Frame.h"
-#include "Memory/Page.h"
 #include "Memory/VirtualMemoryAllocator.h"
 #include "Panic.h"
 
@@ -78,7 +77,7 @@ Result PCIDeviceMapBars(PCIDevice* device)
 
 			device->ConfigurationSpace->Bar[i] = bar;
 
-			Page4KiB mappedBar;
+			void* mappedBar;
 			Result result = AllocateMMIORegion(&g_kernelMemoryAllocator, address, size, PageWriteable | PageNoCache, &mappedBar);
 			if (result) {
 				// This is an extremally dangerous approach but since the kernel will panic later,
@@ -110,7 +109,7 @@ Result PCIDeviceMapBars(PCIDevice* device)
 		device->ConfigurationSpace->Bar[i] = barLow;
 		device->ConfigurationSpace->Bar[i + 1] = barHigh;
 
-		Page4KiB mappedBar;
+		void* mappedBar;
 		Result result = AllocateMMIORegion(&g_kernelMemoryAllocator, address, size, PageWriteable | PageNoCache, &mappedBar);
 		if (result) {
 			// This is an extremally dangerous approach but since the kernel will panic later,
@@ -174,7 +173,7 @@ Result PCIDeviceSetMSIXVector(const PCIDevice* device, usz msiVector, u8 systemV
 	return ResultOk;
 }
 
-static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus, Page4KiB* mappedBus)
+static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus, void** mappedBus)
 {
 	Frame4KiB frame = baseAddress + ((u64)bus << 20);
 
@@ -186,7 +185,7 @@ static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus, Page4KiB* mapped
 	return result;
 }
 
-static Result UnmapEntireBus(Page4KiB mappedBus)
+static Result UnmapEntireBus(void* mappedBus)
 {
 	Result result = DeallocateMMIORegion(&g_kernelMemoryAllocator, mappedBus, 0x100000);
 	if (result) {
@@ -197,14 +196,13 @@ static Result UnmapEntireBus(Page4KiB mappedBus)
 }
 
 /// Saves the devices I care about for later use and returns how many of them were detected.
-static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus, Page4KiB mappedBus)
+static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus, void* mappedBus)
 {
 	usz deviceCount = 0;
 
 	for (u8 device = 0; device < 32; device++) {
 		for (u8 function = 0; function < 8; function++) {
-			VirtualAddress configSpaceAddress = mappedBus + ((u64)device << 15) + ((u64)function << 12);
-			PCIDeviceHeader0* configSpace = (PCIDeviceHeader0*)configSpaceAddress;
+			PCIDeviceHeader0* configSpace = (PCIDeviceHeader0*)((u8*)mappedBus + ((u64)device << 15) + ((u64)function << 12));
 
 			if (configSpace->VendorID == 0xffff)
 				continue;
@@ -251,7 +249,7 @@ Result ScanPCIDevices()
 		MCFGEntry* segmentGroup = &mcfg->Entries[i];
 
 		for (usz bus = segmentGroup->StartBusNumber; bus <= segmentGroup->EndBusNumber; bus++) {
-			Page4KiB mappedBus;
+			void* mappedBus;
 			Result result = MapEntireBus(segmentGroup->BaseAddress, bus, &mappedBus);
 			if (result)
 				return result;

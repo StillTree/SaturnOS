@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Core.h"
-#include "Memory/Page.h"
-#include "Memory/PhysicalAddress.h"
 #include "Result.h"
 
 typedef enum CommandRegister : u16 {
@@ -88,7 +86,7 @@ typedef struct PCIDevice {
 	u8 FunctionNumber;
 
 	// This is ridiculous, but since right now I only use a single BAR from a single device I'll leave it in as a temporary solution.
-	Page4KiB MostUsefulBAR;
+	void* MostUsefulBAR;
 
 	MSIXCapability* MSIX;
 	MSIXTableEntry* MSIXTable;

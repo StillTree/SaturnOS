@@ -9,7 +9,7 @@
 typedef struct BitmapFrameAllocator {
 	MemoryMapEntry* MemoryMap;
 	usz MemoryMapEntries;
-	u8* FrameBitmap;
+	u64* FrameBitmap;
 	Frame4KiB LastFrame;
 } BitmapFrameAllocator;
 
@@ -18,10 +18,10 @@ Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapE
 /// Allocates a single 4 KiB memory frame.
 Result AllocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB* frame);
 /// Allocates a contiguous range of 4 KiB memory frames.
-Result AllocateContiguousFrames(BitmapFrameAllocator* frameAllocator, usz number, Frame4KiB* frame);
+Result AllocateContiguousFrames(BitmapFrameAllocator* frameAllocator, usz count, Frame4KiB* frame);
 /// Deallocates a single 4 KiB memory frame.
 void DeallocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB frame);
 /// Deallocates a contiguous range of 4 KiB memory frames.
-Result DeallocateContiguousFrames(BitmapFrameAllocator* frameAllocator, Frame4KiB frame, usz number);
+Result DeallocateContiguousFrames(BitmapFrameAllocator* frameAllocator, Frame4KiB frame, usz count);
 
 extern BitmapFrameAllocator g_frameAllocator;

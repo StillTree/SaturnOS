@@ -254,7 +254,7 @@ Result InitAHCI()
 {
 	g_pciStorageDevices[0].ConfigurationSpace->Command |= CommandRegisterEnableBusMaster | CommandRegisterEnableMemory;
 
-	g_ahciDriver.Registers = (HBARegisters*)g_pciStorageDevices[0].MostUsefulBAR;
+	g_ahciDriver.Registers = g_pciStorageDevices[0].MostUsefulBAR;
 
 	AHCIReset(&g_ahciDriver);
 	for (u8 i = 0; i < 32; i++) {
