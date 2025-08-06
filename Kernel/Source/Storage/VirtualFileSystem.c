@@ -11,7 +11,7 @@ VirtualFileSystem g_virtualFileSystem;
 Result InitVirtualFileSystem(VirtualFileSystem* fileSystem)
 {
 	usz mountpointPoolSize = Page4KiBNext(sizeof(Mountpoint) * MAX_MOUNTPOINTS);
-	Page4KiB mountpointPool;
+	void* mountpointPool;
 	Result result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, mountpointPoolSize, PageWriteable, &mountpointPool);
 	if (result) {
 		return result;
@@ -23,7 +23,7 @@ Result InitVirtualFileSystem(VirtualFileSystem* fileSystem)
 	}
 
 	usz openedFilesPoolSize = Page4KiBNext(sizeof(OpenedFile) * MAX_OPENED_FILES);
-	Page4KiB openedFilesPool;
+	void* openedFilesPool;
 	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, openedFilesPoolSize, PageWriteable, &openedFilesPool);
 	if (result) {
 		return result;

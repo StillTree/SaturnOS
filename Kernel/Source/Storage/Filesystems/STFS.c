@@ -9,7 +9,7 @@ Result InitSTFS()
 {
 	usz inodeTablePoolSize = Page4KiBNext(sizeof(STFSFileListEntry) * STFS_MAX_OPENED_INODES);
 
-	Page4KiB inodeTablePool;
+	void* inodeTablePool;
 	Result result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, inodeTablePoolSize, PageWriteable, &inodeTablePool);
 	if (result) {
 		return result;

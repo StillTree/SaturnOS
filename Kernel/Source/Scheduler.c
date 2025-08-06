@@ -12,14 +12,14 @@ Scheduler g_scheduler;
 static Result AllocateThreadStack(Process* process, Page4KiB* stackTop)
 {
 	// TODO: Add random stack offset support (subtract a random number between 0 and 4096 from the stack top and align it to 16 bytes)
-	Page4KiB stackBottom;
+	void* stackBottom;
 	Result result = AllocateBackedVirtualMemory(
 		&process->VirtualMemoryAllocator, THREAD_STACK_SIZE_BYTES, PageWriteable | PageUserAccessible | PageNoExecute, &stackBottom);
 	if (result) {
 		return result;
 	}
 
-	*stackTop = stackBottom + THREAD_STACK_SIZE_BYTES;
+	*stackTop = (Page4KiB)stackBottom + THREAD_STACK_SIZE_BYTES;
 
 	return result;
 }
@@ -49,7 +49,7 @@ Result ProcessRemove(Scheduler* scheduler, Process* process)
 
 		// Deallocate the process's stack
 		result = DeallocateBackedVirtualMemory(
-			&process->VirtualMemoryAllocator, process->Threads[i]->StackTop - THREAD_STACK_SIZE_BYTES, THREAD_STACK_SIZE_BYTES);
+			&process->VirtualMemoryAllocator, (u8*)process->Threads[i]->StackTop - THREAD_STACK_SIZE_BYTES, THREAD_STACK_SIZE_BYTES);
 		if (result) {
 			return result;
 		}
@@ -92,7 +92,7 @@ Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 	}
 
 	usz fileDescriptorsPoolSize = Page4KiBNext(sizeof(ProcessFileDescriptor) * MAX_FILE_DESCRIPTORS);
-	Page4KiB fileDescriptorsPool;
+	void* fileDescriptorsPool;
 	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, fileDescriptorsPoolSize, PageWriteable, &fileDescriptorsPool);
 	if (result) {
 		return result;
@@ -178,7 +178,7 @@ void ThreadLaunch(Thread* thread)
 Result InitScheduler(Scheduler* scheduler)
 {
 	usz processPoolSize = sizeof(Process) * MAX_PROCESSES;
-	Page4KiB processPool;
+	void* processPool;
 	Result result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, Page4KiBNext(processPoolSize), PageWriteable, &processPool);
 	if (result) {
 		return result;
@@ -190,7 +190,7 @@ Result InitScheduler(Scheduler* scheduler)
 	}
 
 	usz threadPoolSize = sizeof(Thread) * MAX_PROCESSES * MAX_THREADS_PER_PROCESS;
-	Page4KiB threadPool;
+	void* threadPool;
 	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, Page4KiBNext(threadPoolSize), PageWriteable, &threadPool);
 	if (result) {
 		return result;
@@ -228,7 +228,7 @@ Result InitScheduler(Scheduler* scheduler)
 	kernelMainThread->ParentProcess = kernelProcess;
 
 	usz fileDescriptorsPoolSize = Page4KiBNext(sizeof(ProcessFileDescriptor) * MAX_FILE_DESCRIPTORS);
-	Page4KiB fileDescriptorsPool;
+	void* fileDescriptorsPool;
 	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, fileDescriptorsPoolSize, PageWriteable, &fileDescriptorsPool);
 	if (result) {
 		return result;

@@ -30,6 +30,7 @@ typedef struct CPUContext {
 	u64 R13;
 	u64 R14;
 	u64 R15;
+	// TODO: TLS
 	// u64 FS;
 	// u64 GS;
 	InterruptFrame InterruptFrame;
@@ -49,7 +50,7 @@ typedef struct Thread {
 	ThreadStatus Status;
 	CPUContext Context;
 	/// The first frame of this thread's stack. A process's stack for now is always 20 pages long.
-	Frame4KiB StackTop;
+	Page4KiB StackTop;
 	struct Process* ParentProcess;
 } Thread;
 
@@ -61,7 +62,7 @@ typedef struct Process {
 	Thread* MainThread;
 	usz ThreadCount;
 	VirtualMemoryAllocator VirtualMemoryAllocator;
-	Page4KiB AllocatorBackingMemory;
+	void* AllocatorBackingMemory;
 	/// A list of files opened by the process.
 	SizedBlockAllocator FileDescriptors;
 } Process;

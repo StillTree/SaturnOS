@@ -32,19 +32,19 @@ Result ProcessLoadELF(Process* process, const i8* elfPath)
 	}
 
 	usz programHeaderTableSize = elfHeader.e_phnum * sizeof(Elf64_Phdr);
-	Page4KiB programHeaderTablePage;
+	void* programHeaderTablePage;
 	result = AllocateBackedVirtualMemory(
 		&g_kernelMemoryAllocator, Page4KiBNext(programHeaderTableSize), PageWriteable, &programHeaderTablePage);
 	if (result) {
 		goto CloseFile;
 	}
 
-	result = FileRead(fileDescriptor, programHeaderTableSize, (void*)programHeaderTablePage);
+	result = FileRead(fileDescriptor, programHeaderTableSize, programHeaderTablePage);
 	if (result) {
 		goto DeallocateProgramHeaderTable;
 	}
 
-	Page4KiB elfPageMapPool;
+	void* elfPageMapPool;
 	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, PAGE_4KIB_SIZE_BYTES, PageWriteable, &elfPageMapPool);
 	if (result) {
 		return result;
@@ -106,13 +106,13 @@ Result ProcessLoadELF(Process* process, const i8* elfPath)
 	while (!SizedBlockIterate(&elfPageMap, (void**)&segmentRegionIter)) {
 		usz segmentRegionSize = segmentRegionIter->End - segmentRegionIter->Begin;
 
-		Page4KiB segmentPage;
+		void* segmentPage;
 		result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, segmentRegionSize, PageWriteable, &segmentPage);
 		if (result) {
 			goto DeallocateELFMap;
 		}
 
-		MemoryFill((void*)segmentPage, 0, segmentRegionSize);
+		MemoryFill(segmentPage, 0, segmentRegionSize);
 
 		result = FileSetOffset(fileDescriptor, segmentRegionIter->ELFSegment->p_offset);
 		if (result) {
@@ -120,13 +120,14 @@ Result ProcessLoadELF(Process* process, const i8* elfPath)
 		}
 
 		result = FileRead(fileDescriptor, segmentRegionIter->ELFSegment->p_filesz,
-			(void*)(segmentPage + VirtualAddressPageOffset(segmentRegionIter->ELFSegment->p_vaddr)));
+			((u8*)segmentPage + VirtualAddressPageOffset(segmentRegionIter->ELFSegment->p_vaddr)));
 		if (result) {
 			goto DeallocateELFMap;
 		}
 
 		result = ReallocateVirtualMemory(&g_kernelMemoryAllocator, &process->VirtualMemoryAllocator, segmentRegionSize,
-			segmentRegionIter->Flags | PageUserAccessible, segmentPage, Page4KiBContaining(segmentRegionIter->ELFSegment->p_vaddr));
+			segmentRegionIter->Flags | PageUserAccessible, (Page4KiB)segmentPage,
+			Page4KiBContaining(segmentRegionIter->ELFSegment->p_vaddr));
 		if (result) {
 			goto DeallocateELFMap;
 		}

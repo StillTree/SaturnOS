@@ -5,7 +5,7 @@
 
 static void SizedBlockSetStatus(SizedBlockAllocator* blockAllocator, usz index, bool used)
 {
-	if (index >= blockAllocator->MaxAllocations) {
+	if (index >= blockAllocator->AllocationCapacity) {
 		return;
 	}
 
@@ -21,7 +21,7 @@ static void SizedBlockSetStatus(SizedBlockAllocator* blockAllocator, usz index, 
 
 bool SizedBlockGetStatus(SizedBlockAllocator* blockAllocator, usz index)
 {
-	if (index >= blockAllocator->MaxAllocations) {
+	if (index >= blockAllocator->AllocationCapacity) {
 		return false;
 	}
 
@@ -31,7 +31,7 @@ bool SizedBlockGetStatus(SizedBlockAllocator* blockAllocator, usz index)
 	return ((blockAllocator->BlockBitmap[mapIndex] >> bitIndex) & 1) == 1;
 }
 
-Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, VirtualAddress poolStart, usz poolSizeBytes, usz blockSizeBytes)
+Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, void* poolStart, usz poolSizeBytes, usz blockSizeBytes)
 {
 	// TODO: Use more efficient bitscanning (compiler intrinsics)
 	blockAllocator->BlockSizeBytes = blockSizeBytes;
@@ -41,12 +41,12 @@ Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, VirtualAddre
 	const usz bitmapWordCount = (totalBlockCapacity + 63) / 64;
 	const usz blocksTakenUp = (bitmapWordCount * 8 + blockSizeBytes - 1) / blockSizeBytes;
 
-	blockAllocator->BlockBitmap = (u64*)poolStart;
+	blockAllocator->BlockBitmap = poolStart;
 	// The allocator expects the blocks to be correctly padded for alignment,
 	// if they're not, some bad things are probably gonna happen
-	blockAllocator->FirstBlock = poolStart + blocksTakenUp * blockSizeBytes;
-	blockAllocator->LastBlock = poolStart + poolSizeBytes - blockSizeBytes;
-	blockAllocator->MaxAllocations = totalBlockCapacity - blocksTakenUp;
+	blockAllocator->FirstBlock = (u8*)poolStart + blocksTakenUp * blockSizeBytes;
+	blockAllocator->LastBlock = (u8*)poolStart + poolSizeBytes - blockSizeBytes;
+	blockAllocator->AllocationCapacity = totalBlockCapacity - blocksTakenUp;
 	blockAllocator->AllocationCount = 0;
 	blockAllocator->NextToAllocate = 0;
 
@@ -57,7 +57,7 @@ Result InitSizedBlockAllocator(SizedBlockAllocator* blockAllocator, VirtualAddre
 
 Result SizedBlockAllocate(SizedBlockAllocator* blockAllocator, void** block)
 {
-	for (usz i = blockAllocator->NextToAllocate; i < blockAllocator->MaxAllocations; ++i) {
+	for (usz i = blockAllocator->NextToAllocate; i < blockAllocator->AllocationCapacity; ++i) {
 		if (SizedBlockGetStatus(blockAllocator, i)) {
 			continue;
 		}
@@ -74,8 +74,7 @@ Result SizedBlockAllocate(SizedBlockAllocator* blockAllocator, void** block)
 
 Result SizedBlockDeallocate(SizedBlockAllocator* blockAllocator, void* block)
 {
-	VirtualAddress blockAddress = (VirtualAddress)block;
-	if (blockAddress < blockAllocator->FirstBlock || blockAddress > blockAllocator->LastBlock) {
+	if ((u8*)block < blockAllocator->FirstBlock || (u8*)block > blockAllocator->LastBlock) {
 		return ResultSerialOutputUnavailable;
 	}
 
@@ -98,12 +97,12 @@ Result SizedBlockDeallocate(SizedBlockAllocator* blockAllocator, void* block)
 Result SizedBlockIterate(SizedBlockAllocator* blockAllocator, void** sizedBlockIterator)
 {
 	if (*sizedBlockIterator) {
-		*sizedBlockIterator = (void*)((VirtualAddress)*sizedBlockIterator + blockAllocator->BlockSizeBytes);
+		*sizedBlockIterator = (u8*)*sizedBlockIterator + blockAllocator->BlockSizeBytes;
 	} else {
-		*sizedBlockIterator = (void*)blockAllocator->FirstBlock;
+		*sizedBlockIterator = blockAllocator->FirstBlock;
 	}
 
-	for (usz i = SizedBlockGetIndex(blockAllocator, *sizedBlockIterator); i < blockAllocator->MaxAllocations; ++i) {
+	for (usz i = SizedBlockGetIndex(blockAllocator, *sizedBlockIterator); i < blockAllocator->AllocationCapacity; ++i) {
 		if (!SizedBlockGetStatus(blockAllocator, i)) {
 			continue;
 		}
@@ -121,16 +120,15 @@ Result SizedBlockCircularIterate(SizedBlockAllocator* blockAllocator, void** siz
 		return ResultEndOfIteration;
 	}
 
-	// TODO: Make this prettier
 	if (*sizedBlockIterator) {
-		*sizedBlockIterator = (void*)((VirtualAddress)*sizedBlockIterator + blockAllocator->BlockSizeBytes);
+		*sizedBlockIterator = (u8*)*sizedBlockIterator + blockAllocator->BlockSizeBytes;
 	} else {
-		*sizedBlockIterator = (void*)blockAllocator->FirstBlock;
+		*sizedBlockIterator = blockAllocator->FirstBlock;
 	}
 
 	usz i = SizedBlockGetIndex(blockAllocator, *sizedBlockIterator);
 	while (true) {
-		if (i >= blockAllocator->MaxAllocations) {
+		if (i >= blockAllocator->AllocationCapacity) {
 			i = 0;
 			continue;
 		}

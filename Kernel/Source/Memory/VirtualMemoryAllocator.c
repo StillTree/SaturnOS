@@ -158,7 +158,7 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 
 	const Page4KiB endPage = Page4KiBContaining(backingMemoryBegin + backingMemorySize);
 
-	for (Page4KiB heapPage = Page4KiBContaining(backingMemoryBegin); heapPage < endPage; heapPage += PAGE_4KIB_SIZE_BYTES) {
+	for (Page4KiB poolPage = Page4KiBContaining(backingMemoryBegin); poolPage < endPage; poolPage += PAGE_4KIB_SIZE_BYTES) {
 		PhysicalAddress frame;
 		Result result = AllocateFrame(&g_frameAllocator, &frame);
 		if (result) {
@@ -166,13 +166,13 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 		}
 
 		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
-		result = Page4KiBMap(kernelPML4, heapPage, frame, PageWriteable);
+		result = Page4KiBMap(kernelPML4, poolPage, frame, PageWriteable);
 		if (result) {
 			return result;
 		}
 	}
 
-	result = InitVirtualMemoryAllocator(&g_kernelMemoryAllocator, backingMemoryBegin, backingMemorySize, kernelPML4Frame);
+	result = InitVirtualMemoryAllocator(&g_kernelMemoryAllocator, (void*)backingMemoryBegin, backingMemorySize, kernelPML4Frame);
 	if (result) {
 		return result;
 	}
@@ -214,7 +214,7 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 	return result;
 }
 
-Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, VirtualAddress listBeginning, usz listSize, Frame4KiB pml4)
+Result InitVirtualMemoryAllocator(VirtualMemoryAllocator* allocator, void* listBeginning, usz listSize, Frame4KiB pml4)
 {
 	allocator->PML4 = pml4;
 
@@ -267,7 +267,7 @@ Result AllocateBackedVirtualMemoryAtAddress(VirtualMemoryAllocator* allocator, u
 	return result;
 }
 
-Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, PageTableEntryFlags flags, Page4KiB* allocatedPage)
+Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, PageTableEntryFlags flags, void** allocatedPage)
 {
 	if ((size & 0xfff) != 0) {
 		return ResultInvalidPageAlignment;
@@ -298,12 +298,14 @@ Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, 
 		}
 	}
 
-	*allocatedPage = pageBegin;
+	*allocatedPage = (void*)pageBegin;
 	return result;
 }
 
-Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, Page4KiB allocatedPage, usz size)
+Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, void* allocatedMemory, usz size)
 {
+	Page4KiB allocatedPage = (Page4KiB)allocatedMemory;
+
 	if ((allocatedPage & 0xfff) != 0 || (size & 0xfff) != 0) {
 		return ResultInvalidPageAlignment;
 	}
