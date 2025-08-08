@@ -66,7 +66,15 @@ Result ProcessTerminate(Scheduler* scheduler, Process* process)
 		return result;
 	}
 
-	// TODO: Actually free all the dangling file descriptors
+	ProcessFileDescriptor* fileDescriptorIter = nullptr;
+	while (!SizedBlockIterate(&process->FileDescriptors, (void**)&fileDescriptorIter)) {
+		usz index = SizedBlockGetIndex(&process->FileDescriptors, fileDescriptorIter);
+
+		result = FileClose(&g_virtualFileSystem, index);
+		if (result) {
+			return result;
+		}
+	}
 	result = DeallocateBackedVirtualMemory(&g_kernelMemoryAllocator, process->FileDescriptors.BlockBitmap, PAGE_4KIB_SIZE_BYTES);
 	if (result) {
 		return result;
