@@ -92,19 +92,6 @@ void KernelMain(KernelBootInfo* bootInfo)
 
 	SK_PANIC_ON_ERROR(InitExt2(), "An unexpected error occured while trying to initialize the Ext2 driver");
 
-	Process* process;
-	SK_PANIC_ON_ERROR(ProcessCreate(&g_scheduler, &process), "xd!");
-
-	Result result = ProcessLoadELF(process, "X:/test");
-	if (result) {
-		LogLine(SK_LOG_ERROR "%r", result);
-		Hang();
-	}
-
-	ThreadLaunch(process->MainThread);
-	
-	LogLine("123");
-
 	while (true)
 		__asm__ volatile("hlt");
 }

@@ -1,5 +1,7 @@
 #include "Scheduler.h"
 
+#include "ELFLoader.h"
+#include "Logger.h"
 #include "Memory.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
@@ -36,7 +38,7 @@ static usz GetThreadID()
 	return id++;
 }
 
-Result ProcessRemove(Scheduler* scheduler, Process* process)
+Result ProcessTerminate(Scheduler* scheduler, Process* process)
 {
 	Result result = ResultOk;
 
@@ -45,29 +47,37 @@ Result ProcessRemove(Scheduler* scheduler, Process* process)
 			continue;
 		}
 
-		process->Threads[i]->Status = ThreadDead;
+		ThreadTerminate(scheduler, process->Threads[i]);
+	}
 
-		// Deallocate the process's stack
-		result = DeallocateBackedVirtualMemory(
-			&process->VirtualMemoryAllocator, (u8*)process->Threads[i]->StackTop - THREAD_STACK_SIZE_BYTES, THREAD_STACK_SIZE_BYTES);
-		if (result) {
-			return result;
-		}
-
-		// Deallocate the entry point
-		// result = DeallocateMMIORegion(&process->VirtualMemoryAllocator, process->Threads[i]->EntryPointPage, PAGE_4KIB_SIZE_BYTES);
-		// if (result) {
-		// 	return result;
-		// }
-
-		result = SizedBlockDeallocate(&scheduler->Threads, process->Threads[i]);
+	ELFSegmentRegion* elfSegmentRegionIter = nullptr;
+	while (!SizedBlockIterate(&process->ELFSegmentMap, (void**)&elfSegmentRegionIter)) {
+		usz size = elfSegmentRegionIter->End - elfSegmentRegionIter->Begin;
+		result = DeallocateBackedVirtualMemory(&process->VirtualMemoryAllocator, (void*)elfSegmentRegionIter->Begin, size);
 		if (result) {
 			return result;
 		}
 	}
 
-	// As long as all of the virtual memory allocator's regions have been properly freed, its backing memory can simply be deallocated.
-	result = DeallocateBackedVirtualMemory(&g_kernelMemoryAllocator, process->AllocatorBackingMemory, 102400);
+	// As long as all of the virtual memory allocator's regions have been properly freed, its backing memory can simply be deallocated
+	// The bitmaps always start at the exact beginning of the backing memory pool, so I can just point to them when deallocating
+	result = DeallocateBackedVirtualMemory(&g_kernelMemoryAllocator, process->ELFSegmentMap.BlockBitmap, PAGE_4KIB_SIZE_BYTES);
+	if (result) {
+		return result;
+	}
+
+	// TODO: Actually free all the dangling file descriptors
+	result = DeallocateBackedVirtualMemory(&g_kernelMemoryAllocator, process->FileDescriptors.BlockBitmap, PAGE_4KIB_SIZE_BYTES);
+	if (result) {
+		return result;
+	}
+
+	void PrintList(VirtualMemoryAllocator * allocator);
+	LogLine(SK_LOG_DEBUG "Process's memory state before termination:");
+	PrintList(&process->VirtualMemoryAllocator);
+
+	result
+		= DeallocateBackedVirtualMemory(&g_kernelMemoryAllocator, process->VirtualMemoryAllocator.ListBackingStorage.BlockBitmap, 102400);
 	if (result) {
 		return result;
 	}
@@ -83,6 +93,27 @@ Result ProcessRemove(Scheduler* scheduler, Process* process)
 	return result;
 }
 
+Result ThreadTerminate(Scheduler* scheduler, Thread* thread)
+{
+	Process* process = thread->ParentProcess;
+	thread->Status = ThreadDead;
+
+	Result result = DeallocateBackedVirtualMemory(
+		&process->VirtualMemoryAllocator, (u8*)thread->StackTop - THREAD_STACK_SIZE_BYTES, THREAD_STACK_SIZE_BYTES);
+	if (result) {
+		return result;
+	}
+
+	result = SizedBlockDeallocate(&scheduler->Threads, thread);
+	if (result) {
+		return result;
+	}
+
+	process->ThreadCount--;
+
+	return result;
+}
+
 Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 {
 	Process* process = nullptr;
@@ -91,15 +122,24 @@ Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 		return result;
 	}
 
-	usz fileDescriptorsPoolSize = Page4KiBNext(sizeof(ProcessFileDescriptor) * MAX_FILE_DESCRIPTORS);
 	void* fileDescriptorsPool;
-	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, fileDescriptorsPoolSize, PageWriteable, &fileDescriptorsPool);
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, PAGE_4KIB_SIZE_BYTES, PageWriteable, &fileDescriptorsPool);
 	if (result) {
 		return result;
 	}
 
-	result
-		= InitSizedBlockAllocator(&process->FileDescriptors, fileDescriptorsPool, fileDescriptorsPoolSize, sizeof(ProcessFileDescriptor));
+	result = InitSizedBlockAllocator(&process->FileDescriptors, fileDescriptorsPool, PAGE_4KIB_SIZE_BYTES, sizeof(ProcessFileDescriptor));
+	if (result) {
+		return result;
+	}
+
+	void* elfSegmentMapPool;
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, PAGE_4KIB_SIZE_BYTES, PageWriteable, &elfSegmentMapPool);
+	if (result) {
+		return result;
+	}
+
+	result = InitSizedBlockAllocator(&process->ELFSegmentMap, elfSegmentMapPool, PAGE_4KIB_SIZE_BYTES, sizeof(ELFSegmentRegion));
 	if (result) {
 		return result;
 	}
@@ -112,12 +152,13 @@ Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 	PageTableEntry* processPML4 = PhysicalAddressAsPointer(pml4Frame);
 	InitEmptyPageTable(processPML4);
 
-	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, 102400, PageWriteable, &process->AllocatorBackingMemory);
+	void* virtualMemoryAllocatorPool;
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, 102400, PageWriteable, &virtualMemoryAllocatorPool);
 	if (result) {
 		return result;
 	}
 
-	result = InitVirtualMemoryAllocator(&process->VirtualMemoryAllocator, process->AllocatorBackingMemory, 102400, pml4Frame);
+	result = InitVirtualMemoryAllocator(&process->VirtualMemoryAllocator, virtualMemoryAllocatorPool, 102400, pml4Frame);
 	if (result) {
 		return result;
 	}
@@ -170,10 +211,7 @@ Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 	return result;
 }
 
-void ThreadLaunch(Thread* thread)
-{
-	thread->Status = ThreadReady;
-}
+void ThreadLaunch(Thread* thread) { thread->Status = ThreadReady; }
 
 Result InitScheduler(Scheduler* scheduler)
 {
@@ -209,6 +247,7 @@ Result InitScheduler(Scheduler* scheduler)
 
 	kernelProcess->ID = 0;
 	kernelProcess->PML4 = KernelPML4();
+	kernelProcess->ThreadCount = 1;
 	for (usz i = 0; i < MAX_THREADS_PER_PROCESS; i++) {
 		kernelProcess->Threads[i] = nullptr;
 	}
@@ -227,15 +266,14 @@ Result InitScheduler(Scheduler* scheduler)
 	kernelMainThread->StackTop = g_bootInfo.KernelStackTop;
 	kernelMainThread->ParentProcess = kernelProcess;
 
-	usz fileDescriptorsPoolSize = Page4KiBNext(sizeof(ProcessFileDescriptor) * MAX_FILE_DESCRIPTORS);
 	void* fileDescriptorsPool;
-	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, fileDescriptorsPoolSize, PageWriteable, &fileDescriptorsPool);
+	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, PAGE_4KIB_SIZE_BYTES, PageWriteable, &fileDescriptorsPool);
 	if (result) {
 		return result;
 	}
 
 	result = InitSizedBlockAllocator(
-		&kernelProcess->FileDescriptors, fileDescriptorsPool, fileDescriptorsPoolSize, sizeof(ProcessFileDescriptor));
+		&kernelProcess->FileDescriptors, fileDescriptorsPool, PAGE_4KIB_SIZE_BYTES, sizeof(ProcessFileDescriptor));
 	if (result) {
 		return result;
 	}

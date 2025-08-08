@@ -1,5 +1,6 @@
 #include "ELFLoader.h"
 
+#include "Logger.h"
 #include "Memory.h"
 #include "Memory/VirtualMemoryAllocator.h"
 #include "Storage/VirtualFileSystem.h"
@@ -44,18 +45,6 @@ Result ProcessLoadELF(Process* process, const i8* elfPath)
 		goto DeallocateProgramHeaderTable;
 	}
 
-	void* elfPageMapPool;
-	result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, PAGE_4KIB_SIZE_BYTES, PageWriteable, &elfPageMapPool);
-	if (result) {
-		return result;
-	}
-
-	SizedBlockAllocator elfPageMap;
-	result = InitSizedBlockAllocator(&elfPageMap, elfPageMapPool, PAGE_4KIB_SIZE_BYTES, sizeof(ELFSegmentRegion));
-	if (result) {
-		return result;
-	}
-
 	Elf64_Phdr* programHeaders = (Elf64_Phdr*)programHeaderTablePage;
 	ELFSegmentRegion* regionBefore = nullptr;
 	Elf64_Phdr* programHeaderBefore = nullptr;
@@ -67,7 +56,7 @@ Result ProcessLoadELF(Process* process, const i8* elfPath)
 		if ((programHeaderBefore && programHeaderBefore->p_vaddr + programHeaderBefore->p_memsz >= programHeaders[i].p_vaddr)
 			|| programHeaders[i].p_align != PAGE_4KIB_SIZE_BYTES) {
 			result = ResultSerialOutputUnavailable;
-			goto DeallocateELFMap;
+			goto DeallocateProgramHeaderTable;
 		}
 
 		PageTableEntryFlags flags = 0;
@@ -88,9 +77,9 @@ Result ProcessLoadELF(Process* process, const i8* elfPath)
 		}
 
 		ELFSegmentRegion* region;
-		result = SizedBlockAllocate(&elfPageMap, (void**)&region);
+		result = SizedBlockAllocate(&process->ELFSegmentMap, (void**)&region);
 		if (result) {
-			goto DeallocateELFMap;
+			goto DeallocateProgramHeaderTable;
 		}
 
 		region->Begin = begin;
@@ -103,40 +92,38 @@ Result ProcessLoadELF(Process* process, const i8* elfPath)
 	}
 
 	ELFSegmentRegion* segmentRegionIter = nullptr;
-	while (!SizedBlockIterate(&elfPageMap, (void**)&segmentRegionIter)) {
+	while (!SizedBlockIterate(&process->ELFSegmentMap, (void**)&segmentRegionIter)) {
 		usz segmentRegionSize = segmentRegionIter->End - segmentRegionIter->Begin;
 
 		void* segmentPage;
 		result = AllocateBackedVirtualMemory(&g_kernelMemoryAllocator, segmentRegionSize, PageWriteable, &segmentPage);
 		if (result) {
-			goto DeallocateELFMap;
+			goto DeallocateProgramHeaderTable;
 		}
 
 		MemoryFill(segmentPage, 0, segmentRegionSize);
 
 		result = FileSetOffset(fileDescriptor, segmentRegionIter->ELFSegment->p_offset);
 		if (result) {
-			goto DeallocateELFMap;
+			goto DeallocateProgramHeaderTable;
 		}
 
 		result = FileRead(fileDescriptor, segmentRegionIter->ELFSegment->p_filesz,
 			((u8*)segmentPage + VirtualAddressPageOffset(segmentRegionIter->ELFSegment->p_vaddr)));
 		if (result) {
-			goto DeallocateELFMap;
+			goto DeallocateProgramHeaderTable;
 		}
 
 		result = ReallocateVirtualMemory(&g_kernelMemoryAllocator, &process->VirtualMemoryAllocator, segmentRegionSize,
 			segmentRegionIter->Flags | PageUserAccessible, (Page4KiB)segmentPage,
 			Page4KiBContaining(segmentRegionIter->ELFSegment->p_vaddr));
 		if (result) {
-			goto DeallocateELFMap;
+			goto DeallocateProgramHeaderTable;
 		}
 	}
 
 	process->MainThread->Context.InterruptFrame.RIP = elfHeader.e_entry;
 
-DeallocateELFMap:
-	DeallocateBackedVirtualMemory(&g_kernelMemoryAllocator, elfPageMapPool, PAGE_4KIB_SIZE_BYTES);
 DeallocateProgramHeaderTable:
 	DeallocateBackedVirtualMemory(&g_kernelMemoryAllocator, programHeaderTablePage, Page4KiBNext(programHeaderTableSize));
 CloseFile:

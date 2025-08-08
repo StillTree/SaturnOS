@@ -62,9 +62,9 @@ typedef struct Process {
 	Thread* MainThread;
 	usz ThreadCount;
 	VirtualMemoryAllocator VirtualMemoryAllocator;
-	void* AllocatorBackingMemory;
 	/// A list of files opened by the process.
 	SizedBlockAllocator FileDescriptors;
+	SizedBlockAllocator ELFSegmentMap;
 } Process;
 
 typedef struct Scheduler {
@@ -78,9 +78,10 @@ Result InitScheduler(Scheduler* scheduler);
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 Result ProcessCreate(Scheduler* scheduler, Process** createdProcess);
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
-Result ProcessRemove(Scheduler* scheduler, Process* process);
+Result ProcessTerminate(Scheduler* scheduler, Process* process);
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 void ThreadLaunch(Thread* thread);
+Result ThreadTerminate(Scheduler* scheduler, Thread* thread);
 
 void ScheduleInterrupt(CPUContext* cpuContext);
 void ScheduleException(CPUContext* cpuContext);

@@ -38,7 +38,7 @@ __attribute__((interrupt)) void InvalidOpcodeInterruptHandler(InterruptFrame* fr
 	} else {
 		// Exception occured in a process
 		LogLine(SK_LOG_ERROR "Terminating the faulty process.");
-		ProcessRemove(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
+		ProcessTerminate(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
 		ScheduleExceptionHandler();
 	}
 }
@@ -54,7 +54,7 @@ __attribute__((interrupt)) void GeneralProtectionFaultInterruptHandler(Interrupt
 	} else {
 		// Exception occured in a process
 		LogLine(SK_LOG_ERROR "Terminating the faulty process.");
-		ProcessRemove(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
+		ProcessTerminate(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
 		ScheduleExceptionHandler();
 	}
 }
@@ -70,7 +70,7 @@ __attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* fram
 	} else {
 		// Exception occured in a process
 		LogLine(SK_LOG_ERROR "Terminating the faulty process.");
-		ProcessRemove(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
+		ProcessTerminate(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
 		ScheduleExceptionHandler();
 	}
 }
@@ -143,7 +143,7 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 	} else {
 		// Exception occured in a process
 		LogLine(SK_LOG_ERROR "Terminating the faulty process.");
-		ProcessRemove(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
+		ProcessTerminate(&g_scheduler, g_scheduler.CurrentThread->ParentProcess);
 		ScheduleExceptionHandler();
 	}
 }
