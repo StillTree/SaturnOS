@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include "Memory.h"
 #include "Memory/Frame.h"
+#include "Panic.h"
 
 BitmapFrameAllocator g_frameAllocator = {};
 
@@ -97,7 +98,7 @@ Result AllocateContiguousFrames(BitmapFrameAllocator* frameAllocator, usz count,
 	return ResultOutOfMemory;
 }
 
-Result AllocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB* frame)
+Frame4KiB AllocateFrame(BitmapFrameAllocator* frameAllocator)
 {
 	for (Frame4KiB checkedFrame = 0; checkedFrame <= frameAllocator->LastFrame; checkedFrame += FRAME_4KIB_SIZE_BYTES) {
 		if (GetFrameStatus(frameAllocator, checkedFrame)) {
@@ -105,11 +106,10 @@ Result AllocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB* frame)
 		}
 
 		SetFrameStatus(frameAllocator, checkedFrame, true);
-		*frame = checkedFrame;
-		return ResultOk;
+		return checkedFrame;
 	}
 
-	return ResultOutOfMemory;
+	SK_PANIC("The kernel ran out of memory");
 }
 
 Result DeallocateContiguousFrames(BitmapFrameAllocator* frameAllocator, Frame4KiB frame, usz count)

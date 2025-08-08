@@ -16,7 +16,7 @@ typedef struct BitmapFrameAllocator {
 Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapEntry* memoryMap, usz memoryMapEntries);
 
 /// Allocates a single 4 KiB memory frame.
-Result AllocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB* frame);
+Frame4KiB AllocateFrame(BitmapFrameAllocator* frameAllocator);
 /// Allocates a contiguous range of 4 KiB memory frames.
 Result AllocateContiguousFrames(BitmapFrameAllocator* frameAllocator, usz count, Frame4KiB* frame);
 /// Deallocates a single 4 KiB memory frame.

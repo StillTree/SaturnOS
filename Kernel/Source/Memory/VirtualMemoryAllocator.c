@@ -145,11 +145,7 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 			continue;
 		}
 
-		Frame4KiB frame;
-		result = AllocateFrame(&g_frameAllocator, &frame);
-		if (result) {
-			return result;
-		}
+		Frame4KiB frame = AllocateFrame(&g_frameAllocator);
 
 		InitEmptyPageTable(PhysicalAddressAsPointer(frame));
 
@@ -159,11 +155,7 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 	const Page4KiB endPage = Page4KiBContaining(backingMemoryBegin + backingMemorySize);
 
 	for (Page4KiB poolPage = Page4KiBContaining(backingMemoryBegin); poolPage < endPage; poolPage += PAGE_4KIB_SIZE_BYTES) {
-		PhysicalAddress frame;
-		Result result = AllocateFrame(&g_frameAllocator, &frame);
-		if (result) {
-			return result;
-		}
+		Frame4KiB frame = AllocateFrame(&g_frameAllocator);
 
 		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
 		result = Page4KiBMap(kernelPML4, poolPage, frame, PageWriteable);
@@ -251,11 +243,7 @@ Result AllocateBackedVirtualMemoryAtAddress(VirtualMemoryAllocator* allocator, u
 	}
 
 	for (Page4KiB page = pageBegin; page < endPage; page += PAGE_4KIB_SIZE_BYTES) {
-		PhysicalAddress frame;
-		Result result = AllocateFrame(&g_frameAllocator, &frame);
-		if (result) {
-			return result;
-		}
+		Frame4KiB frame = AllocateFrame(&g_frameAllocator);
 
 		result = Page4KiBMap(PhysicalAddressAsPointer(allocator->PML4), page, frame, flags);
 		if (result) {
@@ -285,11 +273,7 @@ Result AllocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, usz size, 
 	}
 
 	for (Page4KiB page = pageBegin; page < endPage; page += PAGE_4KIB_SIZE_BYTES) {
-		PhysicalAddress frame;
-		result = AllocateFrame(&g_frameAllocator, &frame);
-		if (result) {
-			return result;
-		}
+		Frame4KiB frame = AllocateFrame(&g_frameAllocator);
 
 		result = Page4KiBMap(PhysicalAddressAsPointer(allocator->PML4), page, frame, flags);
 		if (result) {

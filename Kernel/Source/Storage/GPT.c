@@ -11,18 +11,10 @@ Partition g_usablePartitions[1];
 
 Result DetectGPTPartitions()
 {
-	Result result = ResultOk;
-
 	// For now I just assume that the first partition is usable :D
 	// Like with everything I will later implement support for multiple partitions or whatever
-
-	Frame4KiB partitionTableHeader;
-	result = AllocateFrame(&g_frameAllocator, &partitionTableHeader);
-	if (result) {
-		return result;
-	}
-
-	result = AHCIDeviceReadSectors(&g_ahciDriver.Devices[0], 1, 1, partitionTableHeader);
+	Frame4KiB partitionTableHeader = AllocateFrame(&g_frameAllocator);
+	Result result = AHCIDeviceReadSectors(&g_ahciDriver.Devices[0], 1, 1, partitionTableHeader);
 	if (result) {
 		return result;
 	}

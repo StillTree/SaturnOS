@@ -36,11 +36,7 @@ static Result AHCIDeviceAllocateCommandTables(AHCIDevice* device)
 		AHCICommandHeader* command = device->CommandList + i;
 
 		// I allocate a single frame, even though this isn't technically enough for an entire command table
-		Frame4KiB frame;
-		Result result = AllocateFrame(&g_frameAllocator, &frame);
-		if (result) {
-			return result;
-		}
+		Frame4KiB frame = AllocateFrame(&g_frameAllocator);
 
 		command->CTBA = frame & 0xffffffff;
 		command->CTBAU = frame >> 32;
@@ -91,8 +87,7 @@ static Result AHCIDeviceIdentify(AHCIDevice* device)
 
 	AHCICommandTable* commandTable = AHCICommandHeaderGetCommandTable(commandHeader);
 
-	PhysicalAddress identifyFrame;
-	AllocateFrame(&g_frameAllocator, &identifyFrame);
+	Frame4KiB identifyFrame = AllocateFrame(&g_frameAllocator);
 	MemoryFill(PhysicalAddressAsPointer(identifyFrame), 0, FRAME_4KIB_SIZE_BYTES);
 
 	commandTable->PRDT[0].DBA = identifyFrame & 0xffffffff;
@@ -138,25 +133,17 @@ Result AHCIDeviceInit(AHCIDevice* device)
 	// Clear all ATA errors
 	device->Registers->SERR = ~0;
 
-	PhysicalAddress receivedFisFrame;
-	Result result = AllocateFrame(&g_frameAllocator, &receivedFisFrame);
-	if (result) {
-		return result;
-	}
+	Frame4KiB receivedFisFrame = AllocateFrame(&g_frameAllocator);
 	device->Registers->FB = receivedFisFrame & 0xffffffff;
 	device->Registers->FBU = receivedFisFrame >> 32;
 
-	PhysicalAddress commandListFrame;
-	result = AllocateFrame(&g_frameAllocator, &commandListFrame);
-	if (result) {
-		return result;
-	}
+	Frame4KiB commandListFrame = AllocateFrame(&g_frameAllocator);
 	device->Registers->CLB = commandListFrame & 0xffffffff;
 	device->Registers->CLBU = commandListFrame >> 32;
 
 	device->CommandList = PhysicalAddressAsPointer(commandListFrame);
 
-	result = AHCIDeviceAllocateCommandTables(device);
+	Result result = AHCIDeviceAllocateCommandTables(device);
 	if (result) {
 		return result;
 	}

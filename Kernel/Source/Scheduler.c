@@ -144,11 +144,7 @@ Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 		return result;
 	}
 
-	Frame4KiB pml4Frame;
-	result = AllocateFrame(&g_frameAllocator, &pml4Frame);
-	if (result) {
-		return result;
-	}
+	Frame4KiB pml4Frame = AllocateFrame(&g_frameAllocator);
 	PageTableEntry* processPML4 = PhysicalAddressAsPointer(pml4Frame);
 	InitEmptyPageTable(processPML4);
 

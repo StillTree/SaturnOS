@@ -36,11 +36,7 @@ Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTab
 
 	Ext2INode* currentInode = ext2->RootInode;
 
-	Frame4KiB directoryEntriesFrame;
-	Result result = AllocateFrame(&g_frameAllocator, &directoryEntriesFrame);
-	if (result) {
-		return result;
-	}
+	Frame4KiB directoryEntriesFrame = AllocateFrame(&g_frameAllocator);
 
 	// Currently, when this algorithm encounters a symlink it will most likely shit itself
 	while (filePath[end]) {
@@ -52,7 +48,7 @@ Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTab
 		while (filePath[end] && filePath[end] != '/')
 			end++;
 
-		result = AHCIDeviceReadSectors(&g_ahciDriver.Devices[0],
+		Result result = AHCIDeviceReadSectors(&g_ahciDriver.Devices[0],
 			g_usablePartitions[0].StartLBA + ((usz)currentInode->DirectPointers[0] * 8), 8, directoryEntriesFrame);
 		if (result) {
 			DeallocateFrame(&g_frameAllocator, directoryEntriesFrame);
@@ -102,12 +98,8 @@ Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTab
 
 Result InitExt2()
 {
-	Frame4KiB superblockFrame;
-	Result result = AllocateFrame(&g_frameAllocator, &superblockFrame);
-	if (result) {
-		return result;
-	}
-	result = AHCIDeviceReadSectors(&g_ahciDriver.Devices[0], g_usablePartitions[0].StartLBA + 2, 2, superblockFrame);
+	Frame4KiB superblockFrame = AllocateFrame(&g_frameAllocator);
+	Result result = AHCIDeviceReadSectors(&g_ahciDriver.Devices[0], g_usablePartitions[0].StartLBA + 2, 2, superblockFrame);
 	if (result) {
 		return result;
 	}
@@ -116,32 +108,20 @@ Result InitExt2()
 	g_ext2Driver.BlockGroupCount
 		= (g_ext2Driver.Superblock->InodeCount + g_ext2Driver.Superblock->InodesPerGroup - 1) / g_ext2Driver.Superblock->InodesPerGroup;
 
-	Frame4KiB bgdtFrame;
-	result = AllocateFrame(&g_frameAllocator, &bgdtFrame);
-	if (result) {
-		return result;
-	}
+	Frame4KiB bgdtFrame = AllocateFrame(&g_frameAllocator);
 	result = AHCIDeviceReadSectors(&g_ahciDriver.Devices[0], g_usablePartitions[0].StartLBA + 8, 2, bgdtFrame);
 	if (result) {
 		return result;
 	}
 	g_ext2Driver.BlockGroupDescriptorTable = PhysicalAddressAsPointer(bgdtFrame);
 
-	Frame4KiB rootInodeFrame;
-	result = AllocateFrame(&g_frameAllocator, &rootInodeFrame);
-	if (result) {
-		return result;
-	}
+	Frame4KiB rootInodeFrame = AllocateFrame(&g_frameAllocator);
 	result = GetInode(&g_ext2Driver, 2, rootInodeFrame, &g_ext2Driver.RootInode);
 	if (result) {
 		return result;
 	}
 
-	Frame4KiB rootDirectoryEntriesFrame;
-	result = AllocateFrame(&g_frameAllocator, &rootDirectoryEntriesFrame);
-	if (result) {
-		return result;
-	}
+	Frame4KiB rootDirectoryEntriesFrame = AllocateFrame(&g_frameAllocator);
 	result = AHCIDeviceReadSectors(
 		&g_ahciDriver.Devices[0], 2048 + (g_ext2Driver.RootInode->DirectPointers[0] * 8), 8, rootDirectoryEntriesFrame);
 	if (result) {
