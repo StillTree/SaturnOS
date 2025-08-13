@@ -43,4 +43,6 @@ Result ReallocateVirtualMemory(VirtualMemoryAllocator* allocatorSource, VirtualM
 /// Populates the given number of the top kernel PML4's entries and initializes the memory manager.
 Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, usz backingMemorySize);
 
+void VirtualMemoryPrintRegions(VirtualMemoryAllocator* allocator);
+
 extern VirtualMemoryAllocator g_kernelMemoryAllocator;

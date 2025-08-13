@@ -10,7 +10,8 @@ constexpr usz MAX_THREADS_PER_PROCESS = 64;
 constexpr usz MAX_PROCESSES = 64;
 constexpr usz MAX_FILE_DESCRIPTORS = 64;
 // 100 KiB
-constexpr usz THREAD_STACK_SIZE_BYTES = 102400;
+constexpr usz THREAD_USER_STACK_SIZE_BYTES = 102400;
+constexpr usz THREAD_KERNEL_STACK_SIZE_BYTES = 20480;
 
 // I have no clue if this is enough, but for now it should suffice I guess...
 typedef struct CPUContext {
@@ -49,8 +50,10 @@ typedef struct Thread {
 	usz ID;
 	ThreadStatus Status;
 	CPUContext Context;
-	/// The first frame of this thread's stack. A process's stack for now is always 20 pages long.
-	Page4KiB StackTop;
+	/// A 100 KiB stack for use in the userspace.
+	Page4KiB UserStackTop;
+	/// A 20 KiB stack for use in the syscalls, interrupts or anything else that the kernel must do.
+	Page4KiB KernelStackTop;
 	struct Process* ParentProcess;
 } Thread;
 
@@ -73,17 +76,26 @@ typedef struct Scheduler {
 	Thread* CurrentThread;
 } Scheduler;
 
-Result InitScheduler(Scheduler* scheduler);
+Result InitScheduler();
 
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
-Result ProcessCreate(Scheduler* scheduler, Process** createdProcess);
+Result ProcessCreate(Process** createdProcess);
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
-Result ProcessTerminate(Scheduler* scheduler, Process* process);
+Result ProcessTerminateStart(Process* process);
+/// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
+Result ProcessTerminateFinish(Process* process);
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 void ThreadLaunch(Thread* thread);
-Result ThreadTerminate(Scheduler* scheduler, Thread* thread);
+/// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
+Result ThreadTerminateStart(Thread* thread);
+/// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
+Result ThreadTerminateFinish(Thread* thread);
 
 void ScheduleInterrupt(CPUContext* cpuContext);
 void ScheduleException(CPUContext* cpuContext);
+/// Does everything except for loading the interrupt frame.
+void ScheduleSyscallStart();
+/// Loads the interrupt frame.
+void ScheduleSyscallFinish(CPUContext* cpuContext);
 
 extern Scheduler g_scheduler;

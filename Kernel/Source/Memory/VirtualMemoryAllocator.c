@@ -118,11 +118,11 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 	return ResultOutOfMemory;
 }
 
-void PrintList(VirtualMemoryAllocator* allocator)
+void VirtualMemoryPrintRegions(VirtualMemoryAllocator* allocator)
 {
 	UnusedVirtualRegion* region = allocator->List;
 	while (region) {
-		LogLine(SK_LOG_DEBUG "Begin = 0x%x End = 0x%x", region->Begin, region->End);
+		LogLine(SK_LOG_DEBUG "Region: Begin = 0x%x End = 0x%x", region->Begin, region->End);
 
 		region = region->Next;
 	}

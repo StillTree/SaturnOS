@@ -47,6 +47,8 @@ void InitGDT()
 	g_tss.IST[1] = (u64)g_pageFaultStack + (sizeof(u8) * 20480);
 	g_tss.IST[6] = (u64)g_schedulerInterruptStack + (sizeof(u8) * 20480);
 	g_tss.RSP[0] = g_bootInfo.KernelStackTop;
+	g_tss.RSP[1] = g_bootInfo.KernelStackTop;
+	g_tss.RSP[2] = g_bootInfo.KernelStackTop;
 
 	g_gdt.Null = SetGDTEntry32(0, 0, 0, 0);
 	g_gdt.KernelCode = SetGDTEntry32(0, 0xfffff, 0x9a, 0xa);

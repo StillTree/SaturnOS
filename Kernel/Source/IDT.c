@@ -1,5 +1,6 @@
 #include "IDT.h"
 
+#include "GDT.h"
 #include "InterruptHandlers.h"
 
 IDTEntry g_idt[256];
@@ -9,7 +10,7 @@ void SetIDTEntry(u8 vector, u64 handlerFn, u8 flags, u8 istNumber)
 	g_idt[vector].AddressLow = handlerFn;
 	g_idt[vector].AddressMid = handlerFn >> 16;
 	g_idt[vector].AddressHigh = handlerFn >> 32;
-	g_idt[vector].KernelCS = 0x8;
+	g_idt[vector].KernelCS = GDT_ENTRY_KERNEL_CODE;
 	g_idt[vector].IST = istNumber;
 	g_idt[vector].Flags = flags | IDTEntryPresent;
 	g_idt[vector].Reserved = 0;

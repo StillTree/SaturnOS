@@ -1,27 +1,27 @@
 #include "Scheduler.h"
 
 #include "ELFLoader.h"
-#include "Logger.h"
+#include "GDT.h"
 #include "Memory.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
 #include "Memory/PageTable.h"
+#include "Memory/SizedBlockAllocator.h"
 #include "Result.h"
 #include "Storage/VirtualFileSystem.h"
 
 Scheduler g_scheduler;
 
-static Result AllocateThreadStack(Process* process, Page4KiB* stackTop)
+static Result AllocateThreadStack(Process* process, usz size, PageTableEntryFlags flags, Page4KiB* stackTop)
 {
 	// TODO: Add random stack offset support (subtract a random number between 0 and 4096 from the stack top and align it to 16 bytes)
 	void* stackBottom;
-	Result result = AllocateBackedVirtualMemory(
-		&process->VirtualMemoryAllocator, THREAD_STACK_SIZE_BYTES, PageWriteable | PageUserAccessible | PageNoExecute, &stackBottom);
+	Result result = AllocateBackedVirtualMemory(&process->VirtualMemoryAllocator, size, flags, &stackBottom);
 	if (result) {
 		return result;
 	}
 
-	*stackTop = (Page4KiB)stackBottom + THREAD_STACK_SIZE_BYTES;
+	*stackTop = (Page4KiB)stackBottom + size;
 
 	return result;
 }
@@ -38,7 +38,7 @@ static usz GetThreadID()
 	return id++;
 }
 
-Result ProcessTerminate(Scheduler* scheduler, Process* process)
+Result ProcessTerminateStart(Process* process)
 {
 	Result result = ResultOk;
 
@@ -47,7 +47,10 @@ Result ProcessTerminate(Scheduler* scheduler, Process* process)
 			continue;
 		}
 
-		ThreadTerminate(scheduler, process->Threads[i]);
+		result = ThreadTerminateStart(process->Threads[i]);
+		if (result) {
+			return result;
+		}
 	}
 
 	ELFSegmentRegion* elfSegmentRegionIter = nullptr;
@@ -80,9 +83,23 @@ Result ProcessTerminate(Scheduler* scheduler, Process* process)
 		return result;
 	}
 
-	void PrintList(VirtualMemoryAllocator * allocator);
-	LogLine(SK_LOG_DEBUG "Process's memory state before termination:");
-	PrintList(&process->VirtualMemoryAllocator);
+	return result;
+}
+
+Result ProcessTerminateFinish(Process* process)
+{
+	Result result = ResultOk;
+
+	for (usz i = 0; i < MAX_THREADS_PER_PROCESS; i++) {
+		if (!process->Threads[i]) {
+			continue;
+		}
+
+		result = ThreadTerminateFinish(process->Threads[i]);
+		if (result) {
+			return result;
+		}
+	}
 
 	result
 		= DeallocateBackedVirtualMemory(&g_kernelMemoryAllocator, process->VirtualMemoryAllocator.ListBackingStorage.BlockBitmap, 102400);
@@ -91,9 +108,10 @@ Result ProcessTerminate(Scheduler* scheduler, Process* process)
 	}
 
 	// Deallocate the process's PML4
+	// TODO: Deallocate the intermediate frames in the page table setup (levels 1, 2 and 3)
 	DeallocateFrame(&g_frameAllocator, process->PML4);
 
-	result = SizedBlockDeallocate(&scheduler->Processes, process);
+	result = SizedBlockDeallocate(&g_scheduler.Processes, process);
 	if (result) {
 		return result;
 	}
@@ -101,18 +119,35 @@ Result ProcessTerminate(Scheduler* scheduler, Process* process)
 	return result;
 }
 
-Result ThreadTerminate(Scheduler* scheduler, Thread* thread)
+Result ThreadTerminateStart(Thread* thread)
 {
 	Process* process = thread->ParentProcess;
 	thread->Status = ThreadDead;
 
 	Result result = DeallocateBackedVirtualMemory(
-		&process->VirtualMemoryAllocator, (u8*)thread->StackTop - THREAD_STACK_SIZE_BYTES, THREAD_STACK_SIZE_BYTES);
+		&process->VirtualMemoryAllocator, (u8*)thread->UserStackTop - THREAD_USER_STACK_SIZE_BYTES, THREAD_USER_STACK_SIZE_BYTES);
 	if (result) {
 		return result;
 	}
 
-	result = SizedBlockDeallocate(&scheduler->Threads, thread);
+	return result;
+}
+
+Result ThreadTerminateFinish(Thread* thread)
+{
+	if (thread->Status != ThreadDead) {
+		return ResultSerialOutputUnavailable;
+	}
+
+	Process* process = thread->ParentProcess;
+
+	Result result = DeallocateBackedVirtualMemory(
+		&process->VirtualMemoryAllocator, (u8*)thread->KernelStackTop - THREAD_KERNEL_STACK_SIZE_BYTES, THREAD_KERNEL_STACK_SIZE_BYTES);
+	if (result) {
+		return result;
+	}
+
+	result = SizedBlockDeallocate(&g_scheduler.Threads, thread);
 	if (result) {
 		return result;
 	}
@@ -122,10 +157,10 @@ Result ThreadTerminate(Scheduler* scheduler, Thread* thread)
 	return result;
 }
 
-Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
+Result ProcessCreate(Process** createdProcess)
 {
 	Process* process = nullptr;
-	Result result = SizedBlockAllocate(&scheduler->Processes, (void**)&process);
+	Result result = SizedBlockAllocate(&g_scheduler.Processes, (void**)&process);
 	if (result) {
 		return result;
 	}
@@ -173,7 +208,7 @@ Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 	}
 
 	Thread* mainThread = nullptr;
-	result = SizedBlockAllocate(&scheduler->Threads, (void**)&mainThread);
+	result = SizedBlockAllocate(&g_scheduler.Threads, (void**)&mainThread);
 	if (result) {
 		return result;
 	}
@@ -193,21 +228,28 @@ Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 	mainThread->ID = GetThreadID();
 	mainThread->ParentProcess = process;
 
-	Page4KiB stackTop;
-	result = AllocateThreadStack(process, &stackTop);
+	Page4KiB userStackTop;
+	result = AllocateThreadStack(process, THREAD_USER_STACK_SIZE_BYTES, PageWriteable | PageUserAccessible, &userStackTop);
 	if (result) {
 		return result;
 	}
-	mainThread->StackTop = stackTop;
+	mainThread->UserStackTop = userStackTop;
+
+	Page4KiB kernelStackTop;
+	result = AllocateThreadStack(process, THREAD_KERNEL_STACK_SIZE_BYTES, PageWriteable, &kernelStackTop);
+	if (result) {
+		return result;
+	}
+	mainThread->KernelStackTop = kernelStackTop;
 
 	MemoryFill(&mainThread->Context, 0, sizeof(CPUContext));
 	mainThread->Context.CR3 = pml4Frame;
-	mainThread->Context.InterruptFrame.RSP = stackTop;
+	mainThread->Context.InterruptFrame.RSP = userStackTop;
 	mainThread->Context.RBP = 0;
 	mainThread->Context.InterruptFrame.RFLAGS = 0x202;
 
-	mainThread->Context.InterruptFrame.CS = 0x23;
-	mainThread->Context.InterruptFrame.SS = 0x1b;
+	mainThread->Context.InterruptFrame.CS = GDT_ENTRY_USER_CODE;
+	mainThread->Context.InterruptFrame.SS = GDT_ENTRY_USER_DATA;
 	mainThread->Status = ThreadStartingUp;
 
 	*createdProcess = process;
@@ -217,7 +259,7 @@ Result ProcessCreate(Scheduler* scheduler, Process** createdProcess)
 
 void ThreadLaunch(Thread* thread) { thread->Status = ThreadReady; }
 
-Result InitScheduler(Scheduler* scheduler)
+Result InitScheduler()
 {
 	usz processPoolSize = sizeof(Process) * MAX_PROCESSES;
 	void* processPool;
@@ -226,7 +268,7 @@ Result InitScheduler(Scheduler* scheduler)
 		return result;
 	}
 
-	result = InitSizedBlockAllocator(&scheduler->Processes, processPool, processPoolSize, sizeof(Process));
+	result = InitSizedBlockAllocator(&g_scheduler.Processes, processPool, processPoolSize, sizeof(Process));
 	if (result) {
 		return result;
 	}
@@ -238,13 +280,13 @@ Result InitScheduler(Scheduler* scheduler)
 		return result;
 	}
 
-	result = InitSizedBlockAllocator(&scheduler->Threads, threadPool, threadPoolSize, sizeof(Thread));
+	result = InitSizedBlockAllocator(&g_scheduler.Threads, threadPool, threadPoolSize, sizeof(Thread));
 	if (result) {
 		return result;
 	}
 
 	Process* kernelProcess = nullptr;
-	result = SizedBlockAllocate(&scheduler->Processes, (void**)&kernelProcess);
+	result = SizedBlockAllocate(&g_scheduler.Processes, (void**)&kernelProcess);
 	if (result) {
 		return result;
 	}
@@ -257,7 +299,7 @@ Result InitScheduler(Scheduler* scheduler)
 	}
 
 	Thread* kernelMainThread = nullptr;
-	result = SizedBlockAllocate(&scheduler->Threads, (void**)&kernelMainThread);
+	result = SizedBlockAllocate(&g_scheduler.Threads, (void**)&kernelMainThread);
 	if (result) {
 		return result;
 	}
@@ -266,8 +308,9 @@ Result InitScheduler(Scheduler* scheduler)
 	kernelMainThread->ID = 0;
 	kernelMainThread->Status = ThreadRunning;
 	kernelMainThread->Context.CR3 = kernelProcess->PML4;
-	scheduler->CurrentThread = kernelMainThread;
-	kernelMainThread->StackTop = g_bootInfo.KernelStackTop;
+	g_scheduler.CurrentThread = kernelMainThread;
+	kernelMainThread->UserStackTop = g_bootInfo.KernelStackTop;
+	kernelMainThread->KernelStackTop = g_bootInfo.KernelStackTop;
 	kernelMainThread->ParentProcess = kernelProcess;
 
 	void* fileDescriptorsPool;
@@ -287,11 +330,6 @@ Result InitScheduler(Scheduler* scheduler)
 
 void ScheduleInterrupt(CPUContext* cpuContext)
 {
-	// This means only the kernel is running so we can just safely return here
-	// if (g_scheduler.Threads.AllocationCount == 1) {
-	// 	return;
-	// }
-
 	Thread* threadIterator = g_scheduler.CurrentThread;
 	// TODO: Temporary workaround for when only one process is being run
 	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {
@@ -313,17 +351,14 @@ void ScheduleInterrupt(CPUContext* cpuContext)
 		g_scheduler.CurrentThread->Status = ThreadRunning;
 		*cpuContext = g_scheduler.CurrentThread->Context;
 
+		g_tss.RSP[0] = g_scheduler.CurrentThread->KernelStackTop;
+
 		return;
 	}
 }
 
 void ScheduleException(CPUContext* cpuContext)
 {
-	// This means only the kernel is running so we can just safely return here
-	// if (g_scheduler.Threads.AllocationCount == 1) {
-	// 	return;
-	// }
-
 	Thread* threadIterator = g_scheduler.CurrentThread;
 
 	while (!SizedBlockCircularIterate(&g_scheduler.Threads, (void**)&threadIterator)) {
@@ -332,9 +367,36 @@ void ScheduleException(CPUContext* cpuContext)
 		}
 
 		g_scheduler.CurrentThread = threadIterator;
+
 		g_scheduler.CurrentThread->Status = ThreadRunning;
 		*cpuContext = g_scheduler.CurrentThread->Context;
 
+		g_tss.RSP[0] = g_scheduler.CurrentThread->KernelStackTop;
+
 		return;
 	}
+}
+
+void ScheduleSyscallStart()
+{
+	Thread* threadIterator = g_scheduler.CurrentThread;
+
+	while (!SizedBlockCircularIterate(&g_scheduler.Threads, (void**)&threadIterator)) {
+		if (threadIterator->Status != ThreadReady) {
+			continue;
+		}
+
+		g_scheduler.CurrentThread = threadIterator;
+
+		g_scheduler.CurrentThread->Status = ThreadRunning;
+
+		g_tss.RSP[0] = g_scheduler.CurrentThread->KernelStackTop;
+
+		return;
+	}
+}
+
+void ScheduleSyscallFinish(CPUContext* cpuContext)
+{
+	*cpuContext = g_scheduler.CurrentThread->Context;
 }

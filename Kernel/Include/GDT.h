@@ -2,6 +2,11 @@
 
 #include "Core.h"
 
+constexpr u16 GDT_ENTRY_KERNEL_CODE = 0x8;
+constexpr u16 GDT_ENTRY_KERNEL_DATA = 0x10;
+constexpr u16 GDT_ENTRY_USER_CODE = 0x23;
+constexpr u16 GDT_ENTRY_USER_DATA = 0x1b;
+
 typedef struct __attribute__((packed)) GDTDescriptor {
 	u16 Size;
 	u64 Address;
@@ -48,3 +53,5 @@ typedef struct __attribute__((packed)) TSS {
 
 void InitGDT();
 void FlushGDT();
+
+extern TSS g_tss;

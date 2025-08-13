@@ -1,21 +1,24 @@
 #include "Syscalls.h"
 
+#include "GDT.h"
 #include "Logger.h"
 #include "MSR.h"
 #include "Memory/VirtualAddress.h"
 #include "Result.h"
 
-VirtualAddress g_syscallFunctions[2] = { (VirtualAddress)TestSyscall1, (VirtualAddress)TestSyscall2 };
+VirtualAddress g_syscallFunctions[2] = { (VirtualAddress)ScProcessTerminate, (VirtualAddress)ScTest };
 
-Result TestSyscall1()
+Result ScProcessTerminate(usz processID)
 {
-	LogLine(SK_LOG_DEBUG "Syscall 1");
-	return ResultOk;
+	LogLine(SK_LOG_DEBUG "Terminating process %u", processID);
+	LogLine(SK_LOG_WARN "This syscall doesn't work ;D");
+
+	return ResultSerialOutputUnavailable;
 }
 
-Result TestSyscall2()
+Result ScTest()
 {
-	LogLine(SK_LOG_DEBUG "Syscall 2");
+	LogLine(SK_LOG_DEBUG "Test syscall");
 	return ResultOk;
 }
 
@@ -25,7 +28,7 @@ void InitSyscalls()
 	efer |= 1;
 	WriteMSR(MSR_EFER, efer);
 
-	u64 star = (0x8ULL << 32) | (0x13ULL << 48);
+	u64 star = ((u64)GDT_ENTRY_KERNEL_CODE << 32) | (0x13ULL << 48);
 	WriteMSR(MSR_STAR, star);
 
 	WriteMSR(MSR_LSTAR, (u64)SyscallHandler);

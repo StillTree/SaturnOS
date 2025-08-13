@@ -19,21 +19,7 @@ CheckOptions:
     value: 'g_'
   - key: readability-identifier-naming.GlobalVariableCase
     value: camelBack
-  - key: readability-identifier-naming.PrivateMemberPrefix
-    value: 'm_'
-  - key: readability-identifier-naming.PrivateMemberCase
-    value: camelBack
-  - key: readability-identifier-naming.PrivateStaticMemberPrefix
-    value: 's_'
-  - key: readability-identifier-naming.PrivateStaticMemberCase
-    value: camelBack
-  - key: readability-identifier-naming.ConstantMemberPrefix
-    value: 'c_'
-  - key: readability-identifier-naming.ConstantMemberCase
-    value: camelBack
   - key: readability-identifier-naming.PublicMemberCase
-    value: CamelCase
-  - key: readability-identifier-naming.ClassCase
     value: CamelCase
   - key: readability-identifier-naming.StructCase
     value: CamelCase
