@@ -357,27 +357,7 @@ void ScheduleInterrupt(CPUContext* cpuContext)
 	}
 }
 
-void ScheduleException(CPUContext* cpuContext)
-{
-	Thread* threadIterator = g_scheduler.CurrentThread;
-
-	while (!SizedBlockCircularIterate(&g_scheduler.Threads, (void**)&threadIterator)) {
-		if (threadIterator->Status != ThreadReady) {
-			continue;
-		}
-
-		g_scheduler.CurrentThread = threadIterator;
-
-		g_scheduler.CurrentThread->Status = ThreadRunning;
-		*cpuContext = g_scheduler.CurrentThread->Context;
-
-		g_tss.RSP[0] = g_scheduler.CurrentThread->KernelStackTop;
-
-		return;
-	}
-}
-
-void ScheduleSyscallStart()
+void ScheduleDiscardStart()
 {
 	Thread* threadIterator = g_scheduler.CurrentThread;
 
@@ -396,7 +376,7 @@ void ScheduleSyscallStart()
 	}
 }
 
-void ScheduleSyscallFinish(CPUContext* cpuContext)
+void ScheduleDiscardFinish(CPUContext* cpuContext)
 {
 	*cpuContext = g_scheduler.CurrentThread->Context;
 }

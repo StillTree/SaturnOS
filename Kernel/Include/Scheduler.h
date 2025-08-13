@@ -91,11 +91,17 @@ Result ThreadTerminateStart(Thread* thread);
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 Result ThreadTerminateFinish(Thread* thread);
 
+/// Invokes the scheduler.
 void ScheduleInterrupt(CPUContext* cpuContext);
-void ScheduleException(CPUContext* cpuContext);
-/// Does everything except for loading the interrupt frame.
-void ScheduleSyscallStart();
-/// Loads the interrupt frame.
-void ScheduleSyscallFinish(CPUContext* cpuContext);
+/// Invokes the scheduler without saving the current thread's context or loading the next thread's CPU context.
+/// Used when the current thread is being terminated and its state can be discarded.
+/// Should be used in tandem with the `ScheduleDiscardFinish` function.
+void ScheduleDiscardStart();
+/// Loads the next thread's CPU context.
+/// Should be used in tandem with the `ScheduleDiscardStart` function.
+void ScheduleDiscardFinish(CPUContext* cpuContext);
+
+/// Terminates the currently running process and context switches away from it.
+void ScheduleProcessTerminate();
 
 extern Scheduler g_scheduler;

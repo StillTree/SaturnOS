@@ -1,19 +1,26 @@
 #include "Syscalls.h"
 
 #include "GDT.h"
+#include "Scheduler.h"
 #include "Logger.h"
 #include "MSR.h"
 #include "Memory/VirtualAddress.h"
+#include "Panic.h"
 #include "Result.h"
 
 VirtualAddress g_syscallFunctions[2] = { (VirtualAddress)ScProcessTerminate, (VirtualAddress)ScTest };
 
 Result ScProcessTerminate(usz processID)
 {
-	LogLine(SK_LOG_DEBUG "Terminating process %u", processID);
-	LogLine(SK_LOG_WARN "This syscall doesn't work ;D");
+	if (processID != 0) {
+		LogLine(SK_LOG_DEBUG "Terminating process %u", processID);
+		SK_PANIC("Terminating other process is not implemented yet.");
+	}
 
-	return ResultSerialOutputUnavailable;
+	// The calling process is terminating itself
+	ScheduleProcessTerminate();
+
+	return ResultOk;
 }
 
 Result ScTest()

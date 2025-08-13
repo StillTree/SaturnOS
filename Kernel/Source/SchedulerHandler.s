@@ -1,9 +1,17 @@
 .global ScheduleInterruptHandler
-.global ScheduleExceptionHandler
+.global ScheduleProcessTerminate
 
 .extern EOISignal
 .extern ScheduleInterrupt
-.extern ScheduleException
+.extern ProcessTerminateStart
+.extern ProcessTerminateFinish
+.extern ScheduleDiscardStart
+.extern ScheduleDiscardFinish
+.extern g_scheduler
+
+.equ CURRENT_THREAD_OFFSET, 128
+.equ THREAD_KERNEL_STACK_TOP, 192
+.equ THREAD_PARENT_PROCESS, 200
 
 ScheduleInterruptHandler:
 	// Already present on the stack thanks to the CPU :D
@@ -67,11 +75,27 @@ ScheduleInterruptHandler:
 
 	iretq
 
-ScheduleExceptionHandler:
+ScheduleProcessTerminate:
+	lea g_scheduler(%rip), %r12
+	movq CURRENT_THREAD_OFFSET(%r12), %r12
+	movq THREAD_PARENT_PROCESS(%r12), %r12
+	movq %r12, %rdi
+	call ProcessTerminateStart
+
+	call ScheduleDiscardStart
+
+	lea g_scheduler(%rip), %rbx
+	movq CURRENT_THREAD_OFFSET(%rbx), %rbx
+	movq THREAD_KERNEL_STACK_TOP(%rbx), %rsp
+
+	// We now have a valid stack and can context switch properly
+	movq %r12, %rdi
+	call ProcessTerminateFinish
+
 	sub $168, %rsp // sizeof(CPUContext)
 
 	mov %rsp, %rdi
-	call ScheduleException
+	call ScheduleDiscardFinish
 
 	pop %rax
 	mov %rax, %cr3

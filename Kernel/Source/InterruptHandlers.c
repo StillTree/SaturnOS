@@ -36,11 +36,9 @@ __attribute__((interrupt)) void InvalidOpcodeInterruptHandler(InterruptFrame* fr
 		LogLine(SK_LOG_ERROR "Kernel is in an unrecoverable state. Hanging...");
 		Hang();
 	} else {
-		SK_PANIC("implement");
 		// Exception occured in a process
 		LogLine(SK_LOG_ERROR "Terminating the faulty process.");
-		ProcessTerminateStart(g_scheduler.CurrentThread->ParentProcess);
-		ScheduleExceptionHandler();
+		ScheduleProcessTerminate();
 	}
 }
 
@@ -53,11 +51,9 @@ __attribute__((interrupt)) void GeneralProtectionFaultInterruptHandler(Interrupt
 		LogLine(SK_LOG_ERROR "Kernel is in an unrecoverable state. Hanging...");
 		Hang();
 	} else {
-		SK_PANIC("implement");
 		// Exception occured in a process
 		LogLine(SK_LOG_ERROR "Terminating the faulty process.");
-		ProcessTerminateStart(g_scheduler.CurrentThread->ParentProcess);
-		ScheduleExceptionHandler();
+		ScheduleProcessTerminate();
 	}
 }
 
@@ -70,11 +66,9 @@ __attribute__((interrupt)) void DoubleFaultInterruptHandler(InterruptFrame* fram
 		LogLine(SK_LOG_ERROR "Kernel is in an unrecoverable state. Hanging...");
 		Hang();
 	} else {
-		SK_PANIC("implement");
 		// Exception occured in a process
 		LogLine(SK_LOG_ERROR "Terminating the faulty process.");
-		ProcessTerminateStart(g_scheduler.CurrentThread->ParentProcess);
-		ScheduleExceptionHandler();
+		ScheduleProcessTerminate();
 	}
 }
 
@@ -144,11 +138,9 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 		LogLine(SK_LOG_ERROR "Kernel is in an unrecoverable state. Hanging...");
 		Hang();
 	} else {
-		SK_PANIC("implement");
 		// Exception occured in a process
 		LogLine(SK_LOG_ERROR "Terminating the faulty process.");
-		ProcessTerminateStart(g_scheduler.CurrentThread->ParentProcess);
-		ScheduleExceptionHandler();
+		ScheduleProcessTerminate();
 	}
 }
 
