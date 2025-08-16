@@ -20,7 +20,7 @@ SyscallHandler:
 	movq %rsp, THREAD_RSP(%rbx)
 	movq THREAD_KERNEL_STACK_TOP(%rbx), %rsp
 
-	cmp $2, %rax
+	cmp $3, %rax
 	jae .Error
 
 	movq %r10, %rcx

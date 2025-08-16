@@ -1,7 +1,7 @@
 TARGET_DIR = Output
 SRC_DIR    = Source
 INC_DIR    = Include
-TARGET     = $(TARGET_DIR)/LibSaturn.a
+TARGET     = $(TARGET_DIR)/libSaturn.a
 
 CC = clang
 AS = clang

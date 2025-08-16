@@ -11,6 +11,7 @@ typedef struct BitmapFrameAllocator {
 	usz MemoryMapEntries;
 	u64* FrameBitmap;
 	Frame4KiB LastFrame;
+	Frame4KiB LastAllocated;
 } BitmapFrameAllocator;
 
 Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapEntry* memoryMap, usz memoryMapEntries);

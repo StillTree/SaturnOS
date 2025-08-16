@@ -9,12 +9,13 @@ constexpr u32 MSR_LSTAR = 0xc0000082;
 constexpr u32 MSR_SFMASK = 0xc0000084;
 
 /// Syscall number 0.
-/// When passing in the ID of 0, the calling process will get terminated. This is entirely done in the assembly handler.
+/// When passing in the ID of 0, the calling process will get terminated.
 Result ScProcessTerminate(usz processID);
+Result ScPrint(const i8* text);
 Result ScTest();
 
 void InitSyscalls();
 void SyscallHandler();
 void DispatchSyscall(u64 syscallNumber);
 
-extern VirtualAddress g_syscallFunctions[2];
+extern VirtualAddress g_syscallFunctions[3];

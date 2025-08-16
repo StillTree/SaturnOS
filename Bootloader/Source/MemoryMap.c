@@ -57,7 +57,6 @@ EFI_STATUS CreateMemoryMap(FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDR
 		if (frameAllocator->previousFrame > descriptor->PhysicalStart) {
 			// These are all guaranteed to be 4096 aligned so I don't need to worry about that
 			firstEntry[entry].physicalStart = frameAllocator->previousFrame + 4096;
-			firstEntry[entry].physicalEnd = descriptor->PhysicalStart + descriptor->NumberOfPages * 4096 - 1;
 		}
 
 		entry++;

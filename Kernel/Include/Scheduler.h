@@ -102,6 +102,6 @@ void ScheduleDiscardStart();
 void ScheduleDiscardFinish(CPUContext* cpuContext);
 
 /// Terminates the currently running process and context switches away from it.
-void ScheduleProcessTerminate();
+[[noreturn]] void ScheduleProcessTerminate();
 
 extern Scheduler g_scheduler;

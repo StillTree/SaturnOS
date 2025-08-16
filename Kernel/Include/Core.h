@@ -61,6 +61,7 @@ typedef struct KernelBootInfo {
 	u64 ContextSwitchFunctionPage;
 	void* Ramdisk;
 	usz RamdiskSizeBytes;
+	const i8* Args;
 } KernelBootInfo;
 
 /// Globally accessible boot information.

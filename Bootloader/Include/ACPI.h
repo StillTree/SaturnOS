@@ -15,5 +15,5 @@ typedef struct __attribute__((packed)) XSDP {
 	UINT8 reserved[3];
 } XSDP;
 
-EFI_STATUS FindXSDT(EFI_SYSTEM_TABLE* systemTable, VOID** xsdpPointer);
+EFI_STATUS FindXSDP(EFI_SYSTEM_TABLE* systemTable, VOID** xsdpPointer);
 BOOLEAN CompareGuid(const EFI_GUID* Guid1, const EFI_GUID* Guid2);

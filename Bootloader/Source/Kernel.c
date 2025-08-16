@@ -1,9 +1,42 @@
 #include "Kernel.h"
 
+#include "Config.h"
 #include "FrameAllocator.h"
 #include "Logger.h"
 #include "Memory.h"
 #include "elf.h"
+
+EFI_STATUS LoadKernelArgs(const INT8* configFile, UINTN configFileSize, FrameAllocatorData* frameAllocator,
+	EFI_PHYSICAL_ADDRESS p4TableAddress, EFI_VIRTUAL_ADDRESS* nextUsableVirtualPage)
+{
+	const INT8* args = NULL;
+	UINTN argsLength = 0;
+	EFI_STATUS status = GetConfigValue(configFile, configFileSize, "KernelArgs", &args, &argsLength);
+	if (EFI_ERROR(status)) {
+		SN_LOG_ERROR(L"An unexpected error occured while trying to read the bootloader's configuration \"KernelArgs\" value");
+		return status;
+	}
+
+	EFI_PHYSICAL_ADDRESS frameAddress = 0;
+	status = AllocateFrame(frameAllocator, &frameAddress);
+	if (EFI_ERROR(status)) {
+		SN_LOG_ERROR(L"An unexpected error occured while trying to allocate a memory frame for the kernel arguments");
+		return status;
+	}
+
+	MemoryCopy((INT8*)args, (VOID*)frameAddress, argsLength);
+	*((INT8*)frameAddress + argsLength) = '\0';
+
+	status = MapMemoryPage4KiB(*nextUsableVirtualPage, frameAddress, p4TableAddress, frameAllocator, ENTRY_PRESENT | ENTRY_NO_EXECUTE);
+	if (EFI_ERROR(status)) {
+		SN_LOG_ERROR(L"An unexpected error occured while trying to map a memory frame in the kernel's P4 table");
+		return status;
+	}
+
+	*nextUsableVirtualPage += 4096;
+
+	return status;
+}
 
 EFI_STATUS LoadKernel(UINT8* loadedFile, FrameAllocatorData* frameAllocator, EFI_PHYSICAL_ADDRESS p4TableAddress,
 	EFI_VIRTUAL_ADDRESS* entryPoint, EFI_VIRTUAL_ADDRESS* nextUsableVirtualPage)

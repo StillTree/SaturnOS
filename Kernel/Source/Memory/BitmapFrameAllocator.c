@@ -13,10 +13,12 @@ static void SetFrameStatus(BitmapFrameAllocator* frameAllocator, Frame4KiB frame
 	const usz mapIndex = frameIndex / 64;
 	const usz bitIndex = frameIndex % 64;
 
+	const u64 mask = 1ULL << bitIndex;
+
 	if (used) {
-		frameAllocator->FrameBitmap[mapIndex] |= (1 << bitIndex);
+		frameAllocator->FrameBitmap[mapIndex] |= mask;
 	} else {
-		frameAllocator->FrameBitmap[mapIndex] &= ~(1 << bitIndex);
+		frameAllocator->FrameBitmap[mapIndex] &= ~mask;
 	}
 }
 
@@ -26,13 +28,15 @@ static bool GetFrameStatus(BitmapFrameAllocator* frameAllocator, Frame4KiB frame
 	const usz mapIndex = frameIndex / 64;
 	const usz bitIndex = frameIndex % 64;
 
-	return ((frameAllocator->FrameBitmap[mapIndex] >> bitIndex) & 1) == 1;
+	const u64 mask = 1ULL << bitIndex;
+
+	return (frameAllocator->FrameBitmap[mapIndex] & mask) != 0;
 }
 
 Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapEntry* memoryMap, usz memoryMapEntries)
 {
 	// I assume the last entry is a "NULL-descriptor" so I just skip it
-	const Frame4KiB lastFrame = Frame4KiBContaining(memoryMap[memoryMapEntries - 2].PhysicalEnd + 1);
+	const Frame4KiB lastFrame = Frame4KiBContaining(memoryMap[memoryMapEntries - 2].PhysicalEnd);
 
 	// The number of needed frames to allocate the frame bitmap is calculated with the followinf formula:
 	// number of the last frame / 8 rounded up / frame size rounded up (4096)
@@ -46,20 +50,21 @@ Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapE
 	frameAllocator->FrameBitmap = PhysicalAddressAsPointer(memoryMap[0].PhysicalStart);
 	frameAllocator->MemoryMap = memoryMap;
 	frameAllocator->MemoryMapEntries = memoryMapEntries;
+	frameAllocator->LastAllocated = 0;
 
 	// Because we "allocate" the needed contiguous frames, we offset the descriptor physical start to reflect it
 	memoryMap[0].PhysicalStart += neededFrames * FRAME_4KIB_SIZE_BYTES;
-	frameAllocator->LastFrame = Frame4KiBContaining(frameAllocator->MemoryMap[frameAllocator->MemoryMapEntries - 2].PhysicalEnd);
+	frameAllocator->LastFrame = lastFrame;
 
 	// We set every frame as used
 	MemoryFill(frameAllocator->FrameBitmap, 255, neededFrames * FRAME_4KIB_SIZE_BYTES);
 
 	// Then we mark frames in the memory map as unused since the map only contains available memory regions
 	for (usz i = 0; i < memoryMapEntries - 2; i++) {
-		const Frame4KiB lastFrame = Frame4KiBContaining(frameAllocator->MemoryMap[i].PhysicalEnd);
+		const Frame4KiB regionEnd = Frame4KiBContaining(frameAllocator->MemoryMap[i].PhysicalEnd);
 		Frame4KiB frame = Frame4KiBContaining(frameAllocator->MemoryMap[i].PhysicalStart);
 
-		while (frame <= lastFrame) {
+		while (frame <= regionEnd) {
 			SetFrameStatus(frameAllocator, frame, false);
 			frame += FRAME_4KIB_SIZE_BYTES;
 		}
@@ -70,9 +75,11 @@ Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapE
 
 Result AllocateContiguousFrames(BitmapFrameAllocator* frameAllocator, usz count, Frame4KiB* frame)
 {
-	for (Frame4KiB checkedFrame = 0; checkedFrame <= frameAllocator->LastFrame; checkedFrame += FRAME_4KIB_SIZE_BYTES) {
-		if (GetFrameStatus(frameAllocator, checkedFrame))
+	for (Frame4KiB checkedFrame = frameAllocator->LastAllocated + FRAME_4KIB_SIZE_BYTES; checkedFrame <= frameAllocator->LastFrame;
+		checkedFrame += FRAME_4KIB_SIZE_BYTES) {
+		if (GetFrameStatus(frameAllocator, checkedFrame)) {
 			continue;
+		}
 
 		bool contiguous = true;
 		for (usz i = 1; i < count; i++) {
@@ -92,6 +99,7 @@ Result AllocateContiguousFrames(BitmapFrameAllocator* frameAllocator, usz count,
 		}
 
 		*frame = checkedFrame;
+		frameAllocator->LastAllocated = checkedFrame + (count - 1) * FRAME_4KIB_SIZE_BYTES;
 		return ResultOk;
 	}
 
@@ -100,12 +108,15 @@ Result AllocateContiguousFrames(BitmapFrameAllocator* frameAllocator, usz count,
 
 Frame4KiB AllocateFrame(BitmapFrameAllocator* frameAllocator)
 {
-	for (Frame4KiB checkedFrame = 0; checkedFrame <= frameAllocator->LastFrame; checkedFrame += FRAME_4KIB_SIZE_BYTES) {
+	for (Frame4KiB checkedFrame = frameAllocator->LastAllocated + FRAME_4KIB_SIZE_BYTES; checkedFrame <= frameAllocator->LastFrame;
+		checkedFrame += FRAME_4KIB_SIZE_BYTES) {
 		if (GetFrameStatus(frameAllocator, checkedFrame)) {
 			continue;
 		}
 
 		SetFrameStatus(frameAllocator, checkedFrame, true);
+		frameAllocator->LastAllocated = checkedFrame;
+
 		return checkedFrame;
 	}
 
@@ -129,6 +140,8 @@ Result DeallocateContiguousFrames(BitmapFrameAllocator* frameAllocator, Frame4Ki
 		SetFrameStatus(frameAllocator, frame + (i * FRAME_4KIB_SIZE_BYTES), false);
 	}
 
+	frameAllocator->LastAllocated = 0;
+
 	return ResultOk;
 }
 
@@ -141,4 +154,5 @@ void DeallocateFrame(BitmapFrameAllocator* frameAllocator, Frame4KiB frame)
 	}
 
 	SetFrameStatus(frameAllocator, frame, false);
+	frameAllocator->LastAllocated = 0;
 }

@@ -2,7 +2,7 @@
 
 #include "Logger.h"
 
-EFI_STATUS FindXSDT(EFI_SYSTEM_TABLE* systemTable, VOID** xsdpPointer)
+EFI_STATUS FindXSDP(EFI_SYSTEM_TABLE* systemTable, VOID** xsdpPointer)
 {
 	for (UINTN i = 0; i < systemTable->NumberOfTableEntries; i++) {
 		if (CompareGuid(&systemTable->ConfigurationTable[i].VendorGuid, &gEfiAcpi20TableGuid)) {

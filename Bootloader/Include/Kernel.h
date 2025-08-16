@@ -21,7 +21,15 @@ typedef struct KernelBootInfo {
 	EFI_VIRTUAL_ADDRESS contextSwitchFunctionPage;
 	EFI_VIRTUAL_ADDRESS ramdiskAddress;
 	UINTN ramdiskSizeBytes;
+	EFI_VIRTUAL_ADDRESS kernelArgsAddress;
 } KernelBootInfo;
+
+/// Loads the kernel arguments from the bootloader's config file (`KernelArgs`),
+/// allocates a frame for them and maps it in the kernel's memory space.
+///
+/// Note: The whole bootloader's config file must already be in memory before calling this function.
+EFI_STATUS LoadKernelArgs(const INT8* configFile, UINTN configFileSize, FrameAllocatorData* frameAllocator,
+	EFI_PHYSICAL_ADDRESS p4TableAddress, EFI_VIRTUAL_ADDRESS* nextUsableVirtualPage);
 
 /// Loads the kernel ELF64 executable into memory and maps it to the provided P4 table. After this function call the kernel file's memory
 /// can be deallocated.

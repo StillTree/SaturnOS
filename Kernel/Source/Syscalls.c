@@ -8,7 +8,7 @@
 #include "Panic.h"
 #include "Result.h"
 
-VirtualAddress g_syscallFunctions[2] = { (VirtualAddress)ScProcessTerminate, (VirtualAddress)ScTest };
+VirtualAddress g_syscallFunctions[3] = { (VirtualAddress)ScProcessTerminate, (VirtualAddress)ScTest, (VirtualAddress)ScPrint };
 
 Result ScProcessTerminate(usz processID)
 {
@@ -19,13 +19,18 @@ Result ScProcessTerminate(usz processID)
 
 	// The calling process is terminating itself
 	ScheduleProcessTerminate();
-
-	return ResultOk;
 }
 
 Result ScTest()
 {
 	LogLine(SK_LOG_DEBUG "Test syscall");
+	return ResultOk;
+}
+
+Result ScPrint(const i8* text)
+{
+	Log(text);
+
 	return ResultOk;
 }
 

@@ -40,8 +40,15 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	UINT8* ramdiskFile = NULL;
-	UINTN ramdiskFileSizeBytes = 0;
-	status = ReadFile(systemTable, rootVolume, L"Supernova\\Ramdisk", (VOID**)&ramdiskFile, &ramdiskFileSizeBytes);
+	UINTN ramdiskFileSize = 0;
+	status = ReadFile(systemTable, rootVolume, L"Supernova\\Ramdisk", (VOID**)&ramdiskFile, &ramdiskFileSize);
+	if (EFI_ERROR(status)) {
+		goto halt;
+	}
+
+	INT8* configFile = NULL;
+	UINTN configFileSize = 0;
+	status = ReadFile(systemTable, rootVolume, L"Supernova\\Config.conf", (VOID**)&configFile, &configFileSize);
 	if (EFI_ERROR(status)) {
 		goto halt;
 	}
@@ -49,7 +56,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	rootVolume->Close(rootVolume);
 
 	XSDP* xsdpPointer = NULL;
-	status = FindXSDT(systemTable, (VOID**)&xsdpPointer);
+	status = FindXSDP(systemTable, (VOID**)&xsdpPointer);
 	if (EFI_ERROR(status)) {
 		goto halt;
 	}
@@ -90,13 +97,19 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
-	EFI_VIRTUAL_ADDRESS ramdiskAddress = nextUsableVirtualPage;
-	status = LoadRamdisk(ramdiskFile, ramdiskFileSizeBytes, &frameAllocator, kernelP4Table, &nextUsableVirtualPage);
+	SN_LOG_INFO(L"Successfully loaded the kernel executable into memory");
+
+	EFI_VIRTUAL_ADDRESS kernelArgsVirtualAddress = nextUsableVirtualPage;
+	status = LoadKernelArgs(configFile, configFileSize, &frameAllocator, kernelP4Table, &nextUsableVirtualPage);
 	if (EFI_ERROR(status)) {
 		goto halt;
 	}
 
-	SN_LOG_INFO(L"Successfully loaded the kernel executable into memory");
+	EFI_VIRTUAL_ADDRESS ramdiskVirtualAddress = nextUsableVirtualPage;
+	status = LoadRamdisk(ramdiskFile, ramdiskFileSize, &frameAllocator, kernelP4Table, &nextUsableVirtualPage);
+	if (EFI_ERROR(status)) {
+		goto halt;
+	}
 
 	// TODO: Use some shit to determine the actual function size and if it needs 2 or even more pages to be mapped.
 	EFI_PHYSICAL_ADDRESS contextSwitchFnAddress = (UINTN)ContextSwitch;
@@ -128,7 +141,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		nextUsableVirtualPage += 4096;
 	}
 
-	EFI_VIRTUAL_ADDRESS virtualStackAddress = nextUsableVirtualPage;
+	EFI_VIRTUAL_ADDRESS stackVirtualAddress = nextUsableVirtualPage;
 
 	SN_LOG_INFO(L"Successfully allocated a 100 KiB kernel stack");
 
@@ -147,12 +160,13 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	KernelBootInfo* bootInfo = (KernelBootInfo*)bootInfoPhysicalAddress;
-	bootInfo->ramdiskAddress = ramdiskAddress;
-	bootInfo->ramdiskSizeBytes = ramdiskFileSizeBytes;
+	bootInfo->kernelArgsAddress = kernelArgsVirtualAddress;
+	bootInfo->ramdiskAddress = ramdiskVirtualAddress;
+	bootInfo->ramdiskSizeBytes = ramdiskFileSize;
 	bootInfo->contextSwitchFunctionPage = PhysFrameContainingAddress(contextSwitchFnAddress);
 	bootInfo->kernelAddress = 0xffffffff80010000;
 	bootInfo->kernelSize = nextUsableVirtualPage + 4096 - bootInfo->kernelAddress;
-	bootInfo->kernelStackTop = virtualStackAddress & ~1;
+	bootInfo->kernelStackTop = stackVirtualAddress & ~1;
 	bootInfo->xsdtAddress = (EFI_PHYSICAL_ADDRESS)xsdpPointer->XsdtAddress;
 	bootInfo->framebufferSize = g_mainLogger.framebuffer.framebufferSize;
 	bootInfo->framebufferWidth = g_mainLogger.framebuffer.width;
@@ -206,7 +220,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	SN_LOG_INFO(L"Performing context switch");
 
 	ContextSwitch(kernelEntryPoint, kernelP4Table,
-		virtualStackAddress & ~1, // x86_64 System V ABI requires the stack to be 16 bit aligned so we do exactly that :D
+		stackVirtualAddress, // x86_64 System V ABI requires the stack to be 16 bit aligned so I hope that it is :D
 		bootInfoVirtualAddress);
 
 halt:

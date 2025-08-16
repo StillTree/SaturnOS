@@ -34,6 +34,8 @@ void KernelMain(KernelBootInfo* bootInfo)
 	// so this function doesn't throw but just warns when the serial output device is not available
 	LoggerInit(true, true, &g_bootInfo, 0x3f8);
 
+	LogLine(SK_LOG_DEBUG "Kernel args: \"%s\"", g_bootInfo.Args);
+
 	LogLine(SK_LOG_INFO "Initializing the SaturnOS Kernel\n");
 
 	LogLine(SK_LOG_INFO "SaturnOS Copyright (C) 2025 StillTree (Alexander Debowski)");
@@ -71,7 +73,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 
 	LogLine(SK_LOG_INFO "Initializing the scheduler");
 	InitSyscalls();
-	InitScheduler();
+	SK_PANIC_ON_ERROR(InitScheduler(), "An unexpected error occured while trying to initialize the scheduler");
 
 	LogLine(SK_LOG_INFO "Initializing the x2APIC");
 	SK_PANIC_ON_ERROR(InitAPIC(), "An unexpected error occured while trying to initialize the APIC");
@@ -102,7 +104,7 @@ void KernelMain(KernelBootInfo* bootInfo)
 	}
 
 	ThreadLaunch(process->MainThread);
-	
+
 	while (true)
 		__asm__ volatile("hlt");
 }
