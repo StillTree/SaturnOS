@@ -2,6 +2,13 @@
 #include "Logger.h"
 #include "UefiTypes.h"
 
+VOID* memset(VOID* ptr, UINT8 value, UINTN size)
+{
+	MemoryFill(ptr, value, size);
+
+	return ptr;
+}
+
 VOID MemoryFill(VOID* ptr, UINT8 value, UINTN size)
 {
 	UINT8* p = ptr;

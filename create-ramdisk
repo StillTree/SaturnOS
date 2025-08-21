@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+
+import sys
+import argparse
+import os
+import struct
+
+SCRIPT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
+
+def CreateRamdisk(args):
+    if not args.file or len(args.file) <= 0:
+        raise ValueError("No files specified")
+
+    SUPERBLOCK_SIZE = 16
+    FILE_ENTRY_SIZE = 56
+    # "STFS" in little-endian, so actually "SFTS"
+    SIGNATURE = 0x53465453
+
+    file_entries = []
+    file_data = b""
+    current_offset = SUPERBLOCK_SIZE + (FILE_ENTRY_SIZE * len(args.file))
+    ramdisk_path = os.path.join(SCRIPT_DIRECTORY, "Ramdisk")
+    file_id = 0
+
+    for path in args.file:
+        filename = ("/" + os.path.basename(path)).encode("utf-8")
+        if len(filename) > 31:
+            raise ValueError(f"Filename too long: {filename}")
+
+        with open(path, "rb") as f:
+            contents = f.read()
+
+        padded_name = filename.ljust(32, b"\x00")
+        size = len(contents)
+
+        file_entries.append((padded_name, size, current_offset, file_id))
+        file_data += contents
+        current_offset += size
+        file_id += 1
+
+    with open(ramdisk_path, "wb") as out:
+        out.write(struct.pack("<I", SIGNATURE))
+        out.write(struct.pack("<I", 0))
+        out.write(struct.pack("<Q", len(args.file)))
+
+        for name, size, offset, id in file_entries:
+            out.write(name)
+            out.write(struct.pack("<Q", size))
+            out.write(struct.pack("<Q", offset))
+            out.write(struct.pack("<Q", id))
+
+        out.write(file_data)
+
+    print(f"Created ramdisk: {ramdisk_path}, with file(s): {", ".join(args.file)}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(prog=sys.argv[0], description="SaturnOS's utility build script.")
+
+    parser.add_argument("-f", "--file", action="append", help="adds a file to the ramdisk")
+
+    if len(sys.argv) == 1:
+        parser.print_help(sys.stderr)
+        sys.exit(1)
+
+    args = parser.parse_args()
+
+    CreateRamdisk(args)

@@ -166,7 +166,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	bootInfo->contextSwitchFunctionPage = PhysFrameContainingAddress(contextSwitchFnAddress);
 	bootInfo->kernelAddress = 0xffffffff80010000;
 	bootInfo->kernelSize = nextUsableVirtualPage + 4096 - bootInfo->kernelAddress;
-	bootInfo->kernelStackTop = stackVirtualAddress & ~1;
+	bootInfo->kernelStackTop = stackVirtualAddress;
 	bootInfo->xsdtAddress = (EFI_PHYSICAL_ADDRESS)xsdpPointer->XsdtAddress;
 	bootInfo->framebufferSize = g_mainLogger.framebuffer.framebufferSize;
 	bootInfo->framebufferWidth = g_mainLogger.framebuffer.width;

@@ -14,7 +14,7 @@ Result ScProcessTerminate(usz processID)
 {
 	if (processID != 0) {
 		LogLine(SK_LOG_DEBUG "Terminating process %u", processID);
-		SK_PANIC("Terminating other process is not implemented yet.");
+		SK_PANIC("Terminating other processes is not implemented yet.");
 	}
 
 	// The calling process is terminating itself

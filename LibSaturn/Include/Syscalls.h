@@ -1,5 +1,9 @@
 #include "Core.h"
 
+constexpr u64 SYSCALL_PROCESS_TERMINATE = 0;
+constexpr u64 SYSCALL_TEST = 1;
+constexpr u64 SYSCALL_PRINT = 2;
+
 /// Implemented in `SyscallWrapper.s`.
 u64 SyscallWrapper(usz syscallNumber, u64 arg1, u64 arg2, u64 arg3, u64 arg4, u64 arg5, u64 arg6);
 

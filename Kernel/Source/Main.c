@@ -34,8 +34,6 @@ void KernelMain(KernelBootInfo* bootInfo)
 	// so this function doesn't throw but just warns when the serial output device is not available
 	LoggerInit(true, true, &g_bootInfo, 0x3f8);
 
-	LogLine(SK_LOG_DEBUG "Kernel args: \"%s\"", g_bootInfo.Args);
-
 	LogLine(SK_LOG_INFO "Initializing the SaturnOS Kernel\n");
 
 	LogLine(SK_LOG_INFO "SaturnOS Copyright (C) 2025 StillTree (Alexander Debowski)");
