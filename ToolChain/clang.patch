@@ -101,7 +101,7 @@ index acf9d264d631..42f673351bad 100644
    case llvm::Triple::NetBSD:
 diff --git a/clang/lib/Driver/ToolChains/SaturnOS.cpp b/clang/lib/Driver/ToolChains/SaturnOS.cpp
 new file mode 100644
-index 000000000000..05d7a0598e1d
+index 000000000000..a4cbc8f78b0b
 --- /dev/null
 +++ b/clang/lib/Driver/ToolChains/SaturnOS.cpp
 @@ -0,0 +1,197 @@
@@ -168,7 +168,7 @@ index 000000000000..05d7a0598e1d
 +  if (Relocatable) {
 +    CmdArgs.push_back("-r");
 +  } else {
-+    if (!Shared) {
++    if (!Shared && !Args.hasArg(options::OPT_e)) {
 +      CmdArgs.push_back("-e");
 +      CmdArgs.push_back("Start");
 +    }
