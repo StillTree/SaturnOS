@@ -44,7 +44,7 @@ static inline bool GUIDEmpty(GUID guid)
 }
 
 /// Boot information passed to the kernel by the bootloader.
-typedef struct KernelBootInfo {
+typedef struct BootInfo {
 	u32* Framebuffer;
 	usz FramebufferSize;
 	usz FramebufferWidth;
@@ -62,7 +62,7 @@ typedef struct KernelBootInfo {
 	void* Ramdisk;
 	usz RamdiskSizeBytes;
 	const i8* Args;
-} KernelBootInfo;
+} BootInfo;
 
 /// Globally accessible boot information.
-extern KernelBootInfo g_bootInfo;
+extern BootInfo g_bootInfo;

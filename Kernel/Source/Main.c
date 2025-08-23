@@ -23,16 +23,16 @@
 #endif
 
 /// Initially empty.
-KernelBootInfo g_bootInfo = {};
+BootInfo g_bootInfo = {};
 
-void KernelMain(KernelBootInfo* bootInfo)
+void KernelMain(BootInfo* bootInfo)
 {
 	// Copy the structure provided by the bootloader right at the beginning, so every part of the code can safely access it
 	g_bootInfo = *bootInfo;
 
 	// There is a guarantee that the bootloader will set up the framebuffer,
 	// so this function doesn't throw but just warns when the serial output device is not available
-	LoggerInit(true, true, &g_bootInfo, 0x3f8);
+	LoggerInit(true, true, 0x3f8);
 
 	LogLine(SK_LOG_INFO "Initializing the SaturnOS Kernel\n");
 

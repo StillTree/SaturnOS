@@ -6,16 +6,16 @@
 
 Logger g_mainLogger;
 
-void LoggerInit(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo* bootInfo, u16 serialConsolePort)
+void LoggerInit(bool framebufferEnabled, bool serialConsoleEnabled, u16 serialConsolePort)
 {
 	g_mainLogger.FramebufferEnabled = framebufferEnabled;
 	g_mainLogger.SerialConsoleEnabled = serialConsoleEnabled;
 
 	if (framebufferEnabled) {
-		FramebufferLogger framebufferLogger = { .Framebuffer = bootInfo->Framebuffer,
-			.FramebufferSize = bootInfo->FramebufferSize,
-			.Width = bootInfo->FramebufferWidth,
-			.Height = bootInfo->FramebufferHeight,
+		FramebufferLogger framebufferLogger = { .Framebuffer = g_bootInfo.Framebuffer,
+			.FramebufferSize = g_bootInfo.FramebufferSize,
+			.Width = g_bootInfo.FramebufferWidth,
+			.Height = g_bootInfo.FramebufferHeight,
 			.CursorPositionX = 0,
 			.CursorPositionY = 0 };
 		g_mainLogger.Framebuffer = framebufferLogger;

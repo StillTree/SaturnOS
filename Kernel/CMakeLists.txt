@@ -31,7 +31,7 @@ target_compile_options(Kernel PRIVATE
 
 target_link_options(Kernel PRIVATE
 	-Wl,-T${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
-	-Wl,-static -Wl,-z,max-page-size=0x1000
+	-Wl,-static -Wl,-z,max-page-size=4096
 	-nostdlib
 )
 

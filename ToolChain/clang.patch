@@ -101,10 +101,10 @@ index acf9d264d631..42f673351bad 100644
    case llvm::Triple::NetBSD:
 diff --git a/clang/lib/Driver/ToolChains/SaturnOS.cpp b/clang/lib/Driver/ToolChains/SaturnOS.cpp
 new file mode 100644
-index 000000000000..dce4f85a01ad
+index 000000000000..05d7a0598e1d
 --- /dev/null
 +++ b/clang/lib/Driver/ToolChains/SaturnOS.cpp
-@@ -0,0 +1,169 @@
+@@ -0,0 +1,197 @@
 +//===--- SaturnOS.cpp - SaturnOS ToolChain Implementations ----------------===//
 +//
 +// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
@@ -155,18 +155,46 @@ index 000000000000..dce4f85a01ad
 +  if (Args.hasArg(options::OPT_s))
 +    CmdArgs.push_back("-s");
 +
-+  if (Args.hasArg(options::OPT_static))
-+    CmdArgs.push_back("-Bstatic");
-+  else if (Args.hasArg(options::OPT_shared))
-+    CmdArgs.push_back("-shared");
++  const bool Static = Args.hasArg(options::OPT_static);
++  const bool Shared = Args.hasArg(options::OPT_shared);
++  const bool Pie = Args.hasArg(options::OPT_pie);
++  const bool Nopie = Args.hasArg(options::OPT_no_pie, options::OPT_nopie);
++  const bool Relocatable = Args.hasArg(options::OPT_r);
++  const bool StaticPie = Args.hasArg(options::OPT_static_pie) || (Static && Pie);
++
++  // Static pie is the default
++  const bool DefaultStaticPie = !Static && !Shared && !Pie && !Nopie && !Relocatable && !StaticPie;
++
++  if (Relocatable) {
++    CmdArgs.push_back("-r");
++  } else {
++    if (!Shared) {
++      CmdArgs.push_back("-e");
++      CmdArgs.push_back("Start");
++    }
++  
++    if (!Pie && !StaticPie && !DefaultStaticPie)
++      CmdArgs.push_back("--image-base=0x400000");
++  
++    if (Shared) {
++      CmdArgs.push_back("-shared");
++    } else if (StaticPie || DefaultStaticPie) {
++      CmdArgs.push_back("-static");
++      CmdArgs.push_back("-pie");
++	  CmdArgs.push_back("--no-dynamic-linker");
++    } else if (Pie && !Nopie) {
++      CmdArgs.push_back("-pie");
++    } else if (Static) {
++      CmdArgs.push_back("-static");
++    } 
++  }
 +
 +  CmdArgs.push_back("-o");
 +  CmdArgs.push_back(Output.getFilename());
 +
 +  if (!Args.hasArg(options::OPT_nostdlib, options::OPT_nostartfiles)) {
 +    if (!Args.hasArg(options::OPT_shared)) {
-+      CmdArgs.push_back(
-+          Args.MakeArgString(ToolChain.GetFilePath("SaturnCRT.o")));
++      CmdArgs.push_back("-lSaturnCRT");
 +    }
 +  }
 +

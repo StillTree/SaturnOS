@@ -11,7 +11,7 @@ typedef struct Logger {
 	bool SerialConsoleEnabled;
 } Logger;
 
-void LoggerInit(bool framebufferEnabled, bool serialConsoleEnabled, KernelBootInfo* bootInfo, u16 serialConsolePort);
+void LoggerInit(bool framebufferEnabled, bool serialConsoleEnabled, u16 serialConsolePort);
 void LogLine(const i8* format, ...);
 void Log(const i8* format, ...);
 
