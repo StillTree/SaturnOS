@@ -2,7 +2,7 @@
 
 extern u64 Main();
 
-void Start()
+void _start()
 {
 	// For now return value ignored
 	// TODO: Return value support
