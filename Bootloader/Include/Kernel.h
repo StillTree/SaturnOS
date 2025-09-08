@@ -22,6 +22,7 @@ typedef struct KernelBootInfo {
 	EFI_VIRTUAL_ADDRESS ramdiskAddress;
 	UINTN ramdiskSizeBytes;
 	EFI_VIRTUAL_ADDRESS kernelArgsAddress;
+	EFI_PHYSICAL_ADDRESS kernelP4TableAddress;
 } KernelBootInfo;
 
 /// Loads the kernel arguments from the bootloader's config file (`KernelArgs`),

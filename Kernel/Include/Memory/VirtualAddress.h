@@ -10,7 +10,7 @@ typedef u64 VirtualAddress;
 constexpr u64 INDEX_MASK = ((1ULL << 9) - 1);
 constexpr u64 PAGE_OFFSET_MASK = 0xfff;
 
-Result VirtualAddressToPhysical(VirtualAddress address, const PageTableEntry* p4Table, PhysicalAddress* physicalAddress);
+Result VirtualAddressToPhysical(const PageTableEntry* p4Table, VirtualAddress address, PhysicalAddress* physicalAddress);
 
 static inline u16 VirtualAddressPageOffset(VirtualAddress address) { return address & PAGE_OFFSET_MASK; }
 

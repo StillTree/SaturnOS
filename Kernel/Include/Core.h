@@ -62,6 +62,7 @@ typedef struct BootInfo {
 	void* Ramdisk;
 	usz RamdiskSizeBytes;
 	const i8* Args;
+	u64 KernelPML4;
 } BootInfo;
 
 /// Globally accessible boot information.

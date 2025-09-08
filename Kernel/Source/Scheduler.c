@@ -221,7 +221,7 @@ Result ProcessCreate(Process** createdProcess)
 	process->Threads[0] = mainThread;
 	process->MainThread = mainThread;
 
-	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
+	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(g_bootInfo.KernelPML4);
 	processPML4[510] = kernelPML4[510] & ~PageUserAccessible;
 	processPML4[511] = kernelPML4[511] & ~PageUserAccessible;
 
@@ -292,7 +292,7 @@ Result InitScheduler()
 	}
 
 	kernelProcess->ID = 0;
-	kernelProcess->PML4 = KernelPML4();
+	kernelProcess->PML4 = g_bootInfo.KernelPML4;
 	kernelProcess->ThreadCount = 1;
 	for (usz i = 0; i < MAX_THREADS_PER_PROCESS; i++) {
 		kernelProcess->Threads[i] = nullptr;
@@ -310,7 +310,7 @@ Result InitScheduler()
 	kernelMainThread->Context.CR3 = kernelProcess->PML4;
 	g_scheduler.CurrentThread = kernelMainThread;
 	kernelMainThread->UserStackTop = g_bootInfo.KernelStackTop;
-	kernelMainThread->KernelStackTop = g_bootInfo.KernelStackTop;
+	kernelMainThread->KernelStackTop = (Page4KiB)g_kernelInterruptStack + sizeof(g_kernelInterruptStack);
 	kernelMainThread->ParentProcess = kernelProcess;
 
 	void* fileDescriptorsPool;
@@ -326,6 +326,16 @@ Result InitScheduler()
 	}
 
 	return result;
+}
+
+void ProcessStepInto(Process* process)
+{
+	__asm__ volatile("movq %0, %%cr3" :: "r"(process->PML4) : "memory");
+}
+
+void ProcessStepOut()
+{
+	__asm__ volatile("movq %0, %%cr3" :: "r"(g_bootInfo.KernelPML4) : "memory");
 }
 
 void ScheduleInterrupt(CPUContext* cpuContext)
@@ -376,7 +386,4 @@ void ScheduleDiscardStart()
 	}
 }
 
-void ScheduleDiscardFinish(CPUContext* cpuContext)
-{
-	*cpuContext = g_scheduler.CurrentThread->Context;
-}
+void ScheduleDiscardFinish(CPUContext* cpuContext) { *cpuContext = g_scheduler.CurrentThread->Context; }

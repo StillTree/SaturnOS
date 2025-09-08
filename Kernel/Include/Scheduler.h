@@ -84,6 +84,10 @@ Result ProcessCreate(Process** createdProcess);
 Result ProcessTerminateStart(Process* process);
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 Result ProcessTerminateFinish(Process* process);
+/// Loads the given process's PML4 table.
+void ProcessStepInto(Process* process);
+/// Loads the kernel's PML4 table.
+void ProcessStepOut();
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.
 void ThreadLaunch(Thread* thread);
 /// This functions should be called only when the interrupt flag is cleared. It can be set afterwards.

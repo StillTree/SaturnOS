@@ -11,7 +11,8 @@
 
 VirtualMemoryAllocator g_kernelMemoryAllocator = {};
 
-static Result GetContainingRegion(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end, UnusedVirtualRegion** containingRegion)
+static Result GetContainingUnusedRegion(
+	VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end, UnusedVirtualRegion** containingRegion)
 {
 	if (!Page4KiBIsAligned(begin) || !Page4KiBIsAligned(end)) {
 		return ResultInvalidPageAlignment;
@@ -20,7 +21,10 @@ static Result GetContainingRegion(VirtualMemoryAllocator* allocator, Page4KiB be
 	UnusedVirtualRegion* regionPointer = allocator->List;
 	while (regionPointer) {
 		if (begin >= regionPointer->Begin && end <= regionPointer->End) {
-			*containingRegion = regionPointer;
+			if (containingRegion) {
+				*containingRegion = regionPointer;
+			}
+
 			return ResultOk;
 		}
 
@@ -130,14 +134,14 @@ void VirtualMemoryPrintRegions(VirtualMemoryAllocator* allocator)
 
 Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, usz backingMemorySize)
 {
-	Result result = Page4KiBUnmap(PhysicalAddressAsPointer(KernelPML4()), g_bootInfo.ContextSwitchFunctionPage);
+	Result result = Page4KiBUnmap(PhysicalAddressAsPointer(g_bootInfo.KernelPML4), g_bootInfo.ContextSwitchFunctionPage);
 	if (result) {
 		return result;
 	}
 
 	FlushPage(g_bootInfo.ContextSwitchFunctionPage);
 
-	Frame4KiB kernelPML4Frame = KernelPML4();
+	Frame4KiB kernelPML4Frame = g_bootInfo.KernelPML4;
 	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(kernelPML4Frame);
 
 	for (usz i = PAGE_TABLE_ENTRIES - 1; i > PAGE_TABLE_ENTRIES - 1 - topPML4Entries; i--) {
@@ -157,7 +161,7 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 	for (Page4KiB poolPage = Page4KiBContaining(backingMemoryBegin); poolPage < endPage; poolPage += PAGE_4KIB_SIZE_BYTES) {
 		Frame4KiB frame = AllocateFrame(&g_frameAllocator);
 
-		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(KernelPML4());
+		PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(g_bootInfo.KernelPML4);
 		result = Page4KiBMap(kernelPML4, poolPage, frame, PageWriteable);
 		if (result) {
 			return result;
@@ -301,7 +305,7 @@ Result DeallocateBackedVirtualMemory(VirtualMemoryAllocator* allocator, void* al
 
 	for (Page4KiB page = allocatedPage; page < endPage; page += PAGE_4KIB_SIZE_BYTES) {
 		Frame4KiB frame;
-		result = VirtualAddressToPhysical(page, PhysicalAddressAsPointer(allocator->PML4), &frame);
+		result = VirtualAddressToPhysical(PhysicalAddressAsPointer(allocator->PML4), page, &frame);
 		if (result) {
 			return result;
 		}
@@ -421,7 +425,7 @@ static Result AddRegion(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4
 Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end)
 {
 	UnusedVirtualRegion* containingRegion = nullptr;
-	Result result = GetContainingRegion(allocator, begin, end, &containingRegion);
+	Result result = GetContainingUnusedRegion(allocator, begin, end, &containingRegion);
 	if (result) {
 		return result;
 	}
@@ -479,38 +483,34 @@ Result MarkVirtualMemoryUnused(VirtualMemoryAllocator* allocator, Page4KiB begin
 	return result;
 }
 
-Result ReallocateVirtualMemory(VirtualMemoryAllocator* allocatorSource, VirtualMemoryAllocator* allocatorDestination, usz size,
-	PageTableEntryFlags flags, Page4KiB source, Page4KiB destination)
+Result RemapVirtualMemory(VirtualMemoryAllocator* allocator, Page4KiB begin, usz size, PageTableEntryFlags flags)
 {
-	if (!Page4KiBIsAligned(size)) {
+	if (!Page4KiBIsAligned(size) || !Page4KiBIsAligned(begin)) {
 		return ResultInvalidPageAlignment;
 	}
 
-	Result result = MarkVirtualMemoryUsed(allocatorDestination, destination, destination + size);
-	if (result) {
-		return result;
+	const Page4KiB end = begin + size;
+
+	// If such a region exists (ResultOk returned), the memory is not actually allocated, so it can't be remapped
+	Result result = GetContainingUnusedRegion(allocator, begin, end, nullptr);
+	if (!result) {
+		return ResultSerialOutputUnavailable;
 	}
 
-	for (Page4KiB pageDest = destination, pageSrc = source; pageDest < destination + size;
-		pageDest += PAGE_4KIB_SIZE_BYTES, pageSrc += PAGE_4KIB_SIZE_BYTES) {
+	for (Page4KiB page = begin; page < end; page += PAGE_4KIB_SIZE_BYTES) {
 		Frame4KiB frame;
-		result = VirtualAddressToPhysical(pageSrc, PhysicalAddressAsPointer(allocatorSource->PML4), &frame);
+		result = VirtualAddressToPhysical(PhysicalAddressAsPointer(allocator->PML4), page, &frame);
 		if (result) {
 			return result;
 		}
 
-		result = Page4KiBMap(PhysicalAddressAsPointer(allocatorDestination->PML4), pageDest, frame, flags);
+		result = Page4KiBRemap(PhysicalAddressAsPointer(allocator->PML4), page, frame, flags);
 		if (result) {
 			return result;
 		}
 
-		result = Page4KiBUnmap(PhysicalAddressAsPointer(allocatorSource->PML4), pageSrc);
-		if (result) {
-			return result;
-		}
-
-		FlushPage(pageSrc);
+		FlushPage(page);
 	}
 
-	return MarkVirtualMemoryUnused(allocatorSource, source, source + size);
+	return result;
 }

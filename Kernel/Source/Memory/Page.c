@@ -111,3 +111,51 @@ Result Page4KiBUnmap(const PageTableEntry* p4Table, Page4KiB page)
 
 	return ResultOk;
 }
+
+Result Page4KiBRemap(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags)
+{
+	u16 p4Index = VirtualAddressPage4Index(page);
+
+	// If there is no Level 3 table at the expected level 4's index, this virtual address is not mapped.
+	if (!(p4Table[p4Index] & PagePresent)) {
+		LogLine(SK_LOG_WARN "An attempt was made to remap an unmapped page");
+		return ResultPageAlreadyUnmapped;
+	}
+
+	p4Table[p4Index] |= flags;
+
+	u16 p3Index = VirtualAddressPage3Index(page);
+	PageTableEntry* p3Table = PhysicalAddressAsPointer(p4Table[p4Index] & ~(0xfff));
+
+	// If there is no Level 2 table at the expected level 3's index, this virtual address is not mapped.
+	if (!(p3Table[p3Index] & PagePresent)) {
+		LogLine(SK_LOG_WARN "An attempt was made to remap an unmapped page");
+		return ResultPageAlreadyUnmapped;
+	}
+
+	p3Table[p3Index] |= flags;
+
+	u16 p2Index = VirtualAddressPage2Index(page);
+	PageTableEntry* p2Table = PhysicalAddressAsPointer(p3Table[p3Index] & ~(0xfff));
+
+	// If there is no Level 1 table at the expected level 2's index, this virtual address is not mapped.
+	if (!(p2Table[p2Index] & PagePresent)) {
+		LogLine(SK_LOG_WARN "An attempt was made to remap an unmapped page");
+		return ResultPageAlreadyUnmapped;
+	}
+
+	p2Table[p2Index] |= flags;
+
+	u16 p1Index = VirtualAddressPage1Index(page);
+	PageTableEntry* p1Table = PhysicalAddressAsPointer(p2Table[p2Index] & ~(0xfff));
+
+	// If there is no entry at the expected level 1's index, this virtual address is not mapped.
+	if (!(p1Table[p1Index] & PagePresent)) {
+		LogLine(SK_LOG_WARN "An attempt was made to remap an unmapped page");
+		return ResultPageAlreadyUnmapped;
+	}
+
+	p1Table[p1Index] = frame | flags | PagePresent;
+
+	return ResultOk;
+}

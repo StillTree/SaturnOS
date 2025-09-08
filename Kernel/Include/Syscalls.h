@@ -10,7 +10,7 @@ constexpr u32 MSR_SFMASK = 0xc0000084;
 
 /// Syscall number 0.
 /// When passing in the ID of 0, the calling process will get terminated.
-Result ScProcessTerminate(usz processID);
+void ScProcessTerminate(usz processID);
 Result ScPrint(const i8* text);
 Result ScTest();
 

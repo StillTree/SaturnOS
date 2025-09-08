@@ -171,6 +171,7 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	bootInfo->framebufferSize = g_mainLogger.framebuffer.framebufferSize;
 	bootInfo->framebufferWidth = g_mainLogger.framebuffer.width;
 	bootInfo->framebufferHeight = g_mainLogger.framebuffer.height;
+	bootInfo->kernelP4TableAddress = kernelP4Table;
 
 	// I don't know if the framebuffer is guaranteed to be page aligned (4096 bytes), so after aligning its physical beginning to the
 	// containing frame I get the value contained in the least significant 12 bits of the address (the page offset) and add it back to the

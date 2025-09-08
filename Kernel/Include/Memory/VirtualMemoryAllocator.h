@@ -36,9 +36,8 @@ Result DeallocateMMIORegion(VirtualMemoryAllocator* allocator, void* mmioBegin, 
 Result MarkVirtualMemoryUsed(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end);
 /// Just marks the given virtual memory region as unused, where `begin` is inclusive and `end` exclusive.
 Result MarkVirtualMemoryUnused(VirtualMemoryAllocator* allocator, Page4KiB begin, Page4KiB end);
-/// Unmaps the given memory region in the source allocator and maps it in the destination one.
-Result ReallocateVirtualMemory(VirtualMemoryAllocator* allocatorSource, VirtualMemoryAllocator* allocatorDestination, usz size,
-	PageTableEntryFlags flags, Page4KiB pageSource, Page4KiB pageDestination);
+
+Result RemapVirtualMemory(VirtualMemoryAllocator* allocator, Page4KiB begin, usz size, PageTableEntryFlags flags);
 
 /// Populates the given number of the top kernel PML4's entries and initializes the memory manager.
 Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, usz backingMemorySize);

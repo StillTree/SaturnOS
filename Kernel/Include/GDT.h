@@ -55,3 +55,5 @@ void InitGDT();
 void FlushGDT();
 
 extern TSS g_tss;
+
+extern u8 g_kernelInterruptStack[20480];

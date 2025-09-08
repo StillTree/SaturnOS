@@ -21,3 +21,6 @@ Result Page4KiBMap(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, Page
 /// Clears the page table entry associated with this page.
 /// Does not flush the TLB.
 Result Page4KiBUnmap(const PageTableEntry* p4Table, Page4KiB page);
+/// Changes the given page's underlying frame and flags.
+/// Does not flush the TLB.
+Result Page4KiBRemap(PageTableEntry* p4Table, Page4KiB page, Frame4KiB frame, PageTableEntryFlags flags);

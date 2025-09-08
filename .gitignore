@@ -1,2 +1,4 @@
 Build/
+.cache/
 Sata.img
+compile_commands.json

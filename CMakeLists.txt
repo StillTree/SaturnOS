@@ -12,7 +12,7 @@ set(QEMU_BIN "qemu-system-x86_64" CACHE STRING "QEMU binary to run SaturnOS")
 set(QEMU_OVMF_CODE "/opt/OVMF/OVMF_CODE.fd" CACHE STRING "Path to OVMF_CODE.fd")
 set(QEMU_OVMF_VARS "/opt/OVMF/OVMF_VARS.fd" CACHE STRING "Path to OVMF_VARS.fd")
 option(QEMU_ENABLE_KVM "Enable KVM acceleration" OFF)
-option(QEMU_REMOVE_GDB "Enable remove GDB debugging" OFF)
+option(QEMU_REMOTE_GDB "Enable remove GDB debugging" OFF)
 
 set(SYSROOT_DIR ${CMAKE_BINARY_DIR}/SystemRoot)
 set(SYSROOT_LIB_USER ${SYSROOT_DIR}/Library)

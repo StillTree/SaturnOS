@@ -10,7 +10,7 @@
 
 VirtualAddress g_syscallFunctions[3] = { (VirtualAddress)ScProcessTerminate, (VirtualAddress)ScTest, (VirtualAddress)ScPrint };
 
-Result ScProcessTerminate(usz processID)
+void ScProcessTerminate(usz processID)
 {
 	if (processID != 0) {
 		LogLine(SK_LOG_DEBUG "Terminating process %u", processID);
@@ -45,5 +45,5 @@ void InitSyscalls()
 
 	WriteMSR(MSR_LSTAR, (u64)SyscallHandler);
 
-	WriteMSR(MSR_SFMASK, 0x1ULL << 9);
+	WriteMSR(MSR_SFMASK, 1ULL << 9);
 }

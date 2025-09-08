@@ -1,6 +1,6 @@
 #include "Memory/VirtualAddress.h"
 
-Result VirtualAddressToPhysical(VirtualAddress address, const PageTableEntry* p4Table, PhysicalAddress* physicalAddress)
+Result VirtualAddressToPhysical(const PageTableEntry* p4Table, VirtualAddress address, PhysicalAddress* physicalAddress)
 {
 	u16 p4Index = VirtualAddressPage4Index(address);
 

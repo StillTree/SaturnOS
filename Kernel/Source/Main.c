@@ -103,6 +103,8 @@ void KernelMain(BootInfo* bootInfo)
 
 	ThreadLaunch(process->MainThread);
 
+	VirtualMemoryPrintRegions(&g_kernelMemoryAllocator);
+
 	while (true)
 		__asm__ volatile("hlt");
 }
