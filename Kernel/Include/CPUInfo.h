@@ -23,8 +23,8 @@ typedef struct CPUInfo {
 	bool SupportsXAPIC; // Or just APIC
 	bool SupportsX2APIC;
 
-	u8 PhysicalAddressBits;
-	u8 VirtualAddressBits;
+	u8 PhysAddrBits;
+	u8 VirtAddrBits;
 } CPUInfo;
 
 /// A wrapper around the CPUID macros from GCC with some error checks.

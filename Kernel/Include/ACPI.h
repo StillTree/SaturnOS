@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "Memory/PhysicalAddress.h"
+#include "Memory/PhysAddr.h"
 #include "Result.h"
 
 typedef struct __attribute__((packed)) SDTHeader {
@@ -24,7 +24,7 @@ typedef struct __attribute__((packed)) XSDT {
 	u64 Entries[];
 } XSDT;
 
-Result GetACPITableAddress(const i8* signature, PhysicalAddress* address);
+Result GetACPITableAddress(const i8* signature, PhysAddr* address);
 
 typedef struct __attribute__((packed)) MCFGEntry {
 	u64 BaseAddress;

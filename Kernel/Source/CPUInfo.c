@@ -44,8 +44,8 @@ Result CPUIDSaveInfo(CPUInfo* cpuInfo)
 
 	result = CPUID(cpuInfo, 0x80000008, 0, &featuresInfo);
 	if (!result) {
-		cpuInfo->PhysicalAddressBits = featuresInfo.EAX & 0xff;
-		cpuInfo->VirtualAddressBits = (featuresInfo.EAX >> 8) & 0xff;
+		cpuInfo->PhysAddrBits = featuresInfo.EAX & 0xff;
+		cpuInfo->VirtAddrBits = (featuresInfo.EAX >> 8) & 0xff;
 	}
 
 	return ResultOk;

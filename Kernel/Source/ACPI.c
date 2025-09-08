@@ -18,10 +18,10 @@ bool SDTIsChecksumValid(const SDTHeader* acpiTable)
 
 static usz XSDTEntries(const XSDT* acpiTable) { return (acpiTable->Header.Length - sizeof(SDTHeader)) / 8; }
 
-Result GetACPITableAddress(const i8* signature, PhysicalAddress* address)
+Result GetACPITableAddress(const i8* signature, PhysAddr* address)
 {
 	for (usz i = 0; i < XSDTEntries(g_xsdt); i++) {
-		SDTHeader* table = PhysicalAddressAsPointer(g_xsdt->Entries[i]);
+		SDTHeader* table = PhysAddrAsPointer(g_xsdt->Entries[i]);
 
 		if (SDTIsChecksumValid(table) && MemoryCompare(signature, (i8*)table->Signature, 4)) {
 			*address = g_xsdt->Entries[i];
@@ -50,7 +50,7 @@ u8 MADTGetAPICEntry(const MADT* madt, MADTBaseEntry** pointer)
 
 Result InitXSDT()
 {
-	XSDT* xsdt = PhysicalAddressAsPointer(g_bootInfo.XSDTPhysicalAddress);
+	XSDT* xsdt = PhysAddrAsPointer(g_bootInfo.XSDTPhysAddr);
 
 	if (!SDTIsChecksumValid((SDTHeader*)xsdt)) {
 		return ResultXSDTCorrupted;

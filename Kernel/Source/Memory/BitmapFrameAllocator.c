@@ -47,7 +47,7 @@ Result BitmapFrameAllocatorInit(BitmapFrameAllocator* frameAllocator, MemoryMapE
 		return ResultNotEnoughMemoryFrames;
 	}
 
-	frameAllocator->FrameBitmap = PhysicalAddressAsPointer(memoryMap[0].PhysicalStart);
+	frameAllocator->FrameBitmap = PhysAddrAsPointer(memoryMap[0].PhysicalStart);
 	frameAllocator->MemoryMap = memoryMap;
 	frameAllocator->MemoryMapEntries = memoryMapEntries;
 	frameAllocator->LastAllocated = 0;

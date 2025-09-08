@@ -19,9 +19,9 @@ static Result ELFDynamicSegment(Elf64_Phdr* progHeaders, usz progHeaderCount, El
 	return ResultNotFound;
 }
 
-static VirtualAddress ELFMinVirtAddr(Elf64_Phdr* programHeaders, usz count)
+static VirtAddr ELFMinVirtAddr(Elf64_Phdr* programHeaders, usz count)
 {
-	VirtualAddress minVirtAddr = U64_MAX;
+	VirtAddr minVirtAddr = U64_MAX;
 
 	for (usz i = 0; i < count; ++i) {
 		if (programHeaders[i].p_type != PT_LOAD)
@@ -159,7 +159,7 @@ static Result ELFApplyRelocations(Elf64_Phdr* dynamicSegment, Page4KiB base)
 {
 	Elf64_Dyn* relocationTag = (Elf64_Dyn*)(dynamicSegment->p_vaddr + base);
 
-	VirtualAddress relocationTableAddr = 0;
+	VirtAddr relocationTableAddr = 0;
 	usz relocationTableSize = 0;
 	usz relocationEntrySize = 0;
 
@@ -219,7 +219,7 @@ static Result ELFLoadDYN(Process* process, usz elfFile, Elf64_Ehdr* elfHeader, E
 {
 	// TODO: Randomise base
 	Page4KiB base = 0x400000;
-	VirtualAddress minVirtAddr = ELFMinVirtAddr(progHeaders, progHeaderCount);
+	VirtAddr minVirtAddr = ELFMinVirtAddr(progHeaders, progHeaderCount);
 	Page4KiB minPage = Page4KiBContaining(minVirtAddr);
 	base -= minPage;
 

@@ -4,11 +4,11 @@
 #include "Scheduler.h"
 #include "Logger.h"
 #include "MSR.h"
-#include "Memory/VirtualAddress.h"
+#include "Memory/VirtAddr.h"
 #include "Panic.h"
 #include "Result.h"
 
-VirtualAddress g_syscallFunctions[3] = { (VirtualAddress)ScProcessTerminate, (VirtualAddress)ScTest, (VirtualAddress)ScPrint };
+VirtAddr g_syscallFunctions[3] = { (VirtAddr)ScProcessTerminate, (VirtAddr)ScTest, (VirtAddr)ScPrint };
 
 void ScProcessTerminate(usz processID)
 {

@@ -18,7 +18,7 @@ static Result GetInode(Ext2Driver* ext2, u32 inode, Frame4KiB inodeTableFrame, E
 	if (result) {
 		return result;
 	}
-	Ext2INode* inodeTable = PhysicalAddressAsPointer(inodeTableFrame);
+	Ext2INode* inodeTable = PhysAddrAsPointer(inodeTableFrame);
 
 	*inodePointer = inodeTable + (tableIndex % 2);
 	return ResultOk;
@@ -56,7 +56,7 @@ Result GetInodeFromPath(Ext2Driver* ext2, const i8* filePath, Frame4KiB inodeTab
 		}
 
 		// Read directory entries
-		u8* inodeEntries = (u8*)PhysicalAddressAsPointer(directoryEntriesFrame);
+		u8* inodeEntries = (u8*)PhysAddrAsPointer(directoryEntriesFrame);
 		Ext2DirectoryEntry* entry = (Ext2DirectoryEntry*)inodeEntries;
 		bool found = false;
 		while (entry->Inode != 0) {
@@ -103,7 +103,7 @@ Result InitExt2()
 	if (result) {
 		return result;
 	}
-	g_ext2Driver.Superblock = PhysicalAddressAsPointer(superblockFrame);
+	g_ext2Driver.Superblock = PhysAddrAsPointer(superblockFrame);
 	g_ext2Driver.BlockSizeBytes = 1024 << g_ext2Driver.Superblock->BlockSize;
 	g_ext2Driver.BlockGroupCount
 		= (g_ext2Driver.Superblock->InodeCount + g_ext2Driver.Superblock->InodesPerGroup - 1) / g_ext2Driver.Superblock->InodesPerGroup;
@@ -113,7 +113,7 @@ Result InitExt2()
 	if (result) {
 		return result;
 	}
-	g_ext2Driver.BlockGroupDescriptorTable = PhysicalAddressAsPointer(bgdtFrame);
+	g_ext2Driver.BlockGroupDescriptorTable = PhysAddrAsPointer(bgdtFrame);
 
 	Frame4KiB rootInodeFrame = AllocateFrame(&g_frameAllocator);
 	result = GetInode(&g_ext2Driver, 2, rootInodeFrame, &g_ext2Driver.RootInode);
@@ -127,7 +127,7 @@ Result InitExt2()
 	if (result) {
 		return result;
 	}
-	g_ext2Driver.RootInodeEntries = PhysicalAddressAsPointer(rootDirectoryEntriesFrame);
+	g_ext2Driver.RootInodeEntries = PhysAddrAsPointer(rootDirectoryEntriesFrame);
 
 	return ResultOk;
 }

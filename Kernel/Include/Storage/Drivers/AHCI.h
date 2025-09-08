@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "Memory/PhysicalAddress.h"
+#include "Memory/PhysAddr.h"
 #include "Result.h"
 
 constexpr u32 HBA_PORT_DEVICE_PRESENT = 0x3;
@@ -164,8 +164,8 @@ typedef struct AHCIDevice {
 } AHCIDevice;
 
 Result AHCIDeviceInit(AHCIDevice* device);
-Result AHCIDeviceReadSectors(AHCIDevice* device, usz startSectorIndex, u16 sectorCount, PhysicalAddress buffer);
-Result AHCIDeviceWriteSectors(AHCIDevice* device, usz startSectorIndex, usz sectorCount, PhysicalAddress buffer);
+Result AHCIDeviceReadSectors(AHCIDevice* device, usz startSectorIndex, u16 sectorCount, PhysAddr buffer);
+Result AHCIDeviceWriteSectors(AHCIDevice* device, usz startSectorIndex, usz sectorCount, PhysAddr buffer);
 
 typedef struct AHCIDriver {
 	/// PCI BAR 5

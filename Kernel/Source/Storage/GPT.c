@@ -4,7 +4,7 @@
 #include "Memory.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Frame.h"
-#include "Memory/PhysicalAddress.h"
+#include "Memory/PhysAddr.h"
 #include "Storage/Drivers/AHCI.h"
 
 Partition g_usablePartitions[1];
@@ -19,7 +19,7 @@ Result DetectGPTPartitions()
 		return result;
 	}
 
-	GPTHeader* gptHeader = PhysicalAddressAsPointer(partitionTableHeader);
+	GPTHeader* gptHeader = PhysAddrAsPointer(partitionTableHeader);
 
 	if (!MemoryCompare(gptHeader->Signature, "EFI PART", 8)) {
 		return ResultSerialOutputUnavailable;
@@ -40,7 +40,7 @@ Result DetectGPTPartitions()
 		return result;
 	}
 
-	GPTEntry* gptEntries = PhysicalAddressAsPointer(tableStartFrame);
+	GPTEntry* gptEntries = PhysAddrAsPointer(tableStartFrame);
 	for (u32 i = 0; i < gptHeader->PartitionEntryCount; i++) {
 		if (GUIDEmpty(gptEntries[i].PartitionGUID))
 			continue;

@@ -66,7 +66,7 @@ Result PCIDeviceMapBars(PCIDevice* device)
 		if ((device->ConfigurationSpace->Bar[i] & 0xf) != 4) {
 			const u32 bar = device->ConfigurationSpace->Bar[i];
 
-			PhysicalAddress address = bar & 0xfffffff0;
+			PhysAddr address = bar & 0xfffffff0;
 
 			device->ConfigurationSpace->Bar[i] = 0xffffffff;
 
@@ -95,7 +95,7 @@ Result PCIDeviceMapBars(PCIDevice* device)
 		const u32 barLow = device->ConfigurationSpace->Bar[i];
 		const u32 barHigh = device->ConfigurationSpace->Bar[i + 1];
 
-		PhysicalAddress address = (u64)(barLow & 0xfffffff0) | ((u64)(barHigh) << 32);
+		PhysAddr address = (u64)(barLow & 0xfffffff0) | ((u64)(barHigh) << 32);
 
 		device->ConfigurationSpace->Bar[i] = 0xffffffff;
 		device->ConfigurationSpace->Bar[i + 1] = 0xffffffff;
@@ -173,7 +173,7 @@ Result PCIDeviceSetMSIXVector(const PCIDevice* device, usz msiVector, u8 systemV
 	return ResultOk;
 }
 
-static Result MapEntireBus(PhysicalAddress baseAddress, u8 bus, void** mappedBus)
+static Result MapEntireBus(PhysAddr baseAddress, u8 bus, void** mappedBus)
 {
 	Frame4KiB frame = baseAddress + ((u64)bus << 20);
 
@@ -235,13 +235,13 @@ static usz EnumerateDevices(const MCFGEntry* segmentGroup, u8 bus, void* mappedB
 
 Result ScanPCIDevices()
 {
-	PhysicalAddress mcfgAddress;
+	PhysAddr mcfgAddress;
 	Result result = GetACPITableAddress("MCFG", &mcfgAddress);
 	if (result) {
 		return result;
 	}
 
-	MCFG* mcfg = PhysicalAddressAsPointer(mcfgAddress);
+	MCFG* mcfg = PhysAddrAsPointer(mcfgAddress);
 
 	// In each PCI segment group, I map the entire bus's extended configuration spcae
 	// and if there are no devices there, I unmap it to not waste memory.

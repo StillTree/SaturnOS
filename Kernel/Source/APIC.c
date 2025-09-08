@@ -18,15 +18,15 @@ APIC g_apic;
 /// Simply returns the base address of the first I/O APIC found.
 ///
 /// TODO: Probably should do some ACPI magic and actually pick the correct one or something.
-Result FindIOAPICAddress(PhysicalAddress* address)
+Result FindIOAPICAddress(PhysAddr* address)
 {
-	PhysicalAddress madtAddress;
+	PhysAddr madtAddress;
 	Result result = GetACPITableAddress("APIC", &madtAddress);
 	if (result) {
 		return result;
 	}
 
-	MADT* madt = PhysicalAddressAsPointer(madtAddress);
+	MADT* madt = PhysAddrAsPointer(madtAddress);
 
 	MADTBaseEntry* entry = madt->Entries;
 	while (MADTGetAPICEntry(madt, &entry)) {
@@ -112,7 +112,7 @@ Result InitAPIC()
 
 	LAPICWriteRegister(LAPIC_SVR_REGISTER, 0x1ff);
 
-	PhysicalAddress ioapicBase;
+	PhysAddr ioapicBase;
 	Result result = FindIOAPICAddress(&ioapicBase);
 	if (result) {
 		return result;

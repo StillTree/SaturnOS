@@ -53,7 +53,7 @@ typedef struct BootInfo {
 	u64 MemoryMapEntries;
 	u64 PhysicalMemoryOffset;
 	u64 PhysicalMemoryMappingSize;
-	u64 XSDTPhysicalAddress;
+	u64 XSDTPhysAddr;
 	/// The beginning of the kernel's stack.
 	u64 KernelStackTop;
 	u64 KernelAddress;

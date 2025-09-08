@@ -87,14 +87,14 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 {
 	PrintCommonExceptionInfo(frame, "Page Fault");
 
-	u64 faultVirtualAddress = 0;
-	__asm__ volatile("mov %%cr2, %0" : "=r"(faultVirtualAddress));
+	u64 faultVirtAddr = 0;
+	__asm__ volatile("mov %%cr2, %0" : "=r"(faultVirtAddr));
 
 	u64 pml4Address = U64_MAX;
 	__asm__ volatile("movq %%cr3, %0" : "=r"(pml4Address));
 
 	LogLine(SK_LOG_ERROR "Memory info:");
-	LogLine(SK_LOG_ERROR "Faulty virtual address: 0x%x", faultVirtualAddress);
+	LogLine(SK_LOG_ERROR "Faulty virtual address: 0x%x", faultVirtAddr);
 	LogLine(SK_LOG_ERROR "PML4 address          : 0x%x", pml4Address);
 	LogLine(SK_LOG_ERROR "");
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "Memory/VirtualAddress.h"
+#include "Memory/VirtAddr.h"
 
 constexpr u32 MSR_EFER = 0xc0000080;
 constexpr u32 MSR_STAR = 0xc0000081;
@@ -18,4 +18,4 @@ void InitSyscalls();
 void SyscallHandler();
 void DispatchSyscall(u64 syscallNumber);
 
-extern VirtualAddress g_syscallFunctions[3];
+extern VirtAddr g_syscallFunctions[3];

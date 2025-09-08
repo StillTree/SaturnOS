@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Core.h"
-#include "Memory/PhysicalAddress.h"
-#include "Memory/VirtualAddress.h"
+#include "Memory/PhysAddr.h"
+#include "Memory/VirtAddr.h"
 
 typedef struct MemoryMapEntry {
-	PhysicalAddress PhysicalStart;
-	PhysicalAddress PhysicalEnd;
+	PhysAddr PhysicalStart;
+	PhysAddr PhysicalEnd;
 } MemoryMapEntry;
 
 /// C's memset but without a shitty name.
@@ -27,4 +27,4 @@ inline void FlushTLB()
 }
 
 /// Invalidates a memory page which contains the provided virtual address by using the `invlpg` instruction.
-static inline void FlushPage(VirtualAddress address) { __asm__ volatile("invlpg (%0)" : : "r"(address) : "memory"); }
+static inline void FlushPage(VirtAddr address) { __asm__ volatile("invlpg (%0)" : : "r"(address) : "memory"); }

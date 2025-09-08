@@ -47,7 +47,7 @@ static Result AHCIDeviceAllocateCommandTables(AHCIDevice* device)
 
 static AHCICommandTable* AHCICommandHeaderGetCommandTable(AHCICommandHeader* commandHeader)
 {
-	return PhysicalAddressAsPointer(((u64)commandHeader->CTBAU << 32) | commandHeader->CTBA);
+	return PhysAddrAsPointer(((u64)commandHeader->CTBAU << 32) | commandHeader->CTBA);
 }
 
 static void AHCICommandTableReset(AHCICommandTable* commandTable)
@@ -88,7 +88,7 @@ static Result AHCIDeviceIdentify(AHCIDevice* device)
 	AHCICommandTable* commandTable = AHCICommandHeaderGetCommandTable(commandHeader);
 
 	Frame4KiB identifyFrame = AllocateFrame(&g_frameAllocator);
-	MemoryFill(PhysicalAddressAsPointer(identifyFrame), 0, FRAME_4KIB_SIZE_BYTES);
+	MemoryFill(PhysAddrAsPointer(identifyFrame), 0, FRAME_4KIB_SIZE_BYTES);
 
 	commandTable->PRDT[0].DBA = identifyFrame & 0xffffffff;
 	commandTable->PRDT[0].DBAU = identifyFrame >> 32;
@@ -104,7 +104,7 @@ static Result AHCIDeviceIdentify(AHCIDevice* device)
 
 	AHCIDevicePollCommandCompletion(device, commandSlot);
 
-	u16* identifyDataRaw = PhysicalAddressAsPointer(identifyFrame);
+	u16* identifyDataRaw = PhysAddrAsPointer(identifyFrame);
 
 	// Indicates whether this drive's sectors are longer than 512 bytes
 	// If they are, I just error out 'cause I'm lazy :D
@@ -141,7 +141,7 @@ Result AHCIDeviceInit(AHCIDevice* device)
 	device->Registers->CLB = commandListFrame & 0xffffffff;
 	device->Registers->CLBU = commandListFrame >> 32;
 
-	device->CommandList = PhysicalAddressAsPointer(commandListFrame);
+	device->CommandList = PhysAddrAsPointer(commandListFrame);
 
 	Result result = AHCIDeviceAllocateCommandTables(device);
 	if (result) {
@@ -164,7 +164,7 @@ Result AHCIDeviceInit(AHCIDevice* device)
 	return ResultOk;
 }
 
-Result AHCIDeviceReadSectors(AHCIDevice* device, usz startSectorIndex, u16 sectorCount, PhysicalAddress buffer)
+Result AHCIDeviceReadSectors(AHCIDevice* device, usz startSectorIndex, u16 sectorCount, PhysAddr buffer)
 {
 	u8 commandSlot = AHCIDeviceFindCommandListSlot(device);
 	AHCICommandHeader* commandHeader = AHCIDeviceGetCommandHeaderAddress(device, commandSlot);
@@ -200,7 +200,7 @@ Result AHCIDeviceReadSectors(AHCIDevice* device, usz startSectorIndex, u16 secto
 	return ResultOk;
 }
 
-Result AHCIDeviceWriteSectors(AHCIDevice* device, usz startSectorIndex, usz sectorCount, PhysicalAddress buffer)
+Result AHCIDeviceWriteSectors(AHCIDevice* device, usz startSectorIndex, usz sectorCount, PhysAddr buffer)
 {
 	u8 commandSlot = AHCIDeviceFindCommandListSlot(device);
 	AHCICommandHeader* commandHeader = AHCIDeviceGetCommandHeaderAddress(device, commandSlot);

@@ -188,7 +188,7 @@ Result ProcessCreate(Process** createdProcess)
 	}
 
 	Frame4KiB pml4Frame = AllocateFrame(&g_frameAllocator);
-	PageTableEntry* processPML4 = PhysicalAddressAsPointer(pml4Frame);
+	PageTableEntry* processPML4 = PhysAddrAsPointer(pml4Frame);
 	InitEmptyPageTable(processPML4);
 
 	void* virtualMemoryAllocatorPool;
@@ -221,7 +221,7 @@ Result ProcessCreate(Process** createdProcess)
 	process->Threads[0] = mainThread;
 	process->MainThread = mainThread;
 
-	PageTableEntry* kernelPML4 = PhysicalAddressAsPointer(g_bootInfo.KernelPML4);
+	PageTableEntry* kernelPML4 = PhysAddrAsPointer(g_bootInfo.KernelPML4);
 	processPML4[510] = kernelPML4[510] & ~PageUserAccessible;
 	processPML4[511] = kernelPML4[511] & ~PageUserAccessible;
 
