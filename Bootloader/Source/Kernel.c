@@ -27,7 +27,8 @@ EFI_STATUS LoadKernelArgs(const INT8* configFile, UINTN configFileSize, FrameAll
 	MemoryCopy((INT8*)args, (VOID*)frameAddress, argsLength);
 	*((INT8*)frameAddress + argsLength) = '\0';
 
-	status = MapMemoryPage4KiB(*nextUsableVirtualPage, frameAddress, p4TableAddress, frameAllocator, ENTRY_PRESENT | ENTRY_NO_EXECUTE);
+	status = MapMemoryPage4KiB(
+		*nextUsableVirtualPage, frameAddress, p4TableAddress, frameAllocator, ENTRY_PRESENT | ENTRY_WRITEABLE | ENTRY_NO_EXECUTE);
 	if (EFI_ERROR(status)) {
 		SN_LOG_ERROR(L"An unexpected error occured while trying to map a memory frame in the kernel's P4 table");
 		return status;

@@ -69,8 +69,6 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
-	SN_LOG_INFO(L"Successfully exited boot services");
-
 	FrameAllocatorData frameAllocator = { 0, 0, NULL, 0, 0 };
 	status = InitFrameAllocator(&frameAllocator, memoryMap, memoryMapSize, descriptorSize);
 	if (EFI_ERROR(status)) {
@@ -120,8 +118,6 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 		goto halt;
 	}
 
-	SN_LOG_INFO(L"Successfully identity-mapped the context switch function");
-
 	// We need a quard page right after the stack to fault when overflowing
 	nextUsableVirtualPage += 4096;
 	// Allocate 25 frames for the kernel's stack (100 KiB)
@@ -142,8 +138,6 @@ EFI_STATUS EFIAPI UefiMain(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE* systemTable
 	}
 
 	EFI_VIRTUAL_ADDRESS stackVirtualAddress = nextUsableVirtualPage;
-
-	SN_LOG_INFO(L"Successfully allocated a 100 KiB kernel stack");
 
 	// Allocate the boot info right after the stack
 	EFI_VIRTUAL_ADDRESS bootInfoVirtualAddress = nextUsableVirtualPage;

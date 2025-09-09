@@ -10,6 +10,7 @@
 #include "Memory/VirtualMemoryAllocator.h"
 #include "PCI.h"
 #include "Panic.h"
+#include "Parameters.h"
 #include "Scheduler.h"
 #include "Storage/Drivers/AHCI.h"
 #include "Storage/Filesystems/Ext2.h"
@@ -29,6 +30,8 @@ void KernelMain(BootInfo* bootInfo)
 {
 	// Copy the structure provided by the bootloader right at the beginning, so every part of the code can safely access it
 	g_bootInfo = *bootInfo;
+
+	ParseKernelParams();
 
 	// There is a guarantee that the bootloader will set up the framebuffer,
 	// so this function doesn't throw but just warns when the serial output device is not available

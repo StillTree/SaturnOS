@@ -61,7 +61,7 @@ typedef struct BootInfo {
 	u64 ContextSwitchFunctionPage;
 	void* Ramdisk;
 	usz RamdiskSizeBytes;
-	const i8* Args;
+	i8* Args;
 	u64 KernelPML4;
 } BootInfo;
 
