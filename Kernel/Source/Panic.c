@@ -2,7 +2,7 @@
 
 #include "Format.h"
 #include "IDT.h"
-#include "InOut.h"
+#include "Instructions.h"
 #include "Memory.h"
 
 extern const u8 FONT_BITMAPS[96][20][10];
@@ -50,26 +50,26 @@ void PanicFramebufferWriteChar(u8 character, u32* framebuffer, usz* positionX, u
 
 void PanicReinitializeSerialConsole()
 {
-	OutputU8(0x3f8 + 1, 0x00);
-	OutputU8(0x3f8 + 3, 0x80);
-	OutputU8(0x3f8, 0x03);
-	OutputU8(0x3f8 + 1, 0x00);
-	OutputU8(0x3f8 + 3, 0x03);
-	OutputU8(0x3f8 + 2, 0xc7);
-	OutputU8(0x3f8 + 4, 0x0b);
+	OutU8(0x3f8 + 1, 0x00);
+	OutU8(0x3f8 + 3, 0x80);
+	OutU8(0x3f8, 0x03);
+	OutU8(0x3f8 + 1, 0x00);
+	OutU8(0x3f8 + 3, 0x03);
+	OutU8(0x3f8 + 2, 0xc7);
+	OutU8(0x3f8 + 4, 0x0b);
 	// Set in loopback mode
-	OutputU8(0x3f8 + 4, 0x1e);
+	OutU8(0x3f8 + 4, 0x1e);
 
-	OutputU8(0x3f8, 0xae);
+	OutU8(0x3f8, 0xae);
 
 	// If we didn't get back the exact same byte that we sent in loopback mode,
 	// the device is not functioning corretly and should not be used
-	if (InputU8(0x3f8 + 0) != 0xae) {
+	if (InU8(0x3f8 + 0) != 0xae) {
 		return;
 	}
 
 	// If it is functioning correctly we set it in normal operation mode
-	OutputU8(0x3f8 + 4, 0x0f);
+	OutU8(0x3f8 + 4, 0x0f);
 }
 
 void PanicSerialWriteChar(u8 character)
@@ -78,7 +78,7 @@ void PanicSerialWriteChar(u8 character)
 		character = '?';
 	}
 
-	OutputU8(0x3f8, character);
+	OutU8(0x3f8, character);
 }
 
 void PanicWriteString(const i8* string, u32* framebuffer, usz* positionX, usz* positionY)

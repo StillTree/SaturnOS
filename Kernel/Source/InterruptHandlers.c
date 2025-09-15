@@ -1,7 +1,7 @@
 #include "InterruptHandlers.h"
 
 #include "APIC.h"
-#include "InOut.h"
+#include "Instructions.h"
 #include "Keyboard.h"
 #include "Logger.h"
 #include "Memory/PageTable.h"
@@ -146,19 +146,9 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 	}
 }
 
-static inline void ReadRDTSC(u32 values[2]) {
-    __asm__ volatile ("rdtsc" : "=a"(values[0]), "=d"(values[1]));
-}
-
-extern Randomness test;
-
 __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /* unused */)
 {
-	u32 entropy[2];
-	ReadRDTSC(entropy);
-	RandomReseed(&test, entropy, 2);
-
-	u8 scanCode = InputU8(0x60);
+	u8 scanCode = InU8(0x60);
 	i8 character = TranslateScanCode(scanCode);
 	if (character != '?') {
 		i8 string[2];

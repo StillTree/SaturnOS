@@ -16,8 +16,8 @@ void LoggerInit(bool framebufferEnabled, bool serialConsoleEnabled, u16 serialCo
 			.FramebufferSize = g_bootInfo.FramebufferSize,
 			.Width = g_bootInfo.FramebufferWidth,
 			.Height = g_bootInfo.FramebufferHeight,
-			.CursorPositionX = 0,
-			.CursorPositionY = 0 };
+			.CursorPosX = 0,
+			.CursorPosY = 0 };
 		g_mainLogger.Framebuffer = framebufferLogger;
 
 		FramebufferClear(&g_mainLogger.Framebuffer);

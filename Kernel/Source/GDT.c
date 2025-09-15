@@ -42,20 +42,20 @@ void InitGDT()
 	g_tss.Reserved2 = 0;
 	g_tss.Reserved3 = 0;
 	g_tss.Reserved4 = 0;
-	g_tss.IOPermissionBitMap = sizeof(g_tss);
-	g_tss.IST[0] = (u64)g_doubleFaultStack + sizeof(g_doubleFaultStack);
-	g_tss.IST[1] = (u64)g_pageFaultStack + sizeof(g_pageFaultStack);
-	g_tss.IST[6] = (u64)g_kernelInterruptStack + sizeof(g_kernelInterruptStack);
-	g_tss.RSP[0] = (u64)g_kernelInterruptStack + sizeof(g_kernelInterruptStack);
-	g_tss.RSP[1] = (u64)g_kernelInterruptStack + sizeof(g_kernelInterruptStack);
-	g_tss.RSP[2] = (u64)g_kernelInterruptStack + sizeof(g_kernelInterruptStack);
+	g_tss.IOPermissionBitMap = sizeof g_tss;
+	g_tss.IST[0] = (u64)g_doubleFaultStack + sizeof g_doubleFaultStack;
+	g_tss.IST[1] = (u64)g_pageFaultStack + sizeof g_pageFaultStack;
+	g_tss.IST[6] = (u64)g_kernelInterruptStack + sizeof g_kernelInterruptStack;
+	g_tss.RSP[0] = (u64)g_kernelInterruptStack + sizeof g_kernelInterruptStack;
+	g_tss.RSP[1] = (u64)g_kernelInterruptStack + sizeof g_kernelInterruptStack;
+	g_tss.RSP[2] = (u64)g_kernelInterruptStack + sizeof g_kernelInterruptStack;
 
 	g_gdt.Null = SetGDTEntry32(0, 0, 0, 0);
 	g_gdt.KernelCode = SetGDTEntry32(0, 0xfffff, 0x9a, 0xa);
 	g_gdt.KernelData = SetGDTEntry32(0, 0xfffff, 0x92, 0xc);
 	g_gdt.UserData = SetGDTEntry32(0, 0xfffff, 0xf2, 0xc);
 	g_gdt.UserCode = SetGDTEntry32(0, 0xfffff, 0xfa, 0xa);
-	g_gdt.TSS = SetGDTEntry64((u64)&g_tss, sizeof(g_tss) - 1, 0x89, 0);
+	g_gdt.TSS = SetGDTEntry64((u64)&g_tss, sizeof g_tss - 1, 0x89, 0);
 
 	GDTDescriptor gdtDescriptor = {};
 	gdtDescriptor.Address = (u64)&g_gdt;

@@ -1,15 +1,13 @@
 #include "Random.h"
 
-#include "CPUInfo.h"
+#include "Instructions.h"
 #include "Memory.h"
 
-extern u64 RandomRDRAND();
-
-static u64 g_xorShiftState = 0x1234567890abcdefULL;
+static RandomState g_random;
 
 static u32 U32Rotate(u32 x, usz n) { return (x << n) | (x >> (32 - n)); }
 
-static void QuarterRound(u32* a, u32* b, u32* c, u32* d)
+static void ChaCha20QuarterRound(u32* a, u32* b, u32* c, u32* d)
 {
 	*a += *b;
 	*d ^= *a;
@@ -25,21 +23,21 @@ static void QuarterRound(u32* a, u32* b, u32* c, u32* d)
 	*b = U32Rotate(*b, 7);
 }
 
-static void ChaCha20Block(u32 output[16], const u32 input[16])
+static void ChaCha20CoreTransform(u32* output, const u32* input)
 {
 	u32 temp[16];
-	MemoryCopy(input, temp, sizeof(temp));
+	MemoryCopy(input, temp, sizeof temp);
 
 	for (usz i = 0; i < 10; ++i) {
-		QuarterRound(&temp[0], &temp[4], &temp[8], &temp[12]);
-		QuarterRound(&temp[1], &temp[5], &temp[9], &temp[13]);
-		QuarterRound(&temp[2], &temp[6], &temp[10], &temp[14]);
-		QuarterRound(&temp[3], &temp[7], &temp[11], &temp[15]);
+		ChaCha20QuarterRound(&temp[0], &temp[4], &temp[8], &temp[12]);
+		ChaCha20QuarterRound(&temp[1], &temp[5], &temp[9], &temp[13]);
+		ChaCha20QuarterRound(&temp[2], &temp[6], &temp[10], &temp[14]);
+		ChaCha20QuarterRound(&temp[3], &temp[7], &temp[11], &temp[15]);
 
-		QuarterRound(&temp[0], &temp[5], &temp[10], &temp[15]);
-		QuarterRound(&temp[1], &temp[6], &temp[11], &temp[12]);
-		QuarterRound(&temp[2], &temp[7], &temp[8], &temp[13]);
-		QuarterRound(&temp[3], &temp[4], &temp[9], &temp[14]);
+		ChaCha20QuarterRound(&temp[0], &temp[5], &temp[10], &temp[15]);
+		ChaCha20QuarterRound(&temp[1], &temp[6], &temp[11], &temp[12]);
+		ChaCha20QuarterRound(&temp[2], &temp[7], &temp[8], &temp[13]);
+		ChaCha20QuarterRound(&temp[3], &temp[4], &temp[9], &temp[14]);
 	}
 
 	for (usz i = 0; i < 16; ++i) {
@@ -47,7 +45,7 @@ static void ChaCha20Block(u32 output[16], const u32 input[16])
 	}
 }
 
-static void ChaCha20KeystreamBlockBytes(u32 outputBytes[16], const u32 key[8], const u32 nonce[3], u32 counter)
+static void ChaCha20Run(const u32* key, const u32* nonce, u32 counter, u32* outputBytes)
 {
 	u32 state[16];
 	state[0] = 0x61707865U;
@@ -55,8 +53,8 @@ static void ChaCha20KeystreamBlockBytes(u32 outputBytes[16], const u32 key[8], c
 	state[2] = 0x79622d32U;
 	state[3] = 0x6b206574U;
 
-	for (usz i = 0; i < 8; ++i) {
-		state[4 + i] = key[i];
+	for (usz i = 4; i < 12; ++i) {
+		state[i] = key[i - 4];
 	}
 
 	state[12] = counter;
@@ -65,78 +63,150 @@ static void ChaCha20KeystreamBlockBytes(u32 outputBytes[16], const u32 key[8], c
 	state[15] = nonce[2];
 
 	u32 outputState[16];
-	ChaCha20Block(outputState, state);
+	ChaCha20CoreTransform(outputState, state);
 
 	for (usz i = 0; i < 16; ++i) {
 		outputBytes[i] = outputState[i];
 	}
 }
 
-void InitRandom(ChaState* generator, u32 key[8], u32 nonce[3], usz initialCounter)
+void InitRandomness()
 {
-	MemoryCopy(key, generator->Key, sizeof generator->Key);
-	MemoryCopy(nonce, generator->Nonce, sizeof generator->Nonce);
-	generator->Counter = initialCounter;
-	generator->Pos = 16;
-	MemoryFill(generator->Buffer, 0, sizeof generator->Buffer);
+	u64 tsc = ReadTSC();
+
+	u32 key[8];
+	key[0] = tsc & 0xffffffff;
+	key[1] = tsc >> 32;
+	key[2] = g_bootInfo.ContextSwitchFunctionPage & 0xffffffff;
+	key[3] = g_bootInfo.ContextSwitchFunctionPage >> 32;
+	key[4] = 123;
+	key[5] = 123;
+	key[6] = 123;
+	key[7] = 123;
+
+	u32 nonce[3];
+	nonce[0] = g_bootInfo.XSDTPhysAddr & 0xffffffff;
+	nonce[1] = (g_bootInfo.XSDTPhysAddr >> 32) ^ (g_bootInfo.ContextSwitchFunctionPage & 0xffffffff);
+	nonce[2] = g_bootInfo.ContextSwitchFunctionPage >> 32;
+
+	MemoryCopy(key, g_random.Key, sizeof g_random.Key);
+	MemoryCopy(nonce, g_random.Nonce, sizeof g_random.Nonce);
+	g_random.Counter = 0;
+	g_random.BufferPos = sizeof g_random.KeystreamBuffer;
+	MemoryFill(g_random.KeystreamBuffer, 0, sizeof g_random.KeystreamBuffer);
 }
 
-static void ChaRefill(ChaState* generator)
+static void RandomnessRefill(RandomState* generator)
 {
-	ChaCha20KeystreamBlockBytes(generator->Buffer, generator->Key, generator->Nonce, generator->Counter);
+	ChaCha20Run(generator->Key, generator->Nonce, generator->Counter, (u32*)generator->KeystreamBuffer);
 	++generator->Counter;
-	generator->Pos = 0;
+	generator->BufferPos = 0;
 }
 
-void RandomU64(ChaState* generator, u64* output)
-{
-	if (generator->Pos >= 15) {
-		ChaRefill(generator);
-	}
-
-	*output = generator->Buffer[generator->Pos] | ((u64)generator->Buffer[generator->Pos + 1] << 32);
-	generator->Pos += 2;
-}
-
-void RandomReseedU64(ChaState* generator, u64 entropy)
-{
-	u32 nice[2];
-	nice[0] = entropy & 0xffffffff;
-	nice[1] = (entropy >> 32) & 0xffffffff;
-
-	RandomReseed(generator, nice, 2);
-}
-
-void RandomReseed(ChaState* generator, const u32* entropy, usz length)
+void RandomnessReseed(RandomState* generator, const u32* entropy, usz length)
 {
 	for (usz i = 0; i < length; ++i) {
 		generator->Key[i % 8] ^= entropy[i];
 	}
 
-    u32 ks[16];
-    ChaCha20KeystreamBlockBytes(ks, generator->Key, generator->Nonce, generator->Counter);
-    ++generator->Counter;
-    MemoryCopy(ks, generator->Key, 32);
-    MemoryFill(ks, 0, sizeof ks);
-    generator->Pos = 16;
+	u32 tempKeystream[16];
+	++generator->Counter;
+	ChaCha20Run(generator->Key, generator->Nonce, generator->Counter, tempKeystream);
+
+	MemoryCopy(tempKeystream, generator->Key, sizeof generator->Key);
+	MemoryCopy(tempKeystream + 8, generator->Nonce, sizeof generator->Nonce);
+
+	MemoryFill(tempKeystream, 0, sizeof tempKeystream);
+
+	generator->BufferPos = sizeof generator->KeystreamBuffer;
 }
 
-static u64 RandomXorShift64()
+void RandomBytes(RandomState* generator, void* output, usz length)
 {
-	u64 x = g_xorShiftState;
-	x ^= x << 13;
-	x ^= x >> 7;
-	x ^= x << 17;
-	g_xorShiftState = x;
+	u8* p = (u8*)output;
 
-	return x;
+	for (usz i = 0; i < length; ++i) {
+		if (generator->BufferPos >= sizeof generator->KeystreamBuffer) {
+			RandomnessRefill(generator);
+		}
+
+		p[i] = generator->KeystreamBuffer[generator->BufferPos];
+		++generator->BufferPos;
+	}
+}
+
+u64 RandomU64()
+{
+	u64 result = 0;
+	RandomBytes(&g_random, &result, 8);
+
+	return result;
+}
+
+u32 RandomU32()
+{
+	u32 result = 0;
+	RandomBytes(&g_random, &result, 4);
+
+	return result;
+}
+
+u16 RandomU16()
+{
+	u16 result = 0;
+	RandomBytes(&g_random, &result, 2);
+
+	return result;
+}
+
+u8 RandomU8()
+{
+	u8 result = 0;
+	RandomBytes(&g_random, &result, 1);
+
+	return result;
+}
+
+i64 RandomI64()
+{
+	i64 result = 0;
+	RandomBytes(&g_random, &result, 8);
+
+	return result;
+}
+
+i32 RandomI32()
+{
+	i32 result = 0;
+	RandomBytes(&g_random, &result, 4);
+
+	return result;
+}
+
+i16 RandomI16()
+{
+	i16 result = 0;
+	RandomBytes(&g_random, &result, 2);
+
+	return result;
+}
+
+i8 RandomI8()
+{
+	i8 result = 0;
+	RandomBytes(&g_random, &result, 1);
+
+	return result;
 }
 
 u64 Random()
 {
-	if (g_cpuInformation.SupportsRDRAND) {
-		return RandomRDRAND();
-	}
+	usz rand = 1;
 
-	return RandomXorShift64();
+	// if (!g_cpuInformation.SupportsRDRAND) {
+	//	return RandomRDRAND();
+	// }
+
+	// TODO: Actually implement a pseudo-random algorithm
+	return rand++;
 }

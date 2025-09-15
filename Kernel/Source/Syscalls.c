@@ -3,7 +3,7 @@
 #include "GDT.h"
 #include "Scheduler.h"
 #include "Logger.h"
-#include "MSR.h"
+#include "Instructions.h"
 #include "Memory/VirtAddr.h"
 #include "Panic.h"
 #include "Result.h"

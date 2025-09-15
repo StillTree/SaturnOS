@@ -287,7 +287,7 @@ Result ProcessLoadELF(Process* process, const i8* elfPath)
 	}
 
 	Elf64_Ehdr elfHeader;
-	result = FileRead(fileDescriptor, sizeof(elfHeader), &elfHeader);
+	result = FileRead(fileDescriptor, sizeof elfHeader , &elfHeader);
 	if (result) {
 		goto CloseFile;
 	}

@@ -1,31 +1,31 @@
 #include "Logger/SerialConsole.h"
 
-#include "InOut.h"
+#include "Instructions.h"
 
 Result SerialConsoleInit(SerialConsoleLogger* logger, u16 port)
 {
 	logger->Port = port;
 
-	OutputU8(logger->Port + 1, 0x00);
-	OutputU8(logger->Port + 3, 0x80);
-	OutputU8(logger->Port, 0x03);
-	OutputU8(logger->Port + 1, 0x00);
-	OutputU8(logger->Port + 3, 0x03);
-	OutputU8(logger->Port + 2, 0xc7);
-	OutputU8(logger->Port + 4, 0x0b);
+	OutU8(logger->Port + 1, 0x00);
+	OutU8(logger->Port + 3, 0x80);
+	OutU8(logger->Port, 0x03);
+	OutU8(logger->Port + 1, 0x00);
+	OutU8(logger->Port + 3, 0x03);
+	OutU8(logger->Port + 2, 0xc7);
+	OutU8(logger->Port + 4, 0x0b);
 	// Set in loopback mode
-	OutputU8(logger->Port + 4, 0x1e);
+	OutU8(logger->Port + 4, 0x1e);
 
-	OutputU8(logger->Port, 0xae);
+	OutU8(logger->Port, 0xae);
 
 	// If we didn't get back the exact same byte that we sent in loopback mode,
 	// the device is not functioning corretly and should not be used
-	if (InputU8(logger->Port + 0) != 0xae) {
+	if (InU8(logger->Port + 0) != 0xae) {
 		return ResultSerialOutputUnavailable;
 	}
 
 	// If it is functioning correctly we set it in normal operation mode
-	OutputU8(logger->Port + 4, 0x0f);
+	OutU8(logger->Port + 4, 0x0f);
 
 	return ResultOk;
 }
@@ -36,7 +36,7 @@ void SerialConsoleWriteChar(SerialConsoleLogger* logger, u8 character)
 		character = '?';
 	}
 
-	OutputU8(logger->Port, character);
+	OutU8(logger->Port, character);
 }
 
 void SerialConsoleWriteString(SerialConsoleLogger* logger, const i8* string)

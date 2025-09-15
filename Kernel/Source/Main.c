@@ -27,12 +27,6 @@
 /// Initially empty.
 BootInfo g_bootInfo = {};
 
-Randomness test;
-
-static inline void ReadRDTSC(u32 values[2]) {
-    __asm__ volatile ("rdtsc" : "=a"(values[0]), "=d"(values[1]));
-}
-
 void KernelMain(BootInfo* bootInfo)
 {
 	// Copy the structure provided by the bootloader right at the beginning, so every part of the code can safely access it
@@ -44,22 +38,7 @@ void KernelMain(BootInfo* bootInfo)
 	// so this function doesn't throw but just warns when the serial output device is not available
 	LoggerInit(true, true, 0x3f8);
 
-	u32 key[8];
-	ReadRDTSC(key);
-
-	key[2] = 123;
-	key[3] = 123;
-	key[4] = 123;
-	key[5] = 123;
-	key[6] = 123;
-	key[7] = 123;
-
-	u32 nonce[3];
-	nonce[0] = g_bootInfo.XSDTPhysAddr & 0xffffffff;
-	nonce[1] = g_bootInfo.XSDTPhysAddr >> 32;
-	nonce[2] = 12;
-
-	InitRandom(&test, key, nonce, 1);
+	InitRandomness();
 
 	LogLine(SK_LOG_INFO "Initializing the SaturnOS Kernel\n");
 
@@ -131,12 +110,6 @@ void KernelMain(BootInfo* bootInfo)
 	ThreadLaunch(process->MainThread);
 
 	VirtualMemoryPrintRegions(&g_kernelMemoryAllocator);
-
-	for(usz i = 0; i < 8; ++i) {
-		u64 a = 0;
-		RandomU64(&test, &a);
-		LogLine(SK_LOG_DEBUG "%u", a);
-	}
 
 	while (true)
 		__asm__ volatile("hlt");

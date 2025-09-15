@@ -2,16 +2,15 @@
 
 #include "ACPI.h"
 #include "CPUInfo.h"
-#include "InOut.h"
+#include "Instructions.h"
 #include "Logger.h"
-#include "MSR.h"
 #include "Memory/VirtualMemoryAllocator.h"
 #include "Random.h"
 
 void DisablePIC()
 {
-	OutputU8(PIC_MASTER_DATA, 0xff);
-	OutputU8(PIC_SLAVE_DATA, 0xff);
+	OutU8(PIC_MASTER_DATA, 0xff);
+	OutU8(PIC_SLAVE_DATA, 0xff);
 }
 
 APIC g_apic;
@@ -138,7 +137,7 @@ Result InitAPIC()
 
 void EOISignal() { LAPICWriteRegister(LAPIC_EOI_REGISTER, 0); }
 
-extern Randomness test;
+extern RandomState test;
 
 void InitAPICTimer()
 {
@@ -153,9 +152,9 @@ void InitAPICTimer()
 	u32 initialCount = LAPICReadRegister(LAPIC_TIMER_CURRENT_REGISTER);
 
 	// Set the divisor to 100 MHz
-	OutputU8(0x43, 0x30);
-	OutputU8(0x40, pitDivisor & 0xff);
-	OutputU8(0x40, pitDivisor >> 8);
+	OutU8(0x43, 0x30);
+	OutU8(0x40, pitDivisor & 0xff);
+	OutU8(0x40, pitDivisor >> 8);
 
 	// Credit to, Omar Elghoul, the luxOS author for this algorithm that I stole from him 💀
 	// https://github.com/lux-operating-system/kernel/blob/main/src/platform/x86_64/apic/timer.c#L61
@@ -165,9 +164,9 @@ void InitAPICTimer()
 	while ((currentCounter <= oldCurrentCounter) && currentCounter) {
 		oldCurrentCounter = currentCounter;
 
-		OutputU8(0x43, 0);
-		currentCounter = (u16)InputU8(0x40);
-		currentCounter |= (u16)InputU8(0x40) << 8;
+		OutU8(0x43, 0);
+		currentCounter = (u16)InU8(0x40);
+		currentCounter |= (u16)InU8(0x40) << 8;
 	}
 
 	u32 finalCount = LAPICReadRegister(LAPIC_TIMER_CURRENT_REGISTER);
@@ -176,13 +175,13 @@ void InitAPICTimer()
 	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, 0);
 	g_apic.LAPICTimerFrequency = (u64)(initialCount - finalCount) * 100;
 
-	RandomReseedU64(&test, g_apic.LAPICTimerFrequency);
+	// RandomnessReseedU64(&test, g_apic.LAPICTimerFrequency);
 
 	// Disable the PIT (setting an invalid divisor)
 	// I don't know if this even does somthing, but hey, that won't hurt (hopefully...)
-	OutputU8(0x43, 0x30);
-	OutputU8(0x40, 0);
-	OutputU8(0x40, 0);
+	OutU8(0x43, 0x30);
+	OutU8(0x40, 0);
+	OutU8(0x40, 0);
 
 	LogLine(SK_LOG_DEBUG "LAPIC Timer frequency: %u MHz", g_apic.LAPICTimerFrequency / 1000000);
 

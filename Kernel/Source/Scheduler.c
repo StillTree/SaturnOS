@@ -311,7 +311,7 @@ Result InitScheduler()
 	kernelMainThread->Context.CR3 = kernelProcess->PML4;
 	g_scheduler.CurrentThread = kernelMainThread;
 	kernelMainThread->UserStackTop = g_bootInfo.KernelStackTop;
-	kernelMainThread->KernelStackTop = (Page4KiB)g_kernelInterruptStack + sizeof(g_kernelInterruptStack);
+	kernelMainThread->KernelStackTop = (Page4KiB)g_kernelInterruptStack + sizeof g_kernelInterruptStack;
 	kernelMainThread->ParentProcess = kernelProcess;
 
 	void* fileDescriptorsPool;
@@ -339,18 +339,8 @@ void ProcessStepOut()
 	__asm__ volatile("movq %0, %%cr3" :: "r"(g_bootInfo.KernelPML4) : "memory");
 }
 
-static inline void ReadRDTSC(u32 values[2]) {
-    __asm__ volatile ("rdtsc" : "=a"(values[0]), "=d"(values[1]));
-}
-
-extern Randomness test;
-
 void ScheduleInterrupt(CPUContext* cpuContext)
 {
-	u32 entropy[2];
-	ReadRDTSC(entropy);
-	RandomReseed(&test, entropy, 2);
-
 	Thread* threadIterator = g_scheduler.CurrentThread;
 	// TODO: Temporary workaround for when only one process is being run
 	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {

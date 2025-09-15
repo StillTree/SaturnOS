@@ -7,8 +7,8 @@ typedef struct FramebufferLogger {
 	u64 FramebufferSize;
 	u64 Width;
 	u64 Height;
-	u64 CursorPositionX;
-	u64 CursorPositionY;
+	u64 CursorPosX;
+	u64 CursorPosY;
 } FramebufferLogger;
 
 void FramebufferWriteChar(FramebufferLogger* logger, u8 character);

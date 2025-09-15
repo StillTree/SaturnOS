@@ -2,19 +2,25 @@
 
 #include "Core.h"
 
-typedef struct Randomness {
+typedef struct RandomState {
 	u32 Key[8];
 	u32 Nonce[3];
 	u32 Counter;
-	u32 Buffer[16];
-	usz Pos;
-} Randomness;
+	u8 KeystreamBuffer[64];
+	usz BufferPos;
+} RandomState;
 
-void InitRandom(Randomness* generator, u32 key[8], u32 nonce[3], usz initialCounter);
+void InitRandomness();
 
-void RandomU64(Randomness* generator, u64* output);
+void RandomnessReseed(RandomState* generator, const u32* entropy, usz length);
 
-void RandomReseed(Randomness* generator, const u32* entropy, usz length);
-void RandomReseedU64(Randomness* generator, u64 entropy);
+u64 RandomU64();
+u32 RandomU32();
+u16 RandomU16();
+u8 RandomU8();
+i64 RandomI64();
+i32 RandomI32();
+i16 RandomI16();
+i8 RandomI8();
 
 u64 Random();
