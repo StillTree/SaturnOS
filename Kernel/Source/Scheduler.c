@@ -7,6 +7,7 @@
 #include "Memory/Page.h"
 #include "Memory/PageTable.h"
 #include "Memory/SizedBlockAllocator.h"
+#include "Random.h"
 #include "Result.h"
 #include "Storage/VirtualFileSystem.h"
 
@@ -338,8 +339,18 @@ void ProcessStepOut()
 	__asm__ volatile("movq %0, %%cr3" :: "r"(g_bootInfo.KernelPML4) : "memory");
 }
 
+static inline void ReadRDTSC(u32 values[2]) {
+    __asm__ volatile ("rdtsc" : "=a"(values[0]), "=d"(values[1]));
+}
+
+extern Randomness test;
+
 void ScheduleInterrupt(CPUContext* cpuContext)
 {
+	u32 entropy[2];
+	ReadRDTSC(entropy);
+	RandomReseed(&test, entropy, 2);
+
 	Thread* threadIterator = g_scheduler.CurrentThread;
 	// TODO: Temporary workaround for when only one process is being run
 	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {

@@ -6,6 +6,7 @@
 #include "Logger.h"
 #include "Memory/PageTable.h"
 #include "Panic.h"
+#include "Random.h"
 #include "Scheduler.h"
 
 static void PrintCommonExceptionInfo(InterruptFrame* frame, const i8* exceptionName)
@@ -145,8 +146,18 @@ __attribute__((interrupt)) void PageFaultInterruptHandler(InterruptFrame* frame,
 	}
 }
 
+static inline void ReadRDTSC(u32 values[2]) {
+    __asm__ volatile ("rdtsc" : "=a"(values[0]), "=d"(values[1]));
+}
+
+extern Randomness test;
+
 __attribute__((interrupt)) void KeyboardInterruptHandler(InterruptFrame* /* unused */)
 {
+	u32 entropy[2];
+	ReadRDTSC(entropy);
+	RandomReseed(&test, entropy, 2);
+
 	u8 scanCode = InputU8(0x60);
 	i8 character = TranslateScanCode(scanCode);
 	if (character != '?') {

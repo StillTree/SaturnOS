@@ -6,6 +6,7 @@
 #include "Logger.h"
 #include "MSR.h"
 #include "Memory/VirtualMemoryAllocator.h"
+#include "Random.h"
 
 void DisablePIC()
 {
@@ -137,6 +138,8 @@ Result InitAPIC()
 
 void EOISignal() { LAPICWriteRegister(LAPIC_EOI_REGISTER, 0); }
 
+extern Randomness test;
+
 void InitAPICTimer()
 {
 	u16 pitDivisor = 1193182 / 100;
@@ -172,6 +175,8 @@ void InitAPICTimer()
 	// Disable the LAPIC timer
 	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, 0);
 	g_apic.LAPICTimerFrequency = (u64)(initialCount - finalCount) * 100;
+
+	RandomReseedU64(&test, g_apic.LAPICTimerFrequency);
 
 	// Disable the PIT (setting an invalid divisor)
 	// I don't know if this even does somthing, but hey, that won't hurt (hopefully...)

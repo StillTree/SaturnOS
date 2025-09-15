@@ -8,14 +8,14 @@ void MemoryFill(void* ptr, u8 value, usz size)
 	}
 }
 
-void memcpy(void* destination, void* source, usz size)
+void memcpy(void* destination, const void* source, usz size)
 {
 	MemoryCopy(source, destination, size);
 }
 
-void MemoryCopy(void* source, void* destination, usz size)
+void MemoryCopy(const void* source, void* destination, usz size)
 {
-	u8* src = source;
+	const u8* src = source;
 	u8* dest = destination;
 
 	for (usz i = 0; i < size; i++) {
