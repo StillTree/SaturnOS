@@ -99,6 +99,327 @@ index 07a3ae925f96..bab351b8237c 100644
    case llvm::Triple::FreeBSD:
      return "freebsd";
    case llvm::Triple::NetBSD:
+diff --git a/clang/lib/Driver/ToolChains/SaturnOS.cpp b/clang/lib/Driver/ToolChains/SaturnOS.cpp
+new file mode 100644
+index 000000000000..b96b17ac45c0
+--- /dev/null
++++ b/clang/lib/Driver/ToolChains/SaturnOS.cpp
+@@ -0,0 +1,189 @@
++//===--- SaturnOS.cpp - SaturnOS ToolChain Implementations ----------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#include "SaturnOS.h"
++#include "clang/Config/config.h"
++#include "clang/Driver/CommonArgs.h"
++#include "clang/Driver/Compilation.h"
++#include "clang/Driver/Driver.h"
++#include "clang/Driver/Options.h"
++#include "llvm/Option/ArgList.h"
++#include "llvm/Support/VirtualFileSystem.h"
++
++using namespace clang::driver;
++using namespace clang::driver::toolchains;
++using namespace clang::driver::tools;
++using namespace clang;
++using namespace llvm::opt;
++
++void saturnos::Linker::ConstructJob(Compilation &C, const JobAction &JA,
++                                    const InputInfo &Output,
++                                    const InputInfoList &Inputs,
++                                    const ArgList &Args,
++                                    const char *LinkingOutput) const {
++  const toolchains::SaturnOS &ToolChain =
++      static_cast<const toolchains::SaturnOS &>(getToolChain());
++  const Driver &D = ToolChain.getDriver();
++  const bool Static = Args.hasArg(options::OPT_static);
++  const bool StaticPie = Args.hasArg(options::OPT_static_pie);
++  const bool Shared = Args.hasArg(options::OPT_shared);
++  const bool Pie = Args.hasArg(options::OPT_pie);
++  const bool Nopie = Args.hasArg(options::OPT_no_pie, options::OPT_nopie);
++  const bool Relocatable = Args.hasArg(options::OPT_r);
++  ArgStringList CmdArgs;
++
++  // Silence warning for "clang -g foo.o -o foo"
++  Args.ClaimAllArgs(options::OPT_g_Group);
++  // and "clang -emit-llvm foo.o -o foo"
++  Args.ClaimAllArgs(options::OPT_emit_llvm);
++  // and for "clang -w foo.o -o foo". Other warning options are already
++  // handled somewhere else.
++  Args.ClaimAllArgs(options::OPT_w);
++
++  if (!D.SysRoot.empty())
++    CmdArgs.push_back(Args.MakeArgString("--sysroot=" + D.SysRoot));
++
++  if (Static) {
++    CmdArgs.push_back("-static");
++  } else {
++    if (Args.hasArg(options::OPT_rdynamic))
++      CmdArgs.push_back("-export-dynamic");
++
++    if (Shared) {
++      CmdArgs.push_back("-shared");
++    }
++  }
++
++  if (Pie)
++    CmdArgs.push_back("-pie");
++  if (Nopie)
++    CmdArgs.push_back("-no-pie");
++  if (StaticPie || (!Static && !StaticPie && !Shared && !Pie && !Nopie && !Relocatable)) {
++    CmdArgs.push_back("-static");
++    CmdArgs.push_back("-pie");
++    CmdArgs.push_back("--no-dynamic-linker");
++  }
++
++  assert((Output.isFilename() || Output.isNothing()) && "Invalid output.");
++  if (Output.isFilename()) {
++    CmdArgs.push_back("-o");
++    CmdArgs.push_back(Output.getFilename());
++  }
++
++  if (!Args.hasArg(options::OPT_nostdlib, options::OPT_nostartfiles,
++                   options::OPT_r)) {
++    CmdArgs.push_back("-lSaturnCRT");
++  }
++
++  Args.AddAllArgs(CmdArgs, options::OPT_L);
++  ToolChain.AddFilePathLibArgs(Args, CmdArgs);
++  Args.addAllArgs(CmdArgs,
++                  {options::OPT_T_Group, options::OPT_s, options::OPT_t});
++
++  if (D.isUsingLTO())
++    addLTOOptions(ToolChain, Args, CmdArgs, Output, Inputs,
++                  D.getLTOMode() == LTOK_Thin);
++
++  AddLinkerInputs(ToolChain, Inputs, Args, CmdArgs, JA);
++
++  if (!Args.hasArg(options::OPT_nostdlib, options::OPT_nodefaultlibs,
++                   options::OPT_r)) {
++    if (!Shared) {
++      CmdArgs.push_back("-lSaturn");
++    }
++
++    CmdArgs.push_back("-lCompilerRT");
++  }
++
++  const char *Exec = Args.MakeArgString(ToolChain.GetLinkerPath());
++  C.addCommand(std::make_unique<Command>(JA, *this,
++                                         ResponseFileSupport::AtFileCurCP(),
++                                         Exec, CmdArgs, Inputs, Output));
++}
++
++SaturnOS::SaturnOS(const Driver &D, const llvm::Triple &Triple,
++                   const ArgList &Args)
++    : ToolChain(D, Triple, Args) {
++  getProgramPaths().push_back(getDriver().Dir);
++
++  if (!D.SysRoot.empty()) {
++    SmallString<128> P(D.SysRoot);
++    llvm::sys::path::append(P, "Library");
++    getFilePaths().push_back(std::string(P.str()));
++  }
++}
++
++std::string SaturnOS::ComputeEffectiveClangTriple(const ArgList &Args,
++                                                  types::ID InputType) const {
++  llvm::Triple Triple(ComputeLLVMTriple(Args, InputType));
++  return Triple.str();
++}
++
++Tool *SaturnOS::buildLinker() const {
++  return new tools::saturnos::Linker(*this);
++}
++
++void SaturnOS::addClangTargetOptions(const ArgList &DriverArgs,
++                                     ArgStringList &CC1Args,
++                                     Action::OffloadKind) const {
++  if (!DriverArgs.hasFlag(options::OPT_fuse_init_array,
++                          options::OPT_fno_use_init_array, true))
++    CC1Args.push_back("-fno-use-init-array");
++
++  CC1Args.push_back("-mlong-double-64"); // for newlib + libc++ compat
++
++  CC1Args.push_back("-ffunction-sections"); // better to optimize binary sizes
++  CC1Args.push_back("-fdata-sections");
++}
++
++void SaturnOS::AddClangSystemIncludeArgs(const ArgList &DriverArgs,
++                                         ArgStringList &CC1Args) const {
++  const Driver &D = getDriver();
++
++  if (DriverArgs.hasArg(options::OPT_nostdinc))
++    return;
++
++  if (!DriverArgs.hasArg(options::OPT_nobuiltininc)) {
++    SmallString<128> P(D.ResourceDir);
++    llvm::sys::path::append(P, "Include");
++    addSystemInclude(DriverArgs, CC1Args, P);
++  }
++
++  if (DriverArgs.hasArg(options::OPT_nostdlibinc))
++    return;
++
++  if (!D.SysRoot.empty()) {
++    SmallString<128> P(D.SysRoot);
++    llvm::sys::path::append(P, "Include");
++    addExternCSystemInclude(DriverArgs, CC1Args, P.str());
++  }
++}
++
++std::string SaturnOS::getCompilerRT(const llvm::opt::ArgList &Args,
++                                    StringRef Component, FileType Type,
++                                    bool IsFortran) const {
++  bool NoRedZone = Args.hasArg(options::OPT_mno_red_zone);
++  const Driver &D = getDriver();
++
++  if (Component != "builtins")
++    return ToolChain::getCompilerRT(Args, Component, Type, IsFortran);
++
++  SmallString<128> Path(D.SysRoot);
++  llvm::sys::path::append(Path, "Library");
++
++  if (NoRedZone)
++    llvm::sys::path::append(Path, "Kernel", "libCompilerRT.a");
++  else
++    llvm::sys::path::append(Path, "libCompilerRT.a");
++
++  if (getVFS().exists(Path))
++    return std::string(Path);
++
++  D.Diag(clang::diag::err_drv_no_such_file) << Path;
++  return "";
++}
+diff --git a/clang/lib/Driver/ToolChains/SaturnOS.h b/clang/lib/Driver/ToolChains/SaturnOS.h
+new file mode 100644
+index 000000000000..15414d687515
+--- /dev/null
++++ b/clang/lib/Driver/ToolChains/SaturnOS.h
+@@ -0,0 +1,120 @@
++//===--- SaturnOS.h - SaturnOS ToolChain Implementations ------------------===//
++//
++// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
++// See https://llvm.org/LICENSE.txt for license information.
++// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
++//
++//===----------------------------------------------------------------------===//
++
++#ifndef LLVM_CLANG_LIB_DRIVER_TOOLCHAINS_SATURNOS_H
++#define LLVM_CLANG_LIB_DRIVER_TOOLCHAINS_SATURNOS_H
++
++#include "clang/Basic/LangOptions.h"
++#include "clang/Driver/Tool.h"
++#include "clang/Driver/ToolChain.h"
++#include "llvm/MC/MCTargetOptions.h"
++
++namespace clang {
++namespace driver {
++namespace tools {
++namespace saturnos {
++class LLVM_LIBRARY_VISIBILITY Linker : public Tool {
++public:
++  Linker(const ToolChain &TC) : Tool("saturnos::Linker", "ld.lld", TC) {}
++
++  bool hasIntegratedCPP() const override { return false; }
++  bool isLinkJob() const override { return true; }
++
++  void ConstructJob(Compilation &C, const JobAction &JA,
++                    const InputInfo &Output, const InputInfoList &Inputs,
++                    const llvm::opt::ArgList &TCArgs,
++                    const char *LinkingOutput) const override;
++};
++} // namespace saturnos
++} // namespace tools
++
++namespace toolchains {
++class LLVM_LIBRARY_VISIBILITY SaturnOS : public ToolChain {
++public:
++  SaturnOS(const Driver &D, const llvm::Triple &Triple,
++           const llvm::opt::ArgList &Args);
++
++  bool HasNativeLLVMSupport() const override { return true; }
++  bool IsIntegratedAssemblerDefault() const override { return true; }
++  bool IsMathErrnoDefault() const override { return false; }
++  bool useRelaxRelocations() const override { return true; }
++  RuntimeLibType
++  GetRuntimeLibType(const llvm::opt::ArgList &Args) const override {
++    return ToolChain::RLT_CompilerRT;
++  }
++
++  UnwindLibType
++  GetUnwindLibType(const llvm::opt::ArgList &Args) const override {
++    return ToolChain::UNW_None;
++  }
++
++  CXXStdlibType
++  GetCXXStdlibType(const llvm::opt::ArgList &Args) const override {
++    return ToolChain::CST_Libcxx;
++  }
++
++  RuntimeLibType GetDefaultRuntimeLibType() const override {
++    return ToolChain::RLT_CompilerRT;
++  }
++  CXXStdlibType GetDefaultCXXStdlibType() const override {
++    return ToolChain::CST_Libcxx;
++  }
++  bool IsUnwindTablesDefault(const llvm::opt::ArgList &Args) const {
++    return false;
++  }
++  bool ShouldLinkCXXStdlib(const llvm::opt::ArgList &Args) const {
++    return false;
++  }
++  llvm::ExceptionHandling
++  GetExceptionModel(const llvm::opt::ArgList &Args) const override {
++    return llvm::ExceptionHandling::SjLj;
++  }
++  ExceptionsMode getExceptionsMode() const {
++    return ExceptionsMode::EM_Disabled;
++  }
++  bool isPICDefault() const override { return false; }
++  bool isPIEDefault(const llvm::opt::ArgList &Args) const override {
++    return true;
++  }
++
++  bool isPICDefaultForced() const override { return false; }
++  llvm::DebuggerKind getDefaultDebuggerTuning() const override {
++    return llvm::DebuggerKind::LLDB;
++  }
++
++  LangOptions::StackProtectorMode
++  GetDefaultStackProtectorLevel(bool KernelOrKext) const override {
++    return LangOptions::SSPOff;
++  }
++
++  std::string ComputeEffectiveClangTriple(const llvm::opt::ArgList &Args,
++                                          types::ID InputType) const override;
++
++  void
++  addClangTargetOptions(const llvm::opt::ArgList &DriverArgs,
++                        llvm::opt::ArgStringList &CC1Args,
++                        Action::OffloadKind DeviceOffloadKind) const override;
++  void
++  AddClangSystemIncludeArgs(const llvm::opt::ArgList &DriverArgs,
++                            llvm::opt::ArgStringList &CC1Args) const override;
++
++  std::string
++  getCompilerRT(const llvm::opt::ArgList &Args, StringRef Component,
++                FileType Type = ToolChain::FT_Static,
++                bool IsFortran = false) const override;
++
++  const char *getDefaultLinker() const override { return "ld.lld"; }
++
++protected:
++  Tool *buildLinker() const override;
++};
++} // namespace toolchains
++} // namespace driver
++} // namespace clang
++
++#endif
 diff --git a/llvm/include/llvm/TargetParser/Triple.h b/llvm/include/llvm/TargetParser/Triple.h
 index 657f4230379e..df3a98824f51 100644
 --- a/llvm/include/llvm/TargetParser/Triple.h
