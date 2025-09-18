@@ -1,11 +1,13 @@
 #include "Random.h"
 
+#include "CPUInfo.h"
+#include "GDT.h"
 #include "Instructions.h"
 #include "Memory.h"
 
 static RandomState g_random;
 
-static u32 U32Rotate(u32 x, usz n) { return (x << n) | (x >> (32 - n)); }
+static u32 U32Rotate(u32 x, u32 n) { return (x << n) | (x >> (32 - n)); }
 
 static void ChaCha20QuarterRound(u32* a, u32* b, u32* c, u32* d)
 {
@@ -43,6 +45,8 @@ static void ChaCha20CoreTransform(u32* output, const u32* input)
 	for (usz i = 0; i < 16; ++i) {
 		output[i] = temp[i] + input[i];
 	}
+
+	MemoryFill(temp, 0, sizeof temp);
 }
 
 static void ChaCha20Run(const u32* key, const u32* nonce, u32 counter, u32* outputBytes)
@@ -62,35 +66,65 @@ static void ChaCha20Run(const u32* key, const u32* nonce, u32 counter, u32* outp
 	state[14] = nonce[1];
 	state[15] = nonce[2];
 
-	u32 outputState[16];
-	ChaCha20CoreTransform(outputState, state);
+	ChaCha20CoreTransform(outputBytes, state);
 
-	for (usz i = 0; i < 16; ++i) {
-		outputBytes[i] = outputState[i];
-	}
+	MemoryFill(state, 0, sizeof state);
 }
 
 void InitRandomness()
 {
-	u64 tsc = ReadTSC();
+	g_random.Key[0] = (u32)ReadTSC();
+	g_random.Key[1] = (u32)(ReadTSC() >> 32);
+	g_random.Key[2] = (u32)g_bootInfo.ContextSwitchFunctionPage;
+	g_random.Key[3] = (u32)(g_bootInfo.ContextSwitchFunctionPage >> 32);
 
-	u32 key[8];
-	key[0] = tsc & 0xffffffff;
-	key[1] = tsc >> 32;
-	key[2] = g_bootInfo.ContextSwitchFunctionPage & 0xffffffff;
-	key[3] = g_bootInfo.ContextSwitchFunctionPage >> 32;
-	key[4] = 123;
-	key[5] = 123;
-	key[6] = 123;
-	key[7] = 123;
+	if (g_cpuInformation.SupportsRDSEED) {
+		u64 rdseed;
+		// Key
+		if (RDSEED(&rdseed)) {
+			g_random.Key[4] = (u32)rdseed;
+			g_random.Key[5] = (u32)(rdseed >> 32);
+		} else {
+			u64 tsc = ReadTSC();
+			__asm__ volatile("pause");
+			tsc ^= ReadTSC();
+			g_random.Key[4] = (u32)tsc;
+			g_random.Key[5] = (u32)(tsc >> 32);
+		}
 
-	u32 nonce[3];
-	nonce[0] = g_bootInfo.XSDTPhysAddr & 0xffffffff;
-	nonce[1] = (g_bootInfo.XSDTPhysAddr >> 32) ^ (g_bootInfo.ContextSwitchFunctionPage & 0xffffffff);
-	nonce[2] = g_bootInfo.ContextSwitchFunctionPage >> 32;
+		// Nonce
+		if (RDSEED(&rdseed)) {
+			g_random.Nonce[1] = (u32)rdseed;
+			g_random.Nonce[2] = (u32)(rdseed >> 32);
+		} else {
+			__asm__ volatile("pause");
+			u64 tsc = ReadTSC();
+			g_random.Nonce[1] = (u32)tsc;
+			g_random.Nonce[2] = (u32)(tsc >> 32);
+		}
+	} else {
+		// Key
+		u64 tsc = ReadTSC();
+		__asm__ volatile("pause");
+		tsc ^= ReadTSC();
+		g_random.Key[4] = (u32)tsc;
+		g_random.Key[5] = (u32)(tsc >> 32);
 
-	MemoryCopy(key, g_random.Key, sizeof g_random.Key);
-	MemoryCopy(nonce, g_random.Nonce, sizeof g_random.Nonce);
+		// Nonce
+		__asm__ volatile("pause");
+		tsc = ReadTSC();
+		g_random.Nonce[1] = (u32)tsc;
+		g_random.Nonce[2] = (u32)(tsc >> 32);
+	}
+
+	g_random.Key[6] = (u32)(g_bootInfo.MemoryMapEntries ^ (u64)&g_kernelInterruptStack);
+	g_random.Key[7] = (u32)(ReadTSC() ^ (u64)&g_random ^ (u64)&ReadTSC);
+
+	g_random.Nonce[0] = (u32)g_bootInfo.XSDTPhysAddr;
+	g_random.Nonce[1] ^= (u32)((g_bootInfo.XSDTPhysAddr >> 32) ^ (g_bootInfo.PhysicalMemoryOffset & 0xffffffff));
+	g_random.Nonce[2] ^= g_bootInfo.PhysicalMemoryOffset >> 32;
+
+	// TODO: Rekey when about to overrun
 	g_random.Counter = 0;
 	g_random.BufferPos = sizeof g_random.KeystreamBuffer;
 	MemoryFill(g_random.KeystreamBuffer, 0, sizeof g_random.KeystreamBuffer);
@@ -103,42 +137,42 @@ static void RandomnessRefill(RandomState* generator)
 	generator->BufferPos = 0;
 }
 
-void RandomnessReseed(RandomState* generator, const u32* entropy, usz length)
+void RandomnessReseed(const u32* entropy, usz length)
 {
 	for (usz i = 0; i < length; ++i) {
-		generator->Key[i % 8] ^= entropy[i];
+		g_random.Key[i % 8] ^= entropy[i];
 	}
 
 	u32 tempKeystream[16];
-	++generator->Counter;
-	ChaCha20Run(generator->Key, generator->Nonce, generator->Counter, tempKeystream);
+	++g_random.Counter;
+	ChaCha20Run(g_random.Key, g_random.Nonce, g_random.Counter, tempKeystream);
 
-	MemoryCopy(tempKeystream, generator->Key, sizeof generator->Key);
-	MemoryCopy(tempKeystream + 8, generator->Nonce, sizeof generator->Nonce);
+	MemoryCopy(tempKeystream, g_random.Key, sizeof g_random.Key);
+	MemoryCopy(tempKeystream + 8, g_random.Nonce, sizeof g_random.Nonce);
 
 	MemoryFill(tempKeystream, 0, sizeof tempKeystream);
 
-	generator->BufferPos = sizeof generator->KeystreamBuffer;
+	g_random.BufferPos = sizeof g_random.KeystreamBuffer;
 }
 
-void RandomBytes(RandomState* generator, void* output, usz length)
+void RandomBytes(void* output, usz length)
 {
 	u8* p = (u8*)output;
 
 	for (usz i = 0; i < length; ++i) {
-		if (generator->BufferPos >= sizeof generator->KeystreamBuffer) {
-			RandomnessRefill(generator);
+		if (g_random.BufferPos >= sizeof g_random.KeystreamBuffer) {
+			RandomnessRefill(&g_random);
 		}
 
-		p[i] = generator->KeystreamBuffer[generator->BufferPos];
-		++generator->BufferPos;
+		p[i] = g_random.KeystreamBuffer[g_random.BufferPos];
+		++g_random.BufferPos;
 	}
 }
 
 u64 RandomU64()
 {
 	u64 result = 0;
-	RandomBytes(&g_random, &result, 8);
+	RandomBytes(&result, 8);
 
 	return result;
 }
@@ -146,7 +180,7 @@ u64 RandomU64()
 u32 RandomU32()
 {
 	u32 result = 0;
-	RandomBytes(&g_random, &result, 4);
+	RandomBytes(&result, 4);
 
 	return result;
 }
@@ -154,7 +188,7 @@ u32 RandomU32()
 u16 RandomU16()
 {
 	u16 result = 0;
-	RandomBytes(&g_random, &result, 2);
+	RandomBytes(&result, 2);
 
 	return result;
 }
@@ -162,7 +196,7 @@ u16 RandomU16()
 u8 RandomU8()
 {
 	u8 result = 0;
-	RandomBytes(&g_random, &result, 1);
+	RandomBytes(&result, 1);
 
 	return result;
 }
@@ -170,7 +204,7 @@ u8 RandomU8()
 i64 RandomI64()
 {
 	i64 result = 0;
-	RandomBytes(&g_random, &result, 8);
+	RandomBytes(&result, 8);
 
 	return result;
 }
@@ -178,7 +212,7 @@ i64 RandomI64()
 i32 RandomI32()
 {
 	i32 result = 0;
-	RandomBytes(&g_random, &result, 4);
+	RandomBytes(&result, 4);
 
 	return result;
 }
@@ -186,7 +220,7 @@ i32 RandomI32()
 i16 RandomI16()
 {
 	i16 result = 0;
-	RandomBytes(&g_random, &result, 2);
+	RandomBytes(&result, 2);
 
 	return result;
 }
@@ -194,19 +228,7 @@ i16 RandomI16()
 i8 RandomI8()
 {
 	i8 result = 0;
-	RandomBytes(&g_random, &result, 1);
+	RandomBytes(&result, 1);
 
 	return result;
-}
-
-u64 Random()
-{
-	usz rand = 1;
-
-	// if (!g_cpuInformation.SupportsRDRAND) {
-	//	return RandomRDRAND();
-	// }
-
-	// TODO: Actually implement a pseudo-random algorithm
-	return rand++;
 }

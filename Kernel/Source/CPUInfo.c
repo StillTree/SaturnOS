@@ -33,19 +33,24 @@ Result CPUIDSaveInfo(CPUInfo* cpuInfo)
 	CPUIDResult featuresInfo = {};
 	result = CPUID(cpuInfo, 1, 0, &featuresInfo);
 	if (!result) {
-		cpuInfo->SupportsAVX = ((featuresInfo.ECX >> 28) & 1) != 0;
-		cpuInfo->SupportsX2APIC = ((featuresInfo.ECX >> 21) & 1) != 0;
-		cpuInfo->SupportsRDRAND = ((featuresInfo.ECX >> 30) & 1) != 0;
-		cpuInfo->SupportsMMX = ((featuresInfo.EDX >> 23) & 1) != 0;
-		cpuInfo->SupportsSSE = ((featuresInfo.EDX >> 25) & 1) != 0;
-		cpuInfo->SupportsSSE2 = ((featuresInfo.EDX >> 26) & 1) != 0;
-		cpuInfo->SupportsXAPIC = ((featuresInfo.EDX >> 9) & 1) != 0;
+		cpuInfo->SupportsAVX = (featuresInfo.ECX & (1U << 28)) != 0;
+		cpuInfo->SupportsX2APIC = (featuresInfo.ECX & (1U << 21)) != 0;
+		cpuInfo->SupportsRDRAND = (featuresInfo.ECX & (1U << 30)) != 0;
+		cpuInfo->SupportsMMX = (featuresInfo.EDX & (1U << 23)) != 0;
+		cpuInfo->SupportsSSE = (featuresInfo.EDX & (1U << 25)) != 0;
+		cpuInfo->SupportsSSE2 = (featuresInfo.EDX & (1U << 26)) != 0;
+		cpuInfo->SupportsXAPIC = (featuresInfo.EDX & (1U << 9)) != 0;
 	}
 
 	result = CPUID(cpuInfo, 0x80000008, 0, &featuresInfo);
 	if (!result) {
 		cpuInfo->PhysAddrBits = featuresInfo.EAX & 0xff;
 		cpuInfo->VirtAddrBits = (featuresInfo.EAX >> 8) & 0xff;
+	}
+
+	result = CPUID(cpuInfo, 7, 0, &featuresInfo);
+	if (!result) {
+		cpuInfo->SupportsRDSEED = (featuresInfo.EBX & (1U << 18)) != 0;
 	}
 
 	return ResultOk;

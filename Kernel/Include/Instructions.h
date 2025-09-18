@@ -39,3 +39,20 @@ static inline u8 InU8(u16 port)
 }
 
 static inline void IOWait() { OutU8(0x80, 0); }
+
+static inline bool RDSEED(u64* value)
+{
+	bool success = false;
+
+	for (usz i = 0; i < 10; ++i) {
+		__asm__ volatile("rdseed %0\n"
+						 "setc %1"
+			: "=r"(*value), "=qm"(success));
+
+		if (success) {
+			return true;
+		}
+	}
+
+	return false;
+}

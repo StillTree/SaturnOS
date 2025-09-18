@@ -157,7 +157,7 @@ void InitAPICTimer()
 	OutU8(0x40, pitDivisor >> 8);
 
 	// Credit to, Omar Elghoul, the luxOS author for this algorithm that I stole from him 💀
-	// https://github.com/lux-operating-system/kernel/blob/main/src/platform/x86_64/apic/timer.c#L61
+	// https://github.com/lux-operating-system/kernel/blob/d83b97fad7f4dbd694d6bcb1b4de03ca71eb1074/src/platform/x86_64/apic/timer.c#L61
 	u16 currentCounter = pitDivisor;
 	u16 oldCurrentCounter = pitDivisor;
 

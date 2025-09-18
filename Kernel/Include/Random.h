@@ -6,14 +6,16 @@ typedef struct RandomState {
 	u32 Key[8];
 	u32 Nonce[3];
 	u32 Counter;
+
 	u8 KeystreamBuffer[64];
 	usz BufferPos;
 } RandomState;
 
 void InitRandomness();
 
-void RandomnessReseed(RandomState* generator, const u32* entropy, usz length);
+void RandomnessReseed(const u32* entropy, usz length);
 
+void RandomBytes(void* output, usz length);
 u64 RandomU64();
 u32 RandomU32();
 u16 RandomU16();
