@@ -130,11 +130,11 @@ void RandomnessInit()
 	MemoryFill(g_random.KeystreamBuffer, 0, sizeof g_random.KeystreamBuffer);
 }
 
-static void RandomnessRefill(RandomState* generator)
+static void RandomnessRefill()
 {
-	ChaCha20Run(generator->Key, generator->Nonce, generator->Counter, (u32*)generator->KeystreamBuffer);
-	++generator->Counter;
-	generator->BufferPos = 0;
+	ChaCha20Run(g_random.Key, g_random.Nonce, g_random.Counter, (u32*)g_random.KeystreamBuffer);
+	++g_random.Counter;
+	g_random.BufferPos = 0;
 }
 
 void RandomnessReseed(const u32* entropy, usz length)
@@ -161,7 +161,7 @@ void RandomBytes(void* output, usz length)
 
 	for (usz i = 0; i < length; ++i) {
 		if (g_random.BufferPos >= sizeof g_random.KeystreamBuffer) {
-			RandomnessRefill(&g_random);
+			RandomnessRefill();
 		}
 
 		p[i] = g_random.KeystreamBuffer[g_random.BufferPos];
