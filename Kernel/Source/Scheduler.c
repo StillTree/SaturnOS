@@ -2,6 +2,7 @@
 
 #include "ELFLoader.h"
 #include "GDT.h"
+#include "Instructions.h"
 #include "Memory.h"
 #include "Memory/BitmapFrameAllocator.h"
 #include "Memory/Page.h"
@@ -329,18 +330,15 @@ Result InitScheduler()
 	return result;
 }
 
-void ProcessStepInto(Process* process)
-{
-	__asm__ volatile("movq %0, %%cr3" :: "r"(process->PML4) : "memory");
-}
+void ProcessStepInto(Process* process) { __asm__ volatile("movq %0, %%cr3" ::"r"(process->PML4) : "memory"); }
 
-void ProcessStepOut()
-{
-	__asm__ volatile("movq %0, %%cr3" :: "r"(g_bootInfo.KernelPML4) : "memory");
-}
+void ProcessStepOut() { __asm__ volatile("movq %0, %%cr3" ::"r"(g_bootInfo.KernelPML4) : "memory"); }
 
 void ScheduleInterrupt(CPUContext* cpuContext)
 {
+	u64 reseed = ReadTSC();
+	RandomnessReseed((u32*)&reseed, 2);
+
 	Thread* threadIterator = g_scheduler.CurrentThread;
 	// TODO: Temporary workaround for when only one process is being run
 	if (g_scheduler.CurrentThread->ParentProcess->ID == 0) {

@@ -38,7 +38,7 @@ void KernelMain(BootInfo* bootInfo)
 	// so this function doesn't throw but just warns when the serial output device is not available
 	LoggerInit(true, true, 0x3f8);
 
-	InitRandomness();
+	RandomnessInit();
 
 	LogLine(SK_LOG_INFO "Initializing the SaturnOS Kernel\n");
 

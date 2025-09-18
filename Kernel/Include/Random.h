@@ -11,7 +11,7 @@ typedef struct RandomState {
 	usz BufferPos;
 } RandomState;
 
-void InitRandomness();
+void RandomnessInit();
 
 void RandomnessReseed(const u32* entropy, usz length);
 
@@ -24,5 +24,3 @@ i64 RandomI64();
 i32 RandomI32();
 i16 RandomI16();
 i8 RandomI8();
-
-u64 Random();

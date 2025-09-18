@@ -95,7 +95,7 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 		return ResultOutOfMemory;
 	}
 
-	usz randomIndex = Random() % regionCount;
+	usz randomIndex = RandomU64() % regionCount;
 
 	regionPointer = allocator->List;
 	while (regionPointer) {
@@ -106,7 +106,7 @@ static Result GetRandomRegion(VirtualMemoryAllocator* allocator, usz size, Page4
 				usz pageSlotCount = (maxOffset / PAGE_4KIB_SIZE_BYTES) + 1;
 				usz offsetPages = 0;
 				if (pageSlotCount > 1) {
-					offsetPages = Random() % pageSlotCount;
+					offsetPages = RandomU64() % pageSlotCount;
 				}
 
 				*randomPage = regionPointer->Begin + offsetPages * PAGE_4KIB_SIZE_BYTES;

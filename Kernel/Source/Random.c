@@ -71,7 +71,7 @@ static void ChaCha20Run(const u32* key, const u32* nonce, u32 counter, u32* outp
 	MemoryFill(state, 0, sizeof state);
 }
 
-void InitRandomness()
+void RandomnessInit()
 {
 	g_random.Key[0] = (u32)ReadTSC();
 	g_random.Key[1] = (u32)(ReadTSC() >> 32);

@@ -137,8 +137,6 @@ Result InitAPIC()
 
 void EOISignal() { LAPICWriteRegister(LAPIC_EOI_REGISTER, 0); }
 
-extern RandomState test;
-
 void InitAPICTimer()
 {
 	u16 pitDivisor = 1193182 / 100;
@@ -170,6 +168,9 @@ void InitAPICTimer()
 	}
 
 	u32 finalCount = LAPICReadRegister(LAPIC_TIMER_CURRENT_REGISTER);
+
+	u32 reseed = initialCount ^ finalCount;
+	RandomnessReseed(&reseed, 1);
 
 	// Disable the LAPIC timer
 	LAPICWriteRegister(LAPIC_TIMER_INITIAL_REGISTER, 0);
