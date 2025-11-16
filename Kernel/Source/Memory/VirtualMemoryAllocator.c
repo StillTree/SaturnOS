@@ -193,8 +193,8 @@ Result InitKernelVirtualMemory(usz topPML4Entries, Page4KiB backingMemoryBegin, 
 
 	// TODO: Not assume that the framebuffer is perfectly 4096 bytes aligned
 	// Exclude the framebuffer
-	result = MarkVirtualMemoryUsed(&g_kernelMemoryAllocator, (VirtAddr)g_bootInfo.Framebuffer,
-		(VirtAddr)g_bootInfo.Framebuffer + g_bootInfo.FramebufferSize);
+	result = MarkVirtualMemoryUsed(
+		&g_kernelMemoryAllocator, (VirtAddr)g_bootInfo.Framebuffer, (VirtAddr)g_bootInfo.Framebuffer + g_bootInfo.FramebufferSize);
 	if (result) {
 		return result;
 	}
